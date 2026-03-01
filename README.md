@@ -57,25 +57,25 @@ Below you will find all the files connected to a dependency.
 
 Some inventories offer a lot of backwards-compatible functionality and you may not need to edit all of the files.
 
--   `systems/inventory.lua`
--   `formatting/formatItem/shared.lua`
--   `functions/addItem/server.lua`
--   `functions/canCarryItem/server.lua`
--   `functions/getInventoryImagePath/shared.lua`
--   `functions/getInventorySlot/server.lua`
--   `functions/getPlayerItems/client.lua`
--   `functions/getPlayerItems/server.lua`
--   `functions/hasItem/server.lua`
--   `functions/money/server.lua`
--   `functions/registerUsableItem/server.lua`
--   `functions/removeFromSlot/server.lua`
--   `functions/setItemMetadata/server.lua`
--   `functions/stash/client.lua`
--   `functions/stash/server.lua`
--   `functions/unequipWeapon/client.lua`
--   `internals/events/client.lua`
--   `internals/items/client.lua`
--   `internals/items/server.lua`
+-   [systems/inventory.lua](systems/inventory.lua)
+-   [formatting/formatItem/shared.lua](formatting/formatItem/shared.lua)
+-   [functions/addItem/server.lua](functions/addItem/server.lua)
+-   [functions/canCarryItem/server.lua](functions/canCarryItem/server.lua)
+-   [functions/getInventoryImagePath/shared.lua](functions/getInventoryImagePath/shared.lua)
+-   [functions/getInventorySlot/server.lua](functions/getInventorySlot/server.lua)
+-   [functions/getPlayerItems/client.lua](functions/getPlayerItems/client.lua)
+-   [functions/getPlayerItems/server.lua](functions/getPlayerItems/server.lua)
+-   [functions/hasItem/server.lua](functions/hasItem/server.lua)
+-   [functions/money/server.lua](functions/money/server.lua)
+-   [functions/registerUsableItem/server.lua](functions/registerUsableItem/server.lua)
+-   [functions/removeFromSlot/server.lua](functions/removeFromSlot/server.lua)
+-   [functions/setItemMetadata/server.lua](functions/setItemMetadata/server.lua)
+-   [functions/stash/client.lua](functions/stash/client.lua)
+-   [functions/stash/server.lua](functions/stash/server.lua)
+-   [functions/unequipWeapon/client.lua](functions/unequipWeapon/client.lua)
+-   [internals/events/client.lua](internals/events/client.lua)
+-   [internals/items/client.lua](internals/items/client.lua)
+-   [internals/items/server.lua](internals/items/server.lua)
 
 ### Fuel
 
