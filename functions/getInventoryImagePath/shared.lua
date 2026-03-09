@@ -17,6 +17,11 @@ function Functions.getInventoryImagePath(itemName)
 
     if (not resourceName) then
         resourceName = frameworkFallbacks[Framework]
+
+        -- qb-inventory uses html/images/ instead of web/images/
+        if (resourceName == "qb-inventory") then
+            return ("nui://%s/html/images/%s.png"):format(resourceName, itemName)
+        end
     end
 
     if (not resourceName) then
