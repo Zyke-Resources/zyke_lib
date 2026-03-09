@@ -2,6 +2,21 @@ Functions.debug.internal("Initializing loader...")
 
 -- Loading our basic dependencies to redirect dependency calls within the library / bridge
 
+-- Load dependency overrides
+local dependencyOverrides = {}
+do
+    local overrideChunk = LoadResourceFile(LibName, "dependency_override.lua")
+    if (overrideChunk) then
+        local func, err = load(overrideChunk, ("@@%s/dependency_override.lua"):format(LibName))
+        if (func and not err) then
+            local ok, result = pcall(func)
+            if (ok and type(result) == "table") then
+                dependencyOverrides = result
+            end
+        end
+    end
+end
+
 -- Warning for extensive dependency loading time
 -- Usually warning about dependency loading would only happen if we have debug enabled
 --- But through testing it appears that quite a few servers keep scripts in their servers without starting them
@@ -40,8 +55,9 @@ local function awaitSystemStarting(fileName)
 end
 
 ---@param fileName string
+---@param overrideKey string
 ---@return function
-local function loadSystem(fileName)
+local function loadSystem(fileName, overrideKey)
     local chunk = LoadResourceFile(LibName, ("systems/%s.lua"):format(fileName))
     local func, err = load(chunk, ("@@%s/systems/%s.lua"):format(LibName, fileName))
 
@@ -49,28 +65,30 @@ local function loadSystem(fileName)
         error(err)
     end
 
-    return func(awaitSystemStarting)
+    local override = dependencyOverrides[overrideKey] or "auto"
+
+    return func(awaitSystemStarting, override)
 end
 
-loadSystem("framework")
+loadSystem("framework", "framework")
 Functions.debug.internal("Loaded framework", Framework)
 
-loadSystem("inventory")
+loadSystem("inventory", "inventory")
 Functions.debug.internal("Loaded inventory", Inventory)
 
-loadSystem("target")
+loadSystem("target", "target")
 Functions.debug.internal("Loaded target", Target)
 
-loadSystem("gang")
+loadSystem("gang", "gang")
 Functions.debug.internal("Loaded gang", GangSystem)
 
-loadSystem("fuel")
+loadSystem("fuel", "fuel")
 Functions.debug.internal("Loaded fuel", FuelSystem)
 
-loadSystem("death")
+loadSystem("death", "death")
 Functions.debug.internal("Loaded death", DeathSystem)
 
-loadSystem("banking")
+loadSystem("banking", "banking")
 Functions.debug.internal("Loaded banking", BankingSystem)
 
 HasLoadedDependencies = true

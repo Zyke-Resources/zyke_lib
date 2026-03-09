@@ -1,4 +1,4 @@
-local awaitSystemStarting = ...
+local awaitSystemStarting, override = ...
 
 local systems = {
     {fileName = "qs-inventory", variable = "QS"},
@@ -9,15 +9,41 @@ local systems = {
     {fileName = "DEFAULT_INVENTORY", variable = "DEFAULT"},
 }
 
-for i = 1, #systems do
-    local resState = awaitSystemStarting(systems[i].fileName)
+if (override ~= "auto") then
+    for i = 1, #systems do
+        if (systems[i].fileName == override) then
+            local resState = awaitSystemStarting(override)
 
-    -- If it's started, we use it
-    if (resState == "started") then
-        Inventory = systems[i].variable
-        Functions.debug.internal("^2Using " .. systems[i].fileName .. " as inventory system^7")
+            if (resState ~= "started") then
+                print("^1========== [WARNING] ==========^7")
+                print(("^1> Inventory override '%s' is set, but the resource is not started (state: %s)^7"):format(override, resState))
+                print("^1> Please make sure the resource is installed and started in your server.cfg^7")
+                print("^1> You can change this in dependency_override.lua^7")
+            else
+                Inventory = systems[i].variable
+                Functions.debug.internal("^2Using " .. override .. " as inventory system (override)^7")
+            end
 
-        break
+            break
+        end
+    end
+
+    if (not Inventory) then
+        local valid = {}
+        for i = 1, #systems do valid[#valid+1] = systems[i].fileName end
+        print(("^1[zyke_lib] Invalid inventory override '%s'. Valid options: %s^7"):format(override, table.concat(valid, ", ")))
+    end
+else
+    for i = 1, #systems do
+        local resState = awaitSystemStarting(systems[i].fileName)
+
+        -- If it's started, we use it
+        if (resState == "started") then
+            Inventory = systems[i].variable
+            Functions.debug.internal("^2Using " .. systems[i].fileName .. " as inventory system^7")
+
+            break
+        end
     end
 end
 
