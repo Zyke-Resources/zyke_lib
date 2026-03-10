@@ -6,7 +6,7 @@
 ---@field discord string?
 ---@field xbl string?
 ---@field liveid string?
----@field ip string?
+
 ---@field firstname? string
 ---@field lastname? string
 
@@ -35,11 +35,14 @@ local function insertIntoIdentifiers(player)
         local separator = id:find(":")
         if (separator) then
             local key = id:sub(1, separator - 1)
+            if (key == "ip") then goto continue end
+
             local value = id:sub(separator + 1)
 
             playerIdentifiers[identifier][key] = value
 
             Player(playerId).state:set("identifier:" .. key, value, true)
+            ::continue::
         end
     end
 end
