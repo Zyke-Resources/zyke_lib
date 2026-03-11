@@ -8,7 +8,9 @@ local isOpen = {}
 Functions.showPrompt = function(id, key, label)
     local resolvedKey = key
 
-    if (key:byte(1) == 43) then
+    -- Checks if the prefix is "+", so that we can resolve the command name, which would be something like "+storeVehicle"
+    -- Also checks length to make sure the "+" is a prefix and not just the "+" character
+    if (#key > 1 and key:byte(1) == 43) then
         local keyData = Functions.keys.getKeyDataForCommand(key)
         resolvedKey = keyData and keyData.label or "?"
     end
