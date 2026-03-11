@@ -5,7 +5,7 @@ version "2.3.16"
 
 shared_script "imports.lua"
 
-ui_page "javascript/index.html"
+ui_page "nui/index.html"
 
 files {
     "imports.lua",
@@ -19,8 +19,7 @@ files {
     "internals/**/*.lua",
     "loader.lua",
 
-    "javascript/index.html",
-    "javascript/*.js",
+    "nui/**/*",
 }
 
 loader {
@@ -48,4 +47,8 @@ loader {
 
 dependencies {
     "ox_lib", -- Skillcheck
+}
+
+client_scripts {
+    "interfaces/**/client.lua",
 }

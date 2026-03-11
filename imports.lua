@@ -82,9 +82,19 @@ local function execute(path, self, index, ...)
     return module
 end
 
+local debug_getinfo = debug.getinfo
+
 Functions = setmetatable({
     name = LibName,
 }, {
+    __newindex = function(self, key, fn)
+        rawset(self, key, fn)
+
+        -- Auto-register exports when set from zyke_lib's own interfaces
+        if (debug_getinfo(2, 'S').short_src:find('@zyke_lib/interfaces')) then
+            exports(key, fn)
+        end
+    end,
     __index = function(self, index)
         return execute("functions", self, index)
     end,

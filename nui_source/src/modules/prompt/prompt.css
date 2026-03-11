@@ -1,0 +1,31 @@
+.prompt-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: fit-content;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.6rem;
+    pointer-events: none;
+}
+
+.prompt-item {
+    display: flex;
+	align-items: center;
+	justify-content: start;
+	background: rgb(var(--dark));
+	padding: var(--mpadding) var(--mlpadding);
+	border-radius: var(--lborderRadius);
+	border: 1px solid rgb(var(--grey3));
+	box-shadow: 0 0 5px -1px rgba(0, 0, 0, 0.2);
+}
+
+.prompt-item p {
+    font-size: 1.4rem;
+    line-height: 1.5;
+    font-weight: 400;
+    margin: 0;
+    margin-left: 0.75rem;
+}

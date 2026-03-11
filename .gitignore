@@ -1,0 +1,5 @@
+# Dependencies
+nui_source/node_modules/
+
+# Build output (generated from nui_source via `npm run build`)
+nui/
