@@ -1,10 +1,13 @@
 -- Set the vehicle you are currently in
 CreateThread(function()
     local prevVeh = nil
+    local prevEntering = nil
 
     while (true) do
         local sleep = 250
-        local veh = GetVehiclePedIsIn(PlayerPedId(), false)
+        local ply = PlayerPedId()
+        local veh = GetVehiclePedIsIn(ply, false)
+        local entering = GetVehiclePedIsEntering(ply)
 
         if (prevVeh ~= veh) then
             LocalPlayer.state:set("currentVehicle", veh ~= 0 and veh or nil, false)
@@ -13,6 +16,12 @@ CreateThread(function()
             LocalPlayer.state:set("currentVehicleNetId", netId, true)
 
             prevVeh = veh
+        end
+
+        -- Maybe doesn't really fit in here, but we'll run it for now
+        if (prevEntering ~= entering) then
+            LocalPlayer.state:set("enteringVehicle", entering ~= 0 and entering or nil, false)
+            prevEntering = entering
         end
 
         Wait(sleep)
