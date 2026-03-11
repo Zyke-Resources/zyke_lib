@@ -1,13 +1,21 @@
 local isOpen = {}
 
 --- Show a prompt / text ui on screen
+--- Possibility to automatically resolve key label from command name to get the actual key bound to the action, without extra work
 ---@param id string @ Unique identifier (allows updates & removal)
----@param key string @ Key label to display in the kbd element (e.g. "E", "U")
+---@param key string @ Key label to display in the kbd element (ex. "E", "U"), or a command name prefixed with "+" (ex. "+storeVehicle") to auto-resolve the key label
 ---@param label string @ Text label next to the key
 Functions.showPrompt = function(id, key, label)
+    local resolvedKey = key
+
+    if (key:byte(1) == 43) then
+        local keyData = Functions.keys.getKeyDataForCommand(key)
+        resolvedKey = keyData and keyData.label or "?"
+    end
+
     SendNUIMessage({
         event = "ShowPrompt",
-        data = { id = id, key = key, label = label }
+        data = { id = id, key = resolvedKey, label = label }
     })
 
     isOpen[id] = true
