@@ -1,4 +1,14 @@
 -- Resolves a vehicle model label from its hash, with a title-cased fallback if no GXT label exists
+
+-- Known GTA base-game models that have no valid GXT label, so we can suppress warnings for these
+local ignoredModels = {
+    [-777275802]  = true, -- FREIGHTTRAI
+    [1956216962]  = true, -- TANKER
+    [-2140210194] = true, -- DOCKTRAILER
+    [356391690]   = true, -- proptrailer
+    [1019737494]  = true, -- GRAINTRAILE
+}
+
 ---@param modelHash number
 ---@return string
 function Functions.getModelLabel(modelHash)
@@ -13,7 +23,9 @@ function Functions.getModelLabel(modelHash)
             return first:upper() .. rest
         end)
 
-        print("^1[WARNING] ^3Invalid label for model " .. modelHash .. " using display name \"" .. displayName .. "\", using fallback \"" .. label .. "\"^7")
+        if (not ignoredModels[modelHash]) then
+            print("^1[WARNING] ^3Invalid label for model " .. modelHash .. " using display name \"" .. displayName .. "\", using fallback \"" .. label .. "\"^7")
+        end
     end
 
     return label
