@@ -8,6 +8,8 @@ return {
     ["ManagedAccess"] = "",
     ["SetFakePlate"] = "",
     ["LockpickedVehicle"] = "",
+    ["RobbedNPCKeys"] = "",
+    ["StolenCarKeys"] = "",
     ["PayImpound"] = "",
 
     -- Admin
