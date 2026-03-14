@@ -9,6 +9,8 @@ local ignoredModels = {
     [1019737494]  = true, -- GRAINTRAILE
 }
 
+local debug = LibConfig.debug
+
 ---@param modelHash number
 ---@return string
 function Functions.getModelLabel(modelHash)
@@ -23,7 +25,7 @@ function Functions.getModelLabel(modelHash)
             return first:upper() .. rest
         end)
 
-        if (not ignoredModels[modelHash]) then
+        if (debug and not ignoredModels[modelHash]) then
             print("^1[WARNING] ^3Invalid label for model " .. modelHash .. " using display name \"" .. displayName .. "\", using fallback \"" .. label .. "\"^7")
         end
     end
