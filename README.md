@@ -101,6 +101,57 @@ To add in a completely new framework, you would need to modify pretty much all f
 
 Currently unused
 
+## Dependency Override
+
+By default, `zyke_lib` automatically detects which systems you are running (framework, inventory, target, etc.). If auto-detection fails or you want to explicitly specify a system, you can configure this in `dependency_override.lua`.
+
+Each system supports the following values:
+
+| Value | Description |
+|---|---|
+| `"auto"` | Automatically detect which system to use **(default)** |
+| `"<resource_name>"` | Use a specific resource (will wait for it to start) |
+| `"none"` | Skip detection entirely, fall back to your framework's built-in system |
+
+> **Note:** `"none"` is only valid for **optional** systems (gang, fuel, death, banking). Setting it means the library will use your framework's default behavior instead.
+
+### Available Systems
+
+**Required** (must always resolve to a valid resource):
+
+| System | Options |
+|---|---|
+| `framework` | `"auto"`, `"es_extended"`, `"qb-core"` |
+| `inventory` | `"auto"`, `"qs-inventory"`, `"ox_inventory"`, `"tgiann-inventory"`, `"codem-inventory"`, `"core_inventory"` |
+| `target` | `"auto"`, `"ox_target"`, `"qb-target"` |
+
+**Optional** (can be set to `"none"`):
+
+| System | Options |
+|---|---|
+| `gang` | `"auto"`, `"none"`, `"zyke_gangs"` |
+| `fuel` | `"auto"`, `"none"`, `"ox_fuel"`, `"LegacyFuel"`, `"cdn-fuel"`, `"lc_fuel"` |
+| `death` | `"auto"`, `"none"`, `"wasabi_ambulance"` |
+| `banking` | `"auto"`, `"none"`, `"Renewed-Banking"`, `"RxBanking"`, `"okokBanking"`, `"bablo-banking"` |
+
+### Example
+
+```lua
+-- dependency_override.lua
+return {
+    framework = "auto",
+    inventory = "ox_inventory",  -- Force ox_inventory
+    target = "auto",
+
+    gang = "none",    -- Use framework's built-in gang system
+    fuel = "ox_fuel",
+    death = "auto",
+    banking = "none",
+}
+```
+
+> **Tip:** If your server gets stuck on the dependency loading step, set the appropriate system to the exact resource name you use instead of `"auto"`.
+
 ## Loader
 
 This is an experimental approach to simplify the setup process for all of our products. Utilizing this loader, it is ensured that **all** dependenciesa are properly loaded before we allow the scripts to be started. This is essentially expanding on the default "dependency" fxmanifest.lua section that often fails due to timing issues in certain cases. This loader may be niche, but there are a lot of servers that will benefit from a simplified setup when installing our resources.
