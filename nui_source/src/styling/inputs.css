@@ -1,0 +1,141 @@
+.mantine-TextInput-root,
+.mantine-NumberInput-root,
+.mantine-Textarea-root {
+    padding: 0.25rem 0;
+}
+
+.input-root .label {
+    font-family: var(--font);
+    color: rgb(var(--text));
+    font-size: 1.3rem;
+    line-height: 1.5;
+    font-weight: 400;
+}
+
+.input-root .tooltip-icon {
+    color: rgb(var(--secIcon));
+    fill: rgb(var(--secIcon));
+    font-size: 1.3rem;
+}
+
+.mantine-InputWrapper-label {
+    font-family: var(--font);
+    color: rgb(var(--text));
+    font-size: 1.3rem;
+    line-height: 1.5;
+    font-weight: 400;
+}
+
+.mantine-InputWrapper-description {
+    font-family: var(--font);
+    color: rgb(var(--secText));
+    font-size: 1.1rem;
+    line-height: 1;
+    font-weight: 400;
+    margin-top: -0.3rem;
+}
+
+.mantine-Input-input {
+    font-family: var(--font);
+    color: rgb(var(--text));
+    font-size: 1.3rem;
+    height: fit-content;
+    min-height: 3rem;
+    padding: var(--spadding) var(--mpadding) var(--spadding) var(--mpadding) !important;
+}
+
+.mantine-InputWrapper-root:not(.unstyled) .mantine-Input-input {
+    background: rgb(var(--dark4));
+    border: 1px solid rgb(var(--grey3));
+}
+
+.mantine-Input-input[data-invalid] {
+    border-color: rgb(var(--red2)) !important;
+}
+
+.mantine-Input-input[data-with-icon] {
+    padding-left: 2.5rem !important;
+}
+
+.mantine-Input-icon svg {
+    color: rgb(var(--secIcon));
+    fill: rgb(var(--secIcon));
+    font-size: 1.5rem;
+}
+
+.mantine-Input-icon {
+    margin: 0rem 0.3rem;
+}
+
+.mantine-Input-input::placeholder {
+    color: rgb(var(--secText));
+    opacity: 0.5;
+}
+
+.mantine-Input-input[data-disabled] {
+    color: rgb(var(--secText)) !important;
+    background: rgb(var(--grey3)) !important;
+}
+
+/* Untested, brought from select */
+/* .mantine-InputWrapper-root.unstyled .mantine-Input-input[data-disabled="true"] {
+    background: transparent !important;
+    border: 1px solid transparent !important;
+} */
+
+.mantine-InputWrapper-error {
+    font-family: var(--font);
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: rgb(var(--red2));
+}
+
+.mantine-LoadingOverlay-root svg {
+    width: 3rem !important;
+    height: 3rem !important;
+}
+
+.mantine-Overlay-root {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.mantine-ColorInput-dropdown {
+    background: rgb(var(--grey));
+    outline: none;
+    border: 1px solid rgb(var(--grey3));
+}
+
+.mantine-ColorSwatch-alphaOverlay {
+    background-image: none;
+}
+
+.mantine-Radio-radio {
+    background: rgb(var(--grey));
+    border-color: rgb(var(--grey));
+}
+
+.mantine-InputWrapper-root.focused .mantine-NumberInput-control {
+    border-color: rgb(var(--blue1)) !important;
+}
+
+.mantine-NumberInput-control {
+    border-color: rgb(var(--grey3));
+    transition: border-color 0.1s;
+}
+
+.mantine-Input-rightSection svg {
+    color: rgba(var(--icon));
+}
+
+.mantine-NumberInput-control:hover {
+    background: rgb(var(--grey3)) !important;
+}
+
+.mantine-NumberInput-root.alignEnd input {
+    text-align: end;
+}
+
+.input-root.unstyled .mantine-Input-input {
+    background: transparent;
+    border: none;
+}

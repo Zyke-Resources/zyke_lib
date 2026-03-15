@@ -1,0 +1,9 @@
+.modals-suspended .modal {
+	pointer-events: none;
+}
+
+.truncate {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}

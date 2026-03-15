@@ -1,0 +1,51 @@
+import { Tooltip as MantineTooltip } from "@mantine/core";
+
+interface TooltipProps {
+    disabled?: boolean;
+    label?: string | undefined;
+    children: React.ReactNode;
+    withArrow?: boolean;
+    position?:
+    | "bottom"
+    | "left"
+    | "right"
+    | "top"
+    | "bottom-end"
+    | "bottom-start"
+    | "left-end"
+    | "left-start"
+    | "right-end"
+    | "right-start"
+    | "top-end"
+    | "top-start";
+}
+
+const Tooltip: React.FC<TooltipProps> = ({
+    disabled,
+    label,
+    children,
+    withArrow,
+    position,
+}) => {
+    return (
+        <MantineTooltip
+            label={label || ""}
+            disabled={!label || disabled}
+            withArrow={withArrow}
+            arrowSize={11}
+            position={position}
+            multiline
+            withinPortal
+            zIndex={9999}
+            style={{
+                width: "fit-content",
+                maxWidth: "220px",
+                textAlign: "center",
+            }}
+        >
+            <div>{children}</div>
+        </MantineTooltip>
+    );
+};
+
+export default Tooltip;
