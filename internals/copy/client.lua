@@ -2,6 +2,8 @@
 function Functions.copy(text)
     SendNUIMessage({
         event = "copy",
-        text = text,
+        data = {
+            text = text,
+        },
     })
 end
