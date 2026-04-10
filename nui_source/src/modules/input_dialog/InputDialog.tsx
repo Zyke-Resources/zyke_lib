@@ -237,6 +237,7 @@ const InputDialog: FC = () => {
 						label={input.label}
 						placeholder={input.placeholder}
 						description={input.description}
+						icon={resolveIcon(input.icon)}
 						value={values[input.name] || ""}
 						onChange={(e) => setValue(input.name, e.target.value)}
 						disabled={input.disabled}
