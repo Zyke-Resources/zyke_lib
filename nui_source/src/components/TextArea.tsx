@@ -92,11 +92,9 @@ const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
 						},
 						...style,
 
-						["& svg"]: {
-							top: "0.6rem",
-							left: "0.4rem",
-							position: "absolute",
-							margin: "0",
+						["& .mantine-Textarea-icon"]: {
+							alignItems: "flex-start",
+							paddingTop: "0.6rem",
 						},
 					} as any}
 					ref={ref}
