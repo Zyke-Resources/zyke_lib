@@ -47,7 +47,7 @@ return {
     fuel = "auto",
 
     -- Death check system (set to "none" to use your framework's built-in death checks)
-    -- Options: "auto", "none", "wasabi_ambulance"
+    -- Options: "auto", "none", "wasabi_ambulance", "wasabi_ambulance_v2"
     death = "auto",
 
     -- Banking system (set to "none" if you don't use society banking)

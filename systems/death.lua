@@ -6,6 +6,7 @@ if (override == "none") then
 end
 
 local systems = {
+    {fileName = "wasabi_ambulance_v2", variable = "wasabi_ambulance_v2"},
     {fileName = "wasabi_ambulance", variable = "wasabi_ambulance"}
 }
 
