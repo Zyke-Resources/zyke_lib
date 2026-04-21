@@ -21,7 +21,7 @@ end
 -- Usually warning about dependency loading would only happen if we have debug enabled
 --- But through testing it appears that quite a few servers keep scripts in their servers without starting them
 --- This would cause the dependency loader to get stuck indefinitely without any warnings
-local warnDependencyLoadingTime = 3
+local warnDependencyLoadingTime = 3 * 1000
 
 ---@param fileName string
 ---@return "started" | "starting" | "stopping" | "stopped" | "missing" | "uninitialized" | "unknown"
@@ -31,13 +31,13 @@ local function awaitSystemStarting(fileName)
     -- If the resource does exist but is not started yet, we need to wait for it
     -- This is a more foolproof approach to avoid having exact resource starting sequences
     if (resState == "starting" or resState == "stopping" or resState == "stopped") then
-        local started = os.time()
+        local started = GetGameTimer()
 
         while (1) do
             resState = GetResourceState(fileName)
             if (resState == "started") then Wait(50) return resState end
 
-            if (os.time() - started > warnDependencyLoadingTime) then
+            if (GetGameTimer() - started > warnDependencyLoadingTime) then
                 print("^1========== [WARNING] ==========^7")
                 print("^1> \"" .. fileName .. "\" is taking a long time to start...^7")
                 print("^1> If this warning persists & our resources are not behaving as expected, please visit:^7")
