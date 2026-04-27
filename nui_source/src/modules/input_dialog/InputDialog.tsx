@@ -55,14 +55,25 @@ interface FormInput {
 	maxLength?: number;
 }
 
+interface FormButton {
+	text: string;
+	icon?: string;
+	color?: string;
+	action?: string;
+}
+
 interface FormOptions {
 	icon?: string;
 	width?: string;
+	/** @deprecated Use buttons[] instead */
 	submitText?: string;
+	/** @deprecated Use buttons[] instead */
 	submitIcon?: string;
+	/** @deprecated Use buttons[] instead */
 	submitColor?: string;
 	disableClickOutside?: boolean;
 	showCancel?: boolean;
+	buttons?: FormButton[];
 }
 
 interface FormData {
@@ -83,14 +94,18 @@ const InputDialog: FC = () => {
 		setValues((prev) => ({ ...prev, [name]: value }));
 	};
 
-	const sendResult = (submitted: boolean) => {
+	const sendResult = (submitted: boolean, action?: string) => {
 		if (!formData) return;
 
-		const data = {
+		const data: Record<string, any> = {
 			formId: formData.formId,
 			submitted,
 			values: submitted ? values : null,
 		};
+
+		if (submitted && action) {
+			data.action = action;
+		}
 
 		send("FormResult", data, "Form");
 
@@ -149,7 +164,7 @@ const InputDialog: FC = () => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Enter") {
 				e.preventDefault();
-				sendResult(true);
+				sendResult(true, "primary");
 			}
 		};
 
@@ -255,9 +270,22 @@ const InputDialog: FC = () => {
 
 	const options = formData?.options || {};
 	const showCancel = options.showCancel !== false; // Default true
-	const submitText = options.submitText || "Confirm";
-	const submitColor = options.submitColor || "var(--blue1)";
 	const modalWidth = options.width || "30rem";
+
+	// Build resolved buttons
+	// Prefer buttons[] array, fall back to old submitText/submitIcon/submitColor
+	const resolvedButtons: FormButton[] = options.buttons?.length
+		? options.buttons
+		: [
+			{
+				text: options.submitText || "Confirm",
+				icon: options.submitIcon,
+				color: options.submitColor || "var(--blue1)",
+				action: "primary",
+			},
+		];
+
+	const hasMultipleButtons = resolvedButtons.length > 1 || showCancel;
 
 	return (
 		<Modal
@@ -302,16 +330,21 @@ const InputDialog: FC = () => {
 								Cancel
 							</Button>
 						)}
-						<Button
-							icon={resolveIcon(options.submitIcon)}
-							color={submitColor}
-							wide={!showCancel}
-							onClick={() => sendResult(true)}
-							loadDelay={300}
-							iconStyling={{ marginRight: "0.5rem" }}
-						>
-							{submitText}
-						</Button>
+						{resolvedButtons.map((btn) => (
+							<Button
+								key={btn.action || btn.text}
+								icon={resolveIcon(btn.icon)}
+								color={btn.color || "var(--blue1)"}
+								wide={!hasMultipleButtons}
+								onClick={() =>
+									sendResult(true, btn.action || "primary")
+								}
+								loadDelay={300}
+								iconStyling={{ marginRight: "0.5rem" }}
+							>
+								{btn.text}
+							</Button>
+						))}
 					</div>
 				</div>
 			)}

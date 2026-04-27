@@ -1,8 +1,54 @@
+---@alias FormInputType "text" | "number" | "select" | "select-player" | "checkbox" | "slider" | "textarea"
+
+---@class FormInput
+---@field type FormInputType
+---@field name string @ Key used in the returned values table
+---@field label? string
+---@field placeholder? string
+---@field description? string
+---@field icon? string @ Resolved via IconRegistry, falls back to Material Icons
+---@field disabled? boolean
+---@field defaultValue? any
+---@field content? { label: string, value: any }[] @ select/multiselect options
+---@field searchable? boolean @ select: enable search filtering (default true)
+---@field multiselect? boolean @ select: allow multiple selections
+---@field min? number @ number/slider
+---@field max? number @ number/slider
+---@field step? number @ number/slider
+---@field marks? { value: number, label?: string }[] @ slider tick marks
+---@field minRows? number @ textarea (default 3)
+---@field maxRows? number @ textarea (default 6)
+---@field maxLength? number @ textarea
+
+---@class FormButton
+---@field text string
+---@field icon? string
+---@field color? string @ CSS color (e.g. "var(--blue1)")
+---@field action? string @ Forwarded to caller via `result._action`
+
+---@class FormOptions
+---@field icon? string @ Header icon
+---@field width? string @ CSS width (default "30rem")
+---@field showCancel? boolean @ Default true
+---@field disableClickOutside? boolean
+---@field buttons? FormButton[]
+---@field submitText? string @ **@deprecated** use buttons[]
+---@field submitIcon? string @ **@deprecated** use buttons[]
+---@field submitColor? string @ **@deprecated** use buttons[]
+
+---@class FormResult
+---@field _action? string @ The clicked button's `action` field
+---@field [string] any @ Values keyed by input `name`
+
+---@type table<string, promise>
 local pending = {}
+
+---@type integer
 local formCounter = 0
+
+---@type string | nil
 local activeFormId = nil
 
--- Registered once, matches formId to resolve the correct promise
 RegisterNUICallback("Eventhandler:Form", function(passed, cb)
     cb("ok")
     SetNuiFocus(false, false)
@@ -17,15 +63,18 @@ RegisterNUICallback("Eventhandler:Form", function(passed, cb)
     activeFormId = nil
 
     if (data.submitted) then
-        p:resolve(data.values)
+        local values = data.values
+        if (type(values) == "table" and data.action) then
+            values._action = data.action
+        end
+        p:resolve(values)
     else
         p:resolve(nil)
     end
 end)
 
---- Preprocess special input types before sending to NUI
----@param inputs table[]
----@return table[]
+---@param inputs FormInput[]
+---@return FormInput[]
 local function preprocessInputs(inputs)
     local processed = {}
 
@@ -35,10 +84,12 @@ local function preprocessInputs(inputs)
 
         if (entry.type == "select-player") then
             entry.type = "select"
-            entry.searchable = entry.searchable ~= false -- default true
+            entry.searchable = entry.searchable ~= false
 
             local players = Z.getPlayers()
             local playerDetails = Z.getCharacter(players)
+            if (not playerDetails or type(playerDetails) ~= "table") then playerDetails = {} end
+
             local content = {}
 
             for _, detail in pairs(playerDetails) do
@@ -52,7 +103,6 @@ local function preprocessInputs(inputs)
 
             entry.content = content
 
-            -- Default icon to person if none set
             if (not entry.icon) then entry.icon = "person" end
         end
 
@@ -62,7 +112,6 @@ local function preprocessInputs(inputs)
     return processed
 end
 
---- Close a form by its formId, resolving the pending promise as nil
 ---@param formId string
 local function resolveAndClose(formId)
     local p = pending[formId]
@@ -77,13 +126,13 @@ local function resolveAndClose(formId)
     p:resolve(nil)
 end
 
---- Open a form dialog and yield until the player submits or cancels
----@param title string @ Title displayed in the form header
----@param inputs table[] @ Array of input definitions ({ type, name, label, ... })
----@param options? table @ Optional: { icon, width, submitText, submitIcon, submitColor, disableClickOutside, showCancel }
----@return table | nil @ Values keyed by input name, or nil if cancelled
+--- Opens a modal form and yields until submitted or cancelled. Only one form can be active at a time.
+--- When `buttons[]` is used, `result._action` contains the clicked button's `action` field.
+---@param title string
+---@param inputs FormInput[]
+---@param options? FormOptions
+---@return FormResult | nil @ nil if cancelled
 local function openForm(title, inputs, options)
-    -- Close any existing form first
     if (activeFormId) then resolveAndClose(activeFormId) end
 
     formCounter = formCounter + 1
@@ -105,28 +154,26 @@ local function openForm(title, inputs, options)
     return Citizen.Await(p)
 end
 
---- Check if any form is currently open
 ---@return boolean
 local function isFormOpen()
     return activeFormId ~= nil
 end
 
---- Get the ID of the currently open form
 ---@return string | nil
 local function getOpenFormId()
     return activeFormId
 end
 
---- Close the currently open form (resolves as nil / cancelled)
 local function closeForm()
     if (not activeFormId) then return end
+
     resolveAndClose(activeFormId)
 end
 
---- Close a specific form by ID (resolves as nil / cancelled)
 ---@param formId string
 local function closeFormById(formId)
     if (not formId or not pending[formId]) then return end
+
     resolveAndClose(formId)
 end
 
