@@ -39,14 +39,16 @@ local function loadFunc(path, self, index)
 
             local function cachedWrapper(...)
                 local localCache = rawget(_G, cacheKey)
-                if (localCache == nil) then
-                    -- First call in this resource: fetch from central cache via export
+                if (not localCache) then
                     localCache = exports[LibName]:getCachedData(index)
-                    rawset(_G, cacheKey, localCache or false) -- false to mark "attempted but nil"
+
+                    -- Only store locally when fetch succeeds, otherwise keep nil so we retry next call
+                    if (localCache ~= nil) then
+                        rawset(_G, cacheKey, localCache)
+                    end
                 end
 
-                -- If cache is false (nil result), return nil
-                if (localCache == false) then return nil end
+                if (not localCache) then return nil end
 
                 return getFunc(localCache, ...)
             end
