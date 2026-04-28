@@ -3,18 +3,15 @@ import PromptModule from "./modules/prompt";
 import ClipboardModule from "./modules/clipboard";
 import ModalModule from "./modules/modal";
 import InputDialogModule from "./modules/input_dialog";
+import ContextMenuModule from "./modules/context_menu";
 
-/**
- * App Shell
- *
- * Each UI feature lives in its own module under src/modules/
- */
 const App = () => (
 	<ModalProvider>
 		<PromptModule />
 		<ClipboardModule />
 		<ModalModule />
 		<InputDialogModule />
+		<ContextMenuModule />
 	</ModalProvider>
 );
 
