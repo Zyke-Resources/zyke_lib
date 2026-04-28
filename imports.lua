@@ -3,7 +3,8 @@ LibName = "zyke_lib"
 Context = IsDuplicityVersion() and "server" or "client"
 
 ResName = GetCurrentResourceName()
-TrimmedResName = ResName:sub(6, #ResName) -- Removes zyke_
+local _, trimStart = ResName:find("_")
+TrimmedResName = trimStart and ResName:sub(trimStart + 1) or ResName
 
 -- Id/name for keymapping, to track if you are still holding the button
 HoldingKeys = {}
