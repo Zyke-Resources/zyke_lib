@@ -1,37 +1,17 @@
-import { FC, useState } from "react";
+import { FC, useState, useRef, useEffect, useMemo } from "react";
 import { Box, ButtonBase } from "@mui/material";
 import MaterialIcon from "../../components/MaterialIcon";
 import iconRegistry from "../../components/IconRegistry";
 import CheckIcon from "@mui/icons-material/Check";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ImageNotSupportedIcon from "@mui/icons-material/ImageNotSupported";
-
-interface ContextMetadata {
-	label: string;
-	value: any;
-	progress?: number;
-	colorScheme?: string;
-}
-
-interface ContextOptionData {
-	title: string;
-	description?: string;
-	icon?: string;
-	iconColor?: string;
-	disabled?: boolean;
-	readOnly?: boolean;
-	menu?: string | any;
-	onSelect?: any;
-	arrow?: boolean;
-	event?: string;
-	serverEvent?: string;
-	args?: any;
-	metadata?: ContextMetadata[];
-	progress?: number;
-	colorScheme?: string;
-	image?: string;
-	value?: any;
-}
+import MouseIcon from "@mui/icons-material/Mouse";
+import {
+	resolveTemplate,
+	type ContextMetadata,
+	type ContextAmount,
+	type ContextOptionData,
+} from "./ContextMenu";
 
 interface ContextOptionProps {
 	option: ContextOptionData;
@@ -40,6 +20,8 @@ interface ContextOptionProps {
 	selected: boolean;
 	onHover: (index: number | null, element?: HTMLElement | null) => void;
 	onClick: (index: number) => void;
+	currentAmount?: number;
+	onAmountChange: (index: number, delta: number) => void;
 }
 
 const resolveIcon = (icon?: string) => {
@@ -55,12 +37,30 @@ const ContextOption: FC<ContextOptionProps> = ({
 	selected,
 	onHover,
 	onClick,
+	currentAmount,
+	onAmountChange,
 }) => {
 	const isDisabled = option.disabled || false;
 	const isReadOnly = option.readOnly || false;
 	const hasMenu = option.menu !== undefined && option.menu !== null;
 	const showArrow = option.arrow !== undefined ? option.arrow : hasMenu;
 	const [imgError, setImgError] = useState(false);
+
+	const hasAmount = option.amount !== undefined;
+	const amountVars = option.amount?.vars;
+
+	const titleHasTpl = hasAmount && option.title.includes("{");
+	const descHasTpl = hasAmount && !!option.description && option.description.includes("{");
+
+	const resolvedTitle = useMemo(() => {
+		if (!titleHasTpl) return option.title;
+		return resolveTemplate(option.title, currentAmount ?? 0, amountVars);
+	}, [titleHasTpl, option.title, currentAmount, amountVars]);
+
+	const resolvedDescription = useMemo(() => {
+		if (!descHasTpl) return option.description;
+		return resolveTemplate(option.description, currentAmount ?? 0, amountVars);
+	}, [descHasTpl, option.description, currentAmount, amountVars]);
 
 	const progressColor = option.colorScheme
 		? `rgb(var(--${option.colorScheme}, var(--blue1)))`
@@ -71,10 +71,28 @@ const ContextOption: FC<ContextOptionProps> = ({
 		onClick(index);
 	};
 
+	const boxRef = useRef<HTMLDivElement>(null);
+
+	const handleWheel = (e: WheelEvent) => {
+		if (!hasAmount || isDisabled || isReadOnly) return;
+		e.preventDefault();
+		e.stopPropagation();
+		const base = e.deltaY < 0 ? 1 : -1;
+		onAmountChange(index, e.shiftKey ? base * 5 : base);
+	};
+
+	useEffect(() => {
+		const el = boxRef.current;
+		if (!el || !hasAmount) return;
+		el.addEventListener("wheel", handleWheel, { passive: false });
+		return () => el.removeEventListener("wheel", handleWheel);
+	}, [hasAmount, isDisabled, isReadOnly, onAmountChange, index]);
+
 	const iconSize = "1.8rem";
 
 	return (
 		<Box
+			ref={boxRef}
 			sx={{
 				transition: "background 0.2s, border 0.2s",
 				borderRadius: "var(--lborderRadius)",
@@ -83,7 +101,6 @@ const ContextOption: FC<ContextOptionProps> = ({
 				display: "flex",
 				alignItems: "center",
 				overflow: "hidden",
-				// gap: "0rem",
 				...(selected
 					? {
 						background: "rgb(var(--grey))",
@@ -102,7 +119,6 @@ const ContextOption: FC<ContextOptionProps> = ({
 					width: "100%",
 					display: "flex",
 					alignItems: "center",
-					// gap: "0.8rem",
 					justifyContent: "flex-start",
 					padding: "var(--spadding) var(--mpadding) var(--spadding) 0",
 					cursor: isDisabled || isReadOnly ? "default" : "pointer",
@@ -132,12 +148,6 @@ const ContextOption: FC<ContextOptionProps> = ({
 							boxSizing: "border-box",
 							...(option.image && !imgError
 								? {
-									// background: "rgba(var(--dark2))",
-									// border: "1px solid rgb(var(--dark3))",
-									// boxSizing: "border-box",
-									// boxShadow: "0 0 3px 0px rgba(0, 0, 0, 0.3)",
-									// width: "4rem",
-									// height: "4rem",
 									padding: "0.5rem",
 								}
 								: {}),
@@ -196,14 +206,13 @@ const ContextOption: FC<ContextOptionProps> = ({
 							lineHeight: 1.5,
 						}}
 					>
-						{option.title}
+						{resolvedTitle}
 					</p>
 
-					{option.description && (
+					{resolvedDescription && (
 						<p
 							style={{
 								margin: "-0.3rem 0 0 0",
-								// margin: 0,
 								color: "rgba(var(--secText))",
 								fontSize: "1.3rem",
 								whiteSpace: "nowrap",
@@ -213,7 +222,7 @@ const ContextOption: FC<ContextOptionProps> = ({
 								lineHeight: 1.3,
 							}}
 						>
-							{option.description}
+							{resolvedDescription}
 						</p>
 					)}
 
@@ -289,6 +298,15 @@ const ContextOption: FC<ContextOptionProps> = ({
 							sx={{
 								fontSize: "2rem",
 								color: "rgba(var(--secIcon))",
+							}}
+						/>
+					)}
+					{hasAmount && !showArrow && (
+						<MouseIcon
+							sx={{
+								fontSize: "1.4rem",
+								color: "rgba(var(--secIcon))",
+								opacity: 1.0,
 							}}
 						/>
 					)}

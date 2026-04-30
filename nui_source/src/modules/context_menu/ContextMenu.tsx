@@ -10,11 +10,19 @@ import iconRegistry from "../../components/IconRegistry";
 import Button from "../../components/Button";
 import "./context_menu.css";
 
-interface ContextMetadata {
+export interface ContextMetadata {
 	label: string;
 	value: any;
 	progress?: number;
 	colorScheme?: string;
+}
+
+export interface ContextAmount {
+	default?: number;
+	min?: number;
+	max: number;
+	step?: number;
+	vars?: Record<string, number>;
 }
 
 export interface ContextOptionData {
@@ -35,6 +43,7 @@ export interface ContextOptionData {
 	colorScheme?: string;
 	image?: string;
 	value?: any;
+	amount?: ContextAmount;
 }
 
 export interface ContextMenuData {
@@ -55,7 +64,7 @@ export interface ContextMenuData {
 interface ContextMenuProps {
 	data: ContextMenuData | null;
 	navigatedData: ContextMenuData | null;
-	onSelect: (index: number) => void;
+	onSelect: (index: number, amount?: number) => void;
 	onConfirm: (selected: any[]) => void;
 	onNavigate: (target: string | any) => void;
 	onBack: (menuId: string) => void;
@@ -63,6 +72,42 @@ interface ContextMenuProps {
 }
 
 export const MODAL_ID = "zyke_context_menu";
+
+export const resolveTemplate = (
+	template: string | undefined | null,
+	amount: number,
+	vars?: Record<string, number>
+): string => {
+	if (!template || !template.includes("{")) return template || "";
+	return template.replace(/\{([^}]+)\}/g, (_, expr: string) => {
+		let resolved = expr
+			.trim()
+			.replace(/\bamount\b/g, String(amount));
+		if (vars) {
+			for (const [key, val] of Object.entries(vars)) {
+				resolved = resolved.replace(
+					new RegExp(`\\b${key}\\b`, "g"),
+					String(val)
+				);
+			}
+		}
+		if (/^[\d\s+\-*/().]+$/.test(resolved)) {
+			try {
+				const result = new Function(
+					'"use strict"; return (' + resolved + ")"
+				)();
+				return typeof result === "number"
+					? Number.isInteger(result)
+						? String(result)
+						: result.toFixed(2)
+					: String(result);
+			} catch {
+				return resolved;
+			}
+		}
+		return `{${expr}}`;
+	});
+};
 
 const resolveIcon = (icon?: any) => {
 	if (!icon) return undefined;
@@ -107,6 +152,7 @@ const ContextMenu: FC<ContextMenuProps> = ({
 	const loadedImages = useRef<Set<string>>(new Set());
 	const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 	const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
+	const [amounts, setAmounts] = useState<Record<number, number>>({});
 
 	const activeData = navigatedData || data;
 	const isOpen = !!modalsOpen[MODAL_ID];
@@ -116,10 +162,23 @@ const ContextMenu: FC<ContextMenuProps> = ({
 			setHoveredIndex(null);
 			hoveredElRef.current = null;
 			setSelectedIndices(new Set());
+			setAmounts({});
 			failedImages.current.clear();
 			loadedImages.current.clear();
 		}
 	}, [isOpen]);
+
+	useEffect(() => {
+		if (isOpen && activeData) {
+			const initial: Record<number, number> = {};
+			activeData.options.forEach((opt, i) => {
+				if (opt.amount) {
+					initial[i] = opt.amount.default ?? opt.amount.min ?? 1;
+				}
+			});
+			setAmounts(initial);
+		}
+	}, [isOpen, data, navigatedData]);
 
 	const mode = activeData?.mode || "action";
 	const canClose = activeData?.canClose !== false;
@@ -172,6 +231,26 @@ const ContextMenu: FC<ContextMenuProps> = ({
 		[activeData]
 	);
 
+	const handleAmountChange = useCallback(
+		(index: number, delta: number) => {
+			if (!activeData) return;
+			const opt = activeData.options[index];
+			if (!opt?.amount) return;
+
+			const step = opt.amount.step ?? 1;
+			const min = opt.amount.min ?? 1;
+			const max = opt.amount.max;
+			const change = delta * step;
+
+			setAmounts((prev) => {
+				const current = prev[index] ?? opt.amount!.default ?? min;
+				const next = Math.min(max, Math.max(min, current + change));
+				return { ...prev, [index]: next };
+			});
+		},
+		[activeData]
+	);
+
 	let metadataTop = 0;
 
 	if (hasMetadata && hoveredElRef.current && wrapperRef.current) {
@@ -192,7 +271,7 @@ const ContextMenu: FC<ContextMenuProps> = ({
 			}
 
 			if (mode === "action") {
-				onSelect(index);
+				onSelect(index, option.amount ? amounts[index] : undefined);
 				return;
 			}
 
@@ -213,17 +292,23 @@ const ContextMenu: FC<ContextMenuProps> = ({
 				});
 			}
 		},
-		[activeData, mode, onSelect, onNavigate]
+		[activeData, mode, onSelect, onNavigate, amounts]
 	);
 
 	const handleConfirm = useCallback(() => {
 		if (!activeData || selectedIndices.size === 0) return;
 		const selected = Array.from(selectedIndices).map((i) => {
 			const opt = activeData.options[i];
-			return opt.value !== undefined ? opt.value : opt;
+			const base = opt.value !== undefined ? opt.value : opt;
+			if (opt.amount && amounts[i] !== undefined) {
+				return typeof base === "object" && base !== null
+					? { ...base, amount: amounts[i] }
+					: { value: base, amount: amounts[i] };
+			}
+			return base;
 		});
 		onConfirm(selected);
-	}, [activeData, selectedIndices, onConfirm]);
+	}, [activeData, selectedIndices, onConfirm, amounts]);
 
 	const handleBack = useCallback(() => {
 		if (!activeData) return;
@@ -414,6 +499,8 @@ const ContextMenu: FC<ContextMenuProps> = ({
 													selected={selectedIndices.has(i)}
 													onHover={handleHover}
 													onClick={handleOptionClick}
+													currentAmount={amounts[i]}
+													onAmountChange={handleAmountChange}
 												/>
 											)
 										)}
@@ -524,7 +611,11 @@ const ContextMenu: FC<ContextMenuProps> = ({
 							<MetadataPanel
 								title={hoveredOption!.title}
 								image={hoveredOption!.image}
-								metadata={hoveredOption!.metadata}
+								metadata={hoveredOption!.metadata?.map((m) => ({
+									...m,
+									label: resolveTemplate(m.label, amounts[hoveredIndex!] ?? 0, hoveredOption!.amount?.vars),
+									value: resolveTemplate(typeof m.value === "string" ? m.value : String(m.value), amounts[hoveredIndex!] ?? 0, hoveredOption!.amount?.vars),
+								}))}
 								visible={true}
 							/>
 						</motion.div>

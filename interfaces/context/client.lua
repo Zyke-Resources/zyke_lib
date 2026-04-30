@@ -7,24 +7,32 @@
 ---@field progress? number @ Progress bar value (0--100)
 ---@field colorScheme? string @ CSS variable name for progress bar colour
 
+---@class ContextAmount
+---@field default number @ Starting value (default: 1)
+---@field min number @ Minimum value (default: 1)
+---@field max number @ Maximum value
+---@field step? number @ Increment per scroll tick (default: 1)
+---@field vars? table<string, number> @ Named variables accessible in template expressions (e.g. `{ price = 30 }`)
+
 ---@class ContextOption
----@field title string
----@field description? string
+---@field title string @ Supports `{amount}` templates when `amount` is set
+---@field description? string @ Supports `{amount}` templates when `amount` is set
 ---@field icon? string @ Resolved via IconRegistry, falls back to Material Icons
 ---@field iconColor? string @ CSS color for the icon
 ---@field image? string @ Image URL (e.g. from `Z.getInventoryImagePath`). Takes priority over `icon`
 ---@field disabled? boolean @ Greys out the option and prevents interaction
 ---@field readOnly? boolean @ Prevents interaction but keeps full opacity
 ---@field menu? string|table @ String id (registered menu) or inline ContextMenuData table
----@field onSelect? fun(args?: any)
+---@field onSelect? fun(args?: any, amount?: number)
 ---@field event? string @ Client event to trigger on select
 ---@field serverEvent? string @ Server event to trigger on select
 ---@field args? any @ Data forwarded to onSelect, event, or serverEvent
 ---@field value? any @ Value returned when selected (used in select/multiselect modes)
 ---@field arrow? boolean @ Force-show or hide the navigation arrow. Auto-shown when `menu` is set
----@field metadata? ContextMetadata[] @ Array of metadata entries shown in the hover popout
+---@field metadata? ContextMetadata[] @ Array of metadata entries shown in the hover popout. `label`/`value` support `{amount}` templates
 ---@field progress? number @ Progress bar value (0--100) rendered below the title
 ---@field colorScheme? string @ CSS variable name for progress bar colour
+---@field amount? ContextAmount @ Scrollable amount tracker. Title/description/metadata update in real-time
 
 ---@class ContextMenuData
 ---@field id? string @ Unique identifier. Auto-generated if omitted
@@ -131,7 +139,7 @@ RegisterNUICallback("Eventhandler:Context", function(passed, cb)
 
         if (option) then
             if (option.onSelect) then
-                option.onSelect(option.args)
+                option.onSelect(option.args, data.amount)
             end
 
             if (option.event) then
@@ -142,7 +150,15 @@ RegisterNUICallback("Eventhandler:Context", function(passed, cb)
                 TriggerServerEvent(option.serverEvent, option.args)
             end
 
-            p:resolve(option.args ~= nil and option.args or option.value or true)
+            local result = option.args ~= nil and option.args or option.value or true
+            if (data.amount ~= nil) then
+                if (type(result) == "table") then
+                    result.amount = data.amount
+                else
+                    result = { value = result, amount = data.amount }
+                end
+            end
+            p:resolve(result)
         else
             p:resolve(nil)
         end

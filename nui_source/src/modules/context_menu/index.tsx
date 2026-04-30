@@ -37,7 +37,7 @@ const ContextMenuModule = () => {
 	});
 
 	const handleSelect = useCallback(
-		(index: number) => {
+		(index: number, amount?: number) => {
 			const activeData = navigatedData || data;
 			if (!activeData) return;
 
@@ -53,6 +53,7 @@ const ContextMenuModule = () => {
 					optionIndex: index + 1,
 					args: option.args,
 					value: option.value,
+					amount,
 				},
 				"Context"
 			);
