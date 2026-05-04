@@ -1,8 +1,9 @@
-import { FC, useState, useCallback, useRef, useEffect } from "react";
+import { FC, useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useModalContext } from "../../context/ModalContext";
 import CloseIcon from "@mui/icons-material/Close";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import ContextOption from "./ContextOption";
 import MetadataPanel from "./MetadataPanel";
 import MaterialIcon from "../../components/MaterialIcon";
@@ -24,6 +25,8 @@ export interface ContextAmount {
 	step?: number;
 	vars?: Record<string, number>;
 }
+
+export type ContextHints = string | string[];
 
 export interface ContextOptionData {
 	title: string;
@@ -54,6 +57,7 @@ export interface ContextMenuData {
 	position?: "top-left" | "top-right" | "bottom-left" | "bottom-right";
 	mode?: "action" | "select" | "multiselect";
 	canClose?: boolean;
+	hints?: ContextHints;
 
 	menu?: string;
 	onExit?: any;
@@ -135,6 +139,98 @@ const getCornerPosition = (position?: string): React.CSSProperties => {
 
 const isLeftPosition = (position?: string) =>
 	position === "top-left" || position === "bottom-left";
+
+const normalizeHints = (hints?: ContextHints): string[] => {
+	if (!hints) return [];
+
+	const rawHints = Array.isArray(hints) ? hints : [hints];
+
+	return rawHints
+		.filter((hint): hint is string => typeof hint === "string")
+		.map((hint) => hint.trim())
+		.filter(Boolean);
+};
+
+const getHintDuration = (hint: string) => {
+	return Math.min(11000, Math.max(3500, 2100 + hint.length * 80));
+};
+
+const ContextFooterHint: FC<{ hints?: ContextHints }> = ({ hints }) => {
+	const messages = useMemo(() => normalizeHints(hints), [hints]);
+	const messagesKey = messages.join("\u0001");
+	const [hintIndex, setHintIndex] = useState(0);
+	const [scrollDistance, setScrollDistance] = useState(0);
+	const [scrollDuration, setScrollDuration] = useState(0);
+	const viewportRef = useRef<HTMLSpanElement>(null);
+	const textRef = useRef<HTMLSpanElement>(null);
+
+	const hint = messages[hintIndex] ?? messages[0] ?? "";
+	const duration = Math.max(
+		getHintDuration(hint),
+		scrollDistance > 0 ? scrollDuration + 2400 : 0
+	);
+
+	useEffect(() => {
+		setHintIndex(0);
+	}, [messagesKey]);
+
+	useEffect(() => {
+		const viewport = viewportRef.current;
+		const text = textRef.current;
+
+		if (!viewport || !text) return;
+
+		const measure = () => {
+			const overflow = Math.ceil(text.scrollWidth - viewport.clientWidth);
+			const distance = Math.max(0, overflow);
+
+			setScrollDistance(distance);
+			setScrollDuration(distance > 0 ? Math.max(4500, distance * 45) : 0);
+		};
+
+		measure();
+		window.addEventListener("resize", measure);
+
+		return () => window.removeEventListener("resize", measure);
+	}, [hint]);
+
+	useEffect(() => {
+		if (messages.length <= 1) return;
+
+		const timeout = window.setTimeout(() => {
+			setHintIndex((current) => (current + 1) % messages.length);
+		}, duration);
+
+		return () => window.clearTimeout(timeout);
+	}, [messages.length, hintIndex, duration]);
+
+	if (!hint) return null;
+
+	return (
+		<p className="context-menu-footer-hint">
+			<InfoOutlinedIcon
+				sx={{
+					fontSize: "1.35rem",
+					color: "rgba(var(--secIcon))",
+					flexShrink: 0,
+				}}
+			/>
+			<span ref={viewportRef} className="context-menu-footer-hint-viewport">
+				<span
+					key={`${hintIndex}:${hint}`}
+					ref={textRef}
+					className={scrollDistance > 0 ? "is-scrolling" : undefined}
+					style={{
+						"--context-hint-shift": `-${scrollDistance}px`,
+						"--context-hint-scroll-duration": `${scrollDuration}ms`,
+					} as React.CSSProperties}
+				>
+					{hint}
+				</span>
+			</span>
+		</p>
+	);
+};
 
 const ContextMenu: FC<ContextMenuProps> = ({
 	data,
@@ -547,33 +643,13 @@ const ContextMenu: FC<ContextMenuProps> = ({
 								</div>
 							)}
 
-							<div
-								style={{
-									width: "100%",
-									boxSizing: "border-box",
-									position: "relative",
-									padding: "0.25rem 0.75rem",
-									height: "3.5rem",
-									display: "flex",
-									alignItems: "center",
-									gap: "0.8rem",
-									flexShrink: 0,
-									background: "rgba(var(--dark4))",
-									boxShadow: "0 2px 3px 0 rgba(0, 0, 0, 0.2)",
-									borderTop: "1px solid rgba(var(--grey2))",
-								}}
-							>
+							<div className="context-menu-footer">
 								<p
-									style={{
-										margin: 0,
-										color: "rgba(var(--secText))",
-										fontSize: "1.3rem",
-										fontWeight: "500",
-										whiteSpace: "nowrap",
-									}}
+									className="context-menu-footer-instruction"
 								>
 									Press <kbd style={{ fontSize: "1.1rem" }}>ESC</kbd> to close
 								</p>
+								<ContextFooterHint hints={activeData?.hints} />
 							</div>
 						</motion.div>
 					)}

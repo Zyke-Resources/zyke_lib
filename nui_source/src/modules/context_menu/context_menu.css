@@ -12,6 +12,84 @@
     background: transparent;
 }
 
+.context-menu-footer {
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
+    padding: 0.25rem 0.75rem;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-shrink: 0;
+    background: rgba(var(--dark4));
+    box-shadow: 0 2px 3px 0 rgba(0, 0, 0, 0.2);
+    border-top: 1px solid rgba(var(--grey2));
+}
+
+.context-menu-footer-instruction {
+    margin: 0;
+    color: rgba(var(--secText));
+    font-size: 1.3rem;
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.context-menu-footer-hint {
+    margin-left: auto;
+    padding-left: 1rem;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: rgba(var(--secText));
+    font-size: 1.2rem;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.context-menu-footer-hint-viewport {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    height: 1.35rem;
+    overflow: hidden;
+    line-height: 1;
+}
+
+.context-menu-footer-hint-viewport span {
+    display: block;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+.context-menu-footer-hint-viewport span:not(.is-scrolling) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.context-menu-footer-hint svg {
+    display: block;
+}
+
+.context-menu-footer-hint-viewport span.is-scrolling {
+    animation: context-menu-hint-pan var(--context-hint-scroll-duration, 4500ms) ease-in-out 1s forwards;
+}
+
+@keyframes context-menu-hint-pan {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(var(--context-hint-shift, 0));
+    }
+}
+
 .corner-positioned {
     position: fixed;
     z-index: 1001;

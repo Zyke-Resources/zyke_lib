@@ -1,5 +1,6 @@
 ---@alias ContextPosition 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
 ---@alias ContextMode 'action' | 'select' | 'multiselect'
+---@alias ContextHints string | string[]
 
 ---@class ContextMetadata
 ---@field label string
@@ -42,6 +43,7 @@
 ---@field position? ContextPosition @ Default `"top-right"`
 ---@field mode? ContextMode @ Default `"action"`
 ---@field canClose? boolean @ Default `true`
+---@field hints? ContextHints @ Optional footer hint, or rotating list of hints, shown bottom-right
 ---@field menu? string @ Parent menu id for back navigation
 ---@field onExit? fun() @ Callback fired when the menu closes
 ---@field onBack? fun() @ Callback fired when the player presses back
