@@ -1,13 +1,16 @@
----@alias FormInputType "paragraph" | "text" | "number" | "select" | "select-player" | "checkbox" | "slider" | "textarea"
+---@alias FormInputType "paragraph" | "hint" | "text" | "number" | "select" | "select-player" | "checkbox" | "slider" | "textarea"
+---@alias FormHintSeverity "info" | "warning" | "error" | "danger"
 
 ---@class FormInput
 ---@field type FormInputType
----@field name? string @ Key used in the returned values table. Not required for paragraph inputs.
+---@field name? string @ Key used in the returned values table. Not required for static paragraph/hint inputs.
 ---@field label? string
----@field text? string | string[] @ Paragraph content when type is "paragraph"
+---@field title? string @ Hint title when type is "hint". Falls back to label.
+---@field text? string | string[] @ Static text for paragraph/hint inputs.
 ---@field placeholder? string
 ---@field description? string
----@field icon? string @ Resolved via IconRegistry, falls back to Material Icons
+---@field icon? string | false @ Resolved via IconRegistry, falls back to Material Icons. Set false on hints to hide the default icon.
+---@field severity? FormHintSeverity @ Hint color/icon severity when type is "hint" (default "info")
 ---@field disabled? boolean
 ---@field defaultValue? any
 ---@field content? { label: string, value: any }[] @ select/multiselect options
@@ -24,7 +27,7 @@
 ---@class FormButton
 ---@field text string
 ---@field icon? string
----@field color? string @ CSS color (e.g. "var(--blue1)")
+---@field color? string @ CSS color (e.g. "var(--blue2)")
 ---@field action? string @ Forwarded to caller via `result._action`
 ---@field timeout? number @ Seconds the button stays disabled after the form opens
 

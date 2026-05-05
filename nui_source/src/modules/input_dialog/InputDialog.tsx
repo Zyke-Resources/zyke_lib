@@ -1,4 +1,12 @@
-import { useEffect, useState, type FC } from "react";
+import {
+	cloneElement,
+	isValidElement,
+	useEffect,
+	useState,
+	type CSSProperties,
+	type FC,
+	type ReactNode,
+} from "react";
 import { listen, send } from "../../utils/Nui";
 import Modal from "../modal/Modal";
 import { useModalContext } from "../../context/ModalContext";
@@ -29,6 +37,7 @@ const resolveIcon = (icon?: any) => {
 interface FormInput {
 	type:
 		| "paragraph"
+		| "hint"
 		| "text"
 		| "number"
 		| "select"
@@ -37,10 +46,12 @@ interface FormInput {
 		| "textarea";
 	name?: string;
 	label?: string;
+	title?: string;
 	text?: string | string[];
 	placeholder?: string;
 	description?: string;
 	icon?: any;
+	severity?: "info" | "warning" | "error" | "danger";
 	disabled?: boolean;
 	defaultValue?: any;
 
@@ -134,6 +145,42 @@ const getButtonRemaining = (
 	return Math.max(0, Math.ceil(timeout - elapsed));
 };
 
+const HINT_SEVERITY = {
+	info: {
+		color: "var(--blue2)",
+		icon: "info",
+	},
+	warning: {
+		color: "var(--orange2)",
+		icon: "warning",
+	},
+	error: {
+		color: "var(--red3)",
+		icon: "error",
+	},
+	danger: {
+		color: "var(--red3)",
+		icon: "error",
+	},
+};
+
+const getHintConfig = (severity?: FormInput["severity"]) => {
+	return HINT_SEVERITY[severity || "info"] || HINT_SEVERITY.info;
+};
+
+const getColoredHintIcon = (icon: ReactNode, color: string) => {
+	if (!icon) return undefined;
+	if (!isValidElement<{ style?: CSSProperties }>(icon)) return icon;
+
+	return cloneElement(icon, {
+		style: {
+			...icon.props.style,
+			color,
+			fill: color,
+		},
+	});
+};
+
 const InputDialog: FC = () => {
 	const { openModal, closeModal } = useModalContext();
 	const [formData, setFormData] = useState<FormData | null>(null);
@@ -174,7 +221,13 @@ const InputDialog: FC = () => {
 		// Set default values
 		const defaults: Record<string, any> = {};
 		data.inputs.forEach((input) => {
-			if (input.type === "paragraph" || !input.name) return;
+			if (
+				input.type === "paragraph" ||
+				input.type === "hint" ||
+				!input.name
+			) {
+				return;
+			}
 
 			if (input.defaultValue !== undefined) {
 				defaults[input.name] = input.defaultValue;
@@ -263,6 +316,9 @@ const InputDialog: FC = () => {
 		switch (input.type) {
 			case "paragraph":
 				return <FormParagraph input={input} />;
+
+			case "hint":
+				return <FormHint input={input} />;
 
 			case "text":
 				return (
@@ -424,10 +480,10 @@ const InputDialog: FC = () => {
 
 							return (
 								<Button
-										key={btn.action || btn.text}
-										icon={resolveIcon(btn.icon)}
-										color={btn.color || DEFAULT_FORM_BUTTON_COLOR}
-										wide={!hasMultipleButtons}
+									key={btn.action || btn.text}
+									icon={resolveIcon(btn.icon)}
+									color={btn.color || DEFAULT_FORM_BUTTON_COLOR}
+									wide={!hasMultipleButtons}
 									disabled={isWaiting}
 									onClick={() => {
 										if (isWaiting) return;
@@ -513,6 +569,109 @@ const FormParagraph: FC<{ input: FormInput }> = ({ input }) => {
 						{paragraph}
 					</p>
 				))}
+			</div>
+		</div>
+	);
+};
+
+const FormHint: FC<{ input: FormInput }> = ({ input }) => {
+	const content = input.text ?? input.description ?? "";
+	const paragraphs = Array.isArray(content) ? content : [content];
+	const title = input.title ?? input.label;
+	const config = getHintConfig(input.severity);
+	const hintColor = `rgba(${config.color}, 1)`;
+	const icon = getColoredHintIcon(
+		input.icon === false ? undefined : resolveIcon(input.icon || config.icon),
+		hintColor
+	);
+
+	const renderIcon = () =>
+		icon ? (
+			<div
+				style={{
+					display: "flex",
+					alignItems: "flex-start",
+					justifyContent: "center",
+					width: "1.8rem",
+					paddingTop: "0.05rem",
+					color: hintColor,
+					flexShrink: 0,
+				}}
+			>
+				{icon}
+			</div>
+		) : null;
+
+	return (
+		<div
+			style={{
+				margin: "0.15rem 0 0.35rem 0",
+				borderRadius: "var(--mborderRadius)",
+				border: "1px solid rgba(var(--grey5), 0.85)",
+				borderLeft: `0.3rem solid ${hintColor}`,
+				background: "rgba(var(--dark3), 0.92)",
+				boxSizing: "border-box",
+				color: "rgba(var(--textMuted))",
+				overflow: "hidden",
+				width: "100%",
+			}}
+		>
+			{title && (
+				<div
+					style={{
+						display: "flex",
+						alignItems: "center",
+						gap: "0.75rem",
+						padding: "0.65rem 0.85rem",
+						background: `rgba(${config.color}, 0.16)`,
+						boxSizing: "border-box",
+					}}
+				>
+					{renderIcon()}
+					<p
+						style={{
+							margin: 0,
+							color: "rgba(var(--text))",
+							fontSize: "1.22rem",
+							fontWeight: 600,
+							lineHeight: 1.35,
+						}}
+					>
+						{title}
+					</p>
+				</div>
+			)}
+			<div
+				style={{
+					display: title ? "block" : "flex",
+					gap: "0.75rem",
+					padding:
+						title && icon
+							? "0.85rem 1rem 0.9rem calc(0.85rem + 1.8rem + 0.75rem)"
+							: "0.85rem 1rem 0.9rem 0.85rem",
+					boxSizing: "border-box",
+				}}
+			>
+				{!title && renderIcon()}
+				<div style={{ minWidth: 0 }}>
+					{paragraphs.map((paragraph, idx) => (
+						<p
+							key={`${input.name || title || "hint"}-${idx}`}
+							style={{
+								margin:
+									idx === paragraphs.length - 1
+										? "0"
+										: "0 0 0.55rem 0",
+								fontSize: "1.12rem",
+								lineHeight: 1.45,
+								whiteSpace: "pre-wrap",
+								wordBreak: "break-word",
+							}}
+						>
+							{paragraph}
+						</p>
+					))}
+				</div>
 			</div>
 		</div>
 	);
