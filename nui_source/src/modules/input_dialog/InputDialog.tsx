@@ -27,9 +27,17 @@ const resolveIcon = (icon?: any) => {
 };
 
 interface FormInput {
-	type: "text" | "number" | "select" | "checkbox" | "slider" | "textarea";
-	name: string;
+	type:
+		| "paragraph"
+		| "text"
+		| "number"
+		| "select"
+		| "checkbox"
+		| "slider"
+		| "textarea";
+	name?: string;
 	label?: string;
+	text?: string | string[];
 	placeholder?: string;
 	description?: string;
 	icon?: any;
@@ -60,6 +68,7 @@ interface FormButton {
 	icon?: string;
 	color?: string;
 	action?: string;
+	timeout?: number;
 }
 
 interface FormOptions {
@@ -85,10 +94,52 @@ interface FormData {
 
 const MODAL_ID = "zyke_form";
 
+const DEFAULT_FORM_BUTTON_COLOR = "var(--blue2)";
+
+const DEFAULT_FORM_BUTTON: FormButton = {
+	text: "Confirm",
+	color: DEFAULT_FORM_BUTTON_COLOR,
+	action: "primary",
+};
+
+const getResolvedButtons = (options: FormOptions): FormButton[] => {
+	if (options.buttons?.length) return options.buttons;
+
+	return [
+		{
+			...DEFAULT_FORM_BUTTON,
+			text: options.submitText ?? DEFAULT_FORM_BUTTON.text,
+			icon: options.submitIcon,
+			color: options.submitColor ?? DEFAULT_FORM_BUTTON_COLOR,
+		},
+	];
+};
+
+const getButtonTimeout = (button: FormButton) => {
+	const timeout = Number(button.timeout);
+	if (!Number.isFinite(timeout) || timeout <= 0) return 0;
+
+	return timeout;
+};
+
+const getButtonRemaining = (
+	button: FormButton,
+	now: number,
+	timeoutStartedAt: number
+) => {
+	const timeout = getButtonTimeout(button);
+	if (timeout <= 0) return 0;
+
+	const elapsed = (now - timeoutStartedAt) / 1000;
+	return Math.max(0, Math.ceil(timeout - elapsed));
+};
+
 const InputDialog: FC = () => {
 	const { openModal, closeModal } = useModalContext();
 	const [formData, setFormData] = useState<FormData | null>(null);
 	const [values, setValues] = useState<Record<string, any>>({});
+	const [timeoutStartedAt, setTimeoutStartedAt] = useState(Date.now());
+	const [countdownNow, setCountdownNow] = useState(Date.now());
 
 	const setValue = (name: string, value: any) => {
 		setValues((prev) => ({ ...prev, [name]: value }));
@@ -123,6 +174,8 @@ const InputDialog: FC = () => {
 		// Set default values
 		const defaults: Record<string, any> = {};
 		data.inputs.forEach((input) => {
+			if (input.type === "paragraph" || !input.name) return;
+
 			if (input.defaultValue !== undefined) {
 				defaults[input.name] = input.defaultValue;
 			} else {
@@ -144,6 +197,9 @@ const InputDialog: FC = () => {
 		});
 
 		setValues(defaults);
+		const now = Date.now();
+		setTimeoutStartedAt(now);
+		setCountdownNow(now);
 		setFormData(data);
 		openModal(MODAL_ID, true, () => sendResult(false));
 	});
@@ -157,6 +213,14 @@ const InputDialog: FC = () => {
 		}, 250);
 	});
 
+	const options = formData?.options || {};
+	const showCancel = options.showCancel !== false; // Default true
+	const modalWidth = options.width || "30rem";
+	const resolvedButtons = getResolvedButtons(options);
+	const hasTimedButtons = resolvedButtons.some(
+		(btn) => getButtonTimeout(btn) > 0
+	);
+
 	// Enter key submits the form
 	useEffect(() => {
 		if (!formData) return;
@@ -164,24 +228,52 @@ const InputDialog: FC = () => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Enter") {
 				e.preventDefault();
-				sendResult(true, "primary");
+
+				const primaryButton = resolvedButtons[0];
+				if (
+					primaryButton &&
+					getButtonRemaining(
+						primaryButton,
+						countdownNow,
+						timeoutStartedAt
+					) > 0
+				) {
+					return;
+				}
+
+				sendResult(true, primaryButton?.action || "primary");
 			}
 		};
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [formData, values]);
+	}, [formData, values, countdownNow, timeoutStartedAt]);
+
+	useEffect(() => {
+		if (!formData || !hasTimedButtons) return;
+
+		const interval = window.setInterval(() => {
+			setCountdownNow(Date.now());
+		}, 250);
+
+		return () => window.clearInterval(interval);
+	}, [formData, hasTimedButtons]);
 
 	const renderInput = (input: FormInput) => {
 		switch (input.type) {
+			case "paragraph":
+				return <FormParagraph input={input} />;
+
 			case "text":
 				return (
 					<TextInput
 						label={input.label}
 						placeholder={input.placeholder}
 						icon={resolveIcon(input.icon)}
-						value={values[input.name] || ""}
-						onChange={(e) => setValue(input.name, e.target.value)}
+						value={values[input.name || ""] || ""}
+						onChange={(e) =>
+							input.name && setValue(input.name, e.target.value)
+						}
 						disabled={input.disabled}
 					/>
 				);
@@ -192,8 +284,10 @@ const InputDialog: FC = () => {
 						label={input.label}
 						placeholder={input.placeholder}
 						icon={resolveIcon(input.icon)}
-						value={values[input.name] ?? 0}
-						onChange={(val) => setValue(input.name, val)}
+						value={values[input.name || ""] ?? 0}
+						onChange={(val) =>
+							input.name && setValue(input.name, val)
+						}
 						disabled={input.disabled}
 						min={input.min}
 						max={input.max}
@@ -209,8 +303,10 @@ const InputDialog: FC = () => {
 						description={input.description}
 						icon={resolveIcon(input.icon)}
 						content={input.content}
-						value={values[input.name] || ""}
-						onChange={(val) => setValue(input.name, val)}
+						value={values[input.name || ""] || ""}
+						onChange={(val) =>
+							input.name && setValue(input.name, val)
+						}
 						disabled={input.disabled}
 						searchable={input.searchable}
 						multiselect={input.multiselect}
@@ -221,8 +317,9 @@ const InputDialog: FC = () => {
 				return (
 					<Checkbox
 						label={input.label}
-						checked={values[input.name] || false}
+						checked={values[input.name || ""] || false}
 						onChange={() =>
+							input.name &&
 							setValue(input.name, !values[input.name])
 						}
 						description={input.description}
@@ -236,8 +333,10 @@ const InputDialog: FC = () => {
 					<Slider
 						label={input.label}
 						description={input.description}
-						value={values[input.name] ?? input.min ?? 0}
-						onChange={(val) => setValue(input.name, val)}
+						value={values[input.name || ""] ?? input.min ?? 0}
+						onChange={(val) =>
+							input.name && setValue(input.name, val)
+						}
 						disabled={input.disabled}
 						min={input.min}
 						max={input.max}
@@ -253,8 +352,10 @@ const InputDialog: FC = () => {
 						placeholder={input.placeholder}
 						description={input.description}
 						icon={resolveIcon(input.icon)}
-						value={values[input.name] || ""}
-						onChange={(e) => setValue(input.name, e.target.value)}
+						value={values[input.name || ""] || ""}
+						onChange={(e) =>
+							input.name && setValue(input.name, e.target.value)
+						}
 						disabled={input.disabled}
 						minRows={input.minRows || 3}
 						maxRows={input.maxRows || 6}
@@ -267,23 +368,6 @@ const InputDialog: FC = () => {
 				return null;
 		}
 	};
-
-	const options = formData?.options || {};
-	const showCancel = options.showCancel !== false; // Default true
-	const modalWidth = options.width || "30rem";
-
-	// Build resolved buttons
-	// Prefer buttons[] array, fall back to old submitText/submitIcon/submitColor
-	const resolvedButtons: FormButton[] = options.buttons?.length
-		? options.buttons
-		: [
-			{
-				text: options.submitText || "Confirm",
-				icon: options.submitIcon,
-				color: options.submitColor || "var(--blue1)",
-				action: "primary",
-			},
-		];
 
 	const hasMultipleButtons = resolvedButtons.length > 1 || showCancel;
 
@@ -330,25 +414,107 @@ const InputDialog: FC = () => {
 								Cancel
 							</Button>
 						)}
-						{resolvedButtons.map((btn) => (
-							<Button
-								key={btn.action || btn.text}
-								icon={resolveIcon(btn.icon)}
-								color={btn.color || "var(--blue1)"}
-								wide={!hasMultipleButtons}
-								onClick={() =>
-									sendResult(true, btn.action || "primary")
-								}
-								loadDelay={300}
-								iconStyling={{ marginRight: "0.5rem" }}
-							>
-								{btn.text}
-							</Button>
-						))}
+						{resolvedButtons.map((btn) => {
+							const remaining = getButtonRemaining(
+								btn,
+								countdownNow,
+								timeoutStartedAt
+							);
+							const isWaiting = remaining > 0;
+
+							return (
+								<Button
+										key={btn.action || btn.text}
+										icon={resolveIcon(btn.icon)}
+										color={btn.color || DEFAULT_FORM_BUTTON_COLOR}
+										wide={!hasMultipleButtons}
+									disabled={isWaiting}
+									onClick={() => {
+										if (isWaiting) return;
+
+										sendResult(
+											true,
+											btn.action || "primary"
+										);
+									}}
+									loadDelay={300}
+									iconStyling={{ marginRight: "0.5rem" }}
+								>
+									{isWaiting
+										? `${btn.text} (${remaining}s)`
+										: btn.text}
+								</Button>
+							);
+						})}
 					</div>
 				</div>
 			)}
 		</Modal>
+	);
+};
+
+const FormParagraph: FC<{ input: FormInput }> = ({ input }) => {
+	const content = input.text ?? input.description ?? "";
+	const paragraphs = Array.isArray(content) ? content : [content];
+	const icon = resolveIcon(input.icon);
+
+	return (
+		<div
+			style={{
+				display: "flex",
+				gap: "0.75rem",
+				padding: "0.15rem 0 0.35rem 0",
+				color: "rgba(var(--textMuted))",
+				boxSizing: "border-box",
+			}}
+		>
+			{icon && (
+				<div
+					style={{
+						display: "flex",
+						alignItems: "flex-start",
+						justifyContent: "center",
+						width: "1.8rem",
+						paddingTop: "0.1rem",
+						color: "rgba(var(--iconMuted))",
+						flexShrink: 0,
+					}}
+				>
+					{icon}
+				</div>
+			)}
+			<div>
+				{input.label && (
+					<p
+						style={{
+							margin: "0 0 0.25rem 0",
+							color: "rgba(var(--text))",
+							fontSize: "1.25rem",
+							fontWeight: 500,
+							lineHeight: 1.35,
+						}}
+					>
+						{input.label}
+					</p>
+				)}
+				{paragraphs.map((paragraph, idx) => (
+					<p
+						key={`${input.name || input.label || "paragraph"}-${idx}`}
+						style={{
+							margin:
+								idx === paragraphs.length - 1
+									? "0"
+									: "0 0 0.55rem 0",
+							fontSize: "1.2rem",
+							lineHeight: 1.45,
+							whiteSpace: "pre-wrap",
+						}}
+					>
+						{paragraph}
+					</p>
+				))}
+			</div>
+		</div>
 	);
 };
 

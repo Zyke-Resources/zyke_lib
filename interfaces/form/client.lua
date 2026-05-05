@@ -1,9 +1,10 @@
----@alias FormInputType "text" | "number" | "select" | "select-player" | "checkbox" | "slider" | "textarea"
+---@alias FormInputType "paragraph" | "text" | "number" | "select" | "select-player" | "checkbox" | "slider" | "textarea"
 
 ---@class FormInput
 ---@field type FormInputType
----@field name string @ Key used in the returned values table
+---@field name? string @ Key used in the returned values table. Not required for paragraph inputs.
 ---@field label? string
+---@field text? string | string[] @ Paragraph content when type is "paragraph"
 ---@field placeholder? string
 ---@field description? string
 ---@field icon? string @ Resolved via IconRegistry, falls back to Material Icons
@@ -25,6 +26,7 @@
 ---@field icon? string
 ---@field color? string @ CSS color (e.g. "var(--blue1)")
 ---@field action? string @ Forwarded to caller via `result._action`
+---@field timeout? number @ Seconds the button stays disabled after the form opens
 
 ---@class FormOptions
 ---@field icon? string @ Header icon
