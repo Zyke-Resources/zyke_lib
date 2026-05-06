@@ -50,6 +50,50 @@ function Functions.stash.get(id)
     return nil
 end
 
+---@param id string @ Unique stash identifier
+---@return boolean success @ Whether the stash was cleared, or the active inventory has no persistent stash cleanup
+---@return any? err @ Error returned by the inventory export, if one was raised
+function Functions.stash.clear(id)
+    if (type(id) ~= "string" or id == "") then return false, "invalidStash" end
+
+    local ok, result
+
+    if (Inventory == "OX") then
+        ok, result = pcall(function()
+            return exports["ox_inventory"]:ClearInventory(id)
+        end)
+    elseif (Inventory == "QS") then
+        ok, result = pcall(function()
+            return exports["qs-inventory"]:ClearOtherInventory("stash", id)
+        end)
+    elseif (Inventory == "TGIANN") then
+        ok, result = pcall(function()
+            return exports["tgiann-inventory"]:DeleteInventory("stash", id)
+        end)
+    elseif (Inventory == "CODEM") then
+        ok, result = pcall(function()
+            return exports["codem-inventory"]:UpdateStash(id, {})
+        end)
+    elseif (Inventory == "C8RE") then
+        ok, result = pcall(function()
+            return exports["core_inventory"]:clearInventory(id)
+        end)
+    elseif (Framework == "QB" and GetResourceState("qb-inventory") == "started") then
+        ok, result = pcall(function()
+            -- qb-inventory's ClearStash only updates stashes that exist in its
+            -- in-memory Inventories table, so seed that table before clearing
+            exports["qb-inventory"]:CreateInventory(id, {})
+            return exports["qb-inventory"]:ClearStash(id)
+        end)
+    else
+        return true
+    end
+
+    if (not ok) then return false, result end
+
+    return result ~= false, result
+end
+
 -- Internal handler for qb-inventory v2.x stash opens. The new version dropped the
 -- inventory:server:OpenInventory event in favour of an OpenInventory export, so the
 -- client routes here when v2.x is detected.
