@@ -8,5 +8,6 @@ import "./styling/inputs.css"
 import "./styling/select.css"
 import "./styling/checkbox.css"
 import "./styling/slider.css"
+import "./styling/tooltip.css"
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(<App />);

@@ -2,12 +2,13 @@ import {
 	cloneElement,
 	isValidElement,
 	useEffect,
+	useRef,
 	useState,
 	type CSSProperties,
 	type FC,
 	type ReactNode,
 } from "react";
-import { listen, send } from "../../utils/Nui";
+import { callback, listen, send } from "../../utils/Nui";
 import Modal from "../modal/Modal";
 import { useModalContext } from "../../context/ModalContext";
 
@@ -19,9 +20,10 @@ import Slider from "../../components/mantine/Slider";
 import TextArea from "../../components/TextArea";
 import MaterialIcon from "../../components/MaterialIcon";
 import Button from "../../components/Button";
+import Tooltip from "../../components/Tooltip";
 import iconRegistry from "../../components/IconRegistry";
 
-/** Resolve a string icon name from Lua into a React icon component.
+/** Resolve a string icon name from Lua into a React icon component
  *  Priority: IconRegistry (SVG) → MaterialIcon (font fallback) */
 const resolveIcon = (icon?: any) => {
 	if (!icon) return undefined;
@@ -80,6 +82,8 @@ interface FormButton {
 	color?: string;
 	action?: string;
 	timeout?: number;
+	close?: boolean;
+	buttonKey?: string;
 }
 
 interface FormOptions {
@@ -111,10 +115,17 @@ const DEFAULT_FORM_BUTTON: FormButton = {
 	text: "Confirm",
 	color: DEFAULT_FORM_BUTTON_COLOR,
 	action: "primary",
+	buttonKey: "button_1",
 };
 
+// Lua injects buttonKey for callback routing. The fallback keeps legacy buttons stable in browser/dev mode
 const getResolvedButtons = (options: FormOptions): FormButton[] => {
-	if (options.buttons?.length) return options.buttons;
+	if (options.buttons?.length) {
+		return options.buttons.map((button, index) => ({
+			...button,
+			buttonKey: button.buttonKey || `button_${index + 1}`,
+		}));
+	}
 
 	return [
 		{
@@ -144,6 +155,11 @@ const getButtonRemaining = (
 	const elapsed = (now - timeoutStartedAt) / 1000;
 	return Math.max(0, Math.ceil(timeout - elapsed));
 };
+
+const getButtonKey = (button: FormButton) =>
+	button.buttonKey || button.action || button.text;
+
+const getActionValue = (button: FormButton) => button.action || "primary";
 
 const HINT_SEVERITY = {
 	info: {
@@ -184,21 +200,69 @@ const getColoredHintIcon = (icon: ReactNode, color: string) => {
 const InputDialog: FC = () => {
 	const { openModal, closeModal } = useModalContext();
 	const [formData, setFormData] = useState<FormData | null>(null);
+	// NUI listeners and modal close handlers can run after React state changes, so refs carry the latest form values
+	const formDataRef = useRef<FormData | null>(null);
 	const [values, setValues] = useState<Record<string, any>>({});
+	const valuesRef = useRef<Record<string, any>>({});
 	const [timeoutStartedAt, setTimeoutStartedAt] = useState(Date.now());
 	const [countdownNow, setCountdownNow] = useState(Date.now());
+	const [loadingButtons, setLoadingButtons] = useState<
+		Record<string, boolean>
+	>({});
+	const loadingButtonsRef = useRef<Record<string, boolean>>({});
+	const [buttonTooltips, setButtonTooltips] = useState<Record<string, string>>(
+		{}
+	);
+	const tooltipTimeouts = useRef<Record<string, number>>({});
 
-	const setValue = (name: string, value: any) => {
-		setValues((prev) => ({ ...prev, [name]: value }));
+	const clearButtonTooltips = () => {
+		Object.values(tooltipTimeouts.current).forEach((timeout) =>
+			window.clearTimeout(timeout)
+		);
+		tooltipTimeouts.current = {};
+		setButtonTooltips({});
 	};
 
-	const sendResult = (submitted: boolean, action?: string) => {
-		if (!formData) return;
+	const clearLoadingButtons = () => {
+		loadingButtonsRef.current = {};
+		setLoadingButtons({});
+	};
+
+	const setButtonLoading = (buttonKey: string, isLoading: boolean) => {
+		const next = { ...loadingButtonsRef.current };
+
+		if (isLoading) {
+			next[buttonKey] = true;
+		} else {
+			delete next[buttonKey];
+		}
+
+		loadingButtonsRef.current = next;
+		setLoadingButtons(next);
+	};
+
+	const setValue = (name: string, value: any) => {
+		setValues((prev) => {
+			const next = { ...prev, [name]: value };
+			valuesRef.current = next;
+			return next;
+		});
+	};
+
+	const sendResult = (
+		submitted: boolean,
+		action?: string,
+		shouldCloseModal = true
+	) => {
+		const currentForm = formDataRef.current;
+		if (!currentForm) return;
+
+		formDataRef.current = null;
 
 		const data: Record<string, any> = {
-			formId: formData.formId,
+			formId: currentForm.formId,
 			submitted,
-			values: submitted ? values : null,
+			values: submitted ? valuesRef.current : null,
 		};
 
 		if (submitted && action) {
@@ -207,14 +271,132 @@ const InputDialog: FC = () => {
 
 		send("FormResult", data, "Form");
 
-		closeModal(MODAL_ID);
+		if (shouldCloseModal) closeModal(MODAL_ID);
 
 		// Delay cleanup until after the modal exit animation (200ms)
 		setTimeout(() => {
 			setFormData(null);
+			valuesRef.current = {};
 			setValues({});
+			clearButtonTooltips();
+			clearLoadingButtons();
 		}, 250);
 	};
+
+	const showButtonTooltip = (
+		buttonKey: string,
+		label: string,
+		duration = 3000
+	) => {
+		setButtonTooltips((prev) => ({ ...prev, [buttonKey]: label }));
+
+		if (tooltipTimeouts.current[buttonKey]) {
+			window.clearTimeout(tooltipTimeouts.current[buttonKey]);
+		}
+
+		tooltipTimeouts.current[buttonKey] = window.setTimeout(() => {
+			setButtonTooltips((prev) => {
+				const next = { ...prev };
+				delete next[buttonKey];
+				return next;
+			});
+
+			delete tooltipTimeouts.current[buttonKey];
+		}, duration);
+	};
+
+	const handleSelectResponse = (buttonKey: string, response: any) => {
+		if (response?.tooltip) {
+			showButtonTooltip(
+				buttonKey,
+				response.tooltip,
+				response.tooltipDuration || 3000
+			);
+		}
+	};
+
+	const runButtonSelect = async (button: FormButton) => {
+		// close=false buttons call Lua without resolving the form, then update only this button's UI state
+		const currentForm = formDataRef.current;
+		if (!currentForm) return;
+
+		const buttonKey = getButtonKey(button);
+		if (loadingButtonsRef.current[buttonKey]) return;
+
+		let isPending = false;
+		setButtonLoading(buttonKey, true);
+
+		try {
+			const response = await callback(
+				"FormSelect",
+				{
+					formId: currentForm.formId,
+					action: getActionValue(button),
+					buttonKey,
+					values: valuesRef.current,
+				},
+				"Form"
+			);
+
+			if (response?.pending) {
+				isPending = true;
+				return;
+			}
+
+			handleSelectResponse(buttonKey, response);
+		} finally {
+			if (!isPending) {
+				setButtonLoading(buttonKey, false);
+			}
+		}
+	};
+
+	const pressButton = (button: FormButton, isWaiting: boolean) => {
+		if (isWaiting) return;
+
+		const buttonKey = getButtonKey(button);
+		if (loadingButtonsRef.current[buttonKey]) return;
+
+		if (button.close === false) {
+			runButtonSelect(button);
+			return;
+		}
+
+		sendResult(true, getActionValue(button));
+	};
+
+	listen(
+		"FormSelectResult",
+		({
+			formId,
+			action,
+			buttonKey: responseButtonKey,
+			response,
+		}: {
+			formId: string;
+			action?: string;
+			buttonKey?: string;
+			response?: any;
+		}) => {
+			// Lua returns select results asynchronously so callbacks can yield without keeping the NUI fetch open
+			const currentForm = formDataRef.current;
+			if (!currentForm || currentForm.formId !== formId) return;
+
+			const button =
+				resolvedButtons.find(
+					(btn) => getButtonKey(btn) === responseButtonKey
+				) ||
+				resolvedButtons.find(
+					(btn) => getActionValue(btn) === action
+				) || resolvedButtons[0];
+			const buttonKey = button
+				? getButtonKey(button)
+				: responseButtonKey || action || "primary";
+
+			handleSelectResponse(buttonKey, response || {});
+			setButtonLoading(buttonKey, false);
+		}
+	);
 
 	// Listen for open events from Lua
 	listen("OpenForm", (data: FormData) => {
@@ -249,20 +431,28 @@ const InputDialog: FC = () => {
 			}
 		});
 
+		valuesRef.current = defaults;
 		setValues(defaults);
 		const now = Date.now();
 		setTimeoutStartedAt(now);
 		setCountdownNow(now);
+		clearButtonTooltips();
+		clearLoadingButtons();
+		formDataRef.current = data;
 		setFormData(data);
-		openModal(MODAL_ID, true, () => sendResult(false));
+		openModal(MODAL_ID, true, () => sendResult(false, undefined, false));
 	});
 
 	// Listen for close events from Lua (Z.closeForm / Z.closeFormById)
 	listen("CloseForm", () => {
+		formDataRef.current = null;
 		closeModal(MODAL_ID);
 		setTimeout(() => {
 			setFormData(null);
+			valuesRef.current = {};
 			setValues({});
+			clearButtonTooltips();
+			clearLoadingButtons();
 		}, 250);
 	});
 
@@ -282,7 +472,9 @@ const InputDialog: FC = () => {
 			if (e.key === "Enter") {
 				e.preventDefault();
 
-				const primaryButton = resolvedButtons[0];
+				const primaryButton =
+					resolvedButtons.find((btn) => btn.close !== false) ||
+					resolvedButtons[0];
 				if (
 					primaryButton &&
 					getButtonRemaining(
@@ -294,7 +486,7 @@ const InputDialog: FC = () => {
 					return;
 				}
 
-				sendResult(true, primaryButton?.action || "primary");
+				if (primaryButton) pressButton(primaryButton, false);
 			}
 		};
 
@@ -311,6 +503,14 @@ const InputDialog: FC = () => {
 
 		return () => window.clearInterval(interval);
 	}, [formData, hasTimedButtons]);
+
+	useEffect(() => {
+		return () => {
+			Object.values(tooltipTimeouts.current).forEach((timeout) =>
+				window.clearTimeout(timeout)
+			);
+		};
+	}, []);
 
 	const renderInput = (input: FormInput) => {
 		switch (input.type) {
@@ -434,7 +634,7 @@ const InputDialog: FC = () => {
 			icon={options.icon ? resolveIcon(options.icon) : undefined}
 			closeButton
 			width={modalWidth}
-			onClose={() => sendResult(false)}
+			onClose={() => sendResult(false, undefined, false)}
 			disableClickOutside={options.disableClickOutside}
 		>
 			{formData && (
@@ -477,29 +677,44 @@ const InputDialog: FC = () => {
 								timeoutStartedAt
 							);
 							const isWaiting = remaining > 0;
+							const buttonKey = getButtonKey(btn);
+							const buttonTooltip = buttonTooltips[buttonKey];
+							const isNonClosingAction = btn.close === false;
 
 							return (
-								<Button
-									key={btn.action || btn.text}
-									icon={resolveIcon(btn.icon)}
-									color={btn.color || DEFAULT_FORM_BUTTON_COLOR}
-									wide={!hasMultipleButtons}
-									disabled={isWaiting}
-									onClick={() => {
-										if (isWaiting) return;
-
-										sendResult(
-											true,
-											btn.action || "primary"
-										);
-									}}
-									loadDelay={300}
-									iconStyling={{ marginRight: "0.5rem" }}
+								<Tooltip
+									key={buttonKey}
+									label={buttonTooltip}
+									position="bottom"
+									withArrow
+									opened={Boolean(buttonTooltip)}
 								>
-									{isWaiting
-										? `${btn.text} (${remaining}s)`
-										: btn.text}
-								</Button>
+									<Button
+										icon={resolveIcon(btn.icon)}
+										color={
+											btn.color ||
+											DEFAULT_FORM_BUTTON_COLOR
+										}
+										wide={!hasMultipleButtons}
+										disabled={isWaiting}
+										loading={Boolean(
+											loadingButtons[buttonKey]
+										)}
+										onClick={() =>
+											pressButton(btn, isWaiting)
+										}
+										loadDelay={
+											isNonClosingAction ? undefined : 300
+										}
+										iconStyling={{
+											marginRight: "0.5rem",
+										}}
+									>
+										{isWaiting
+											? `${btn.text} (${remaining}s)`
+											: btn.text}
+									</Button>
+								</Tooltip>
 							);
 						})}
 					</div>

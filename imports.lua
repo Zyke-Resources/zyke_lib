@@ -9,6 +9,39 @@ TrimmedResName = trimStart and ResName:sub(trimStart + 1) or ResName
 -- Id/name for keymapping, to track if you are still holding the button
 HoldingKeys = {}
 
+if (Context == "client") then
+    -- Calling resources store form callbacks locally because Lua functions cannot be sent through the zyke_lib export
+    -- zyke_lib calls this private export to run the original onSelect in the resource that opened the form
+    FormSelectHandlers = FormSelectHandlers or {}
+
+    ---@param handlerId string @ Handler registration id from the calling resource
+    ---@param buttonKey string @ Internal button key generated from button order
+    ---@param values? table @ Current form values
+    ---@param formId string @ Active form id
+    ---@param action string @ Button action value
+    ---@return table
+    local function runFormSelectExport(handlerId, buttonKey, values, formId, action)
+        local handlers = FormSelectHandlers[handlerId]
+        local handler = handlers and handlers[buttonKey]
+
+        if (not handler) then
+            print(("^1[FORM] No local select handler registered for form '%s' button '%s'.^7"):format(
+                tostring(formId),
+                tostring(buttonKey)
+            ))
+
+            return {}
+        end
+
+        local result = handler(values or {}, formId, action)
+        if (type(result) ~= "table") then return {} end
+
+        return result
+    end
+
+    exports("__zyke_formSelect", runFormSelectExport)
+end
+
 local function empty() end
 
 -- Load the chunk & function
@@ -72,6 +105,7 @@ local function execute(path, self, index, ...)
 
     if (not module) then
         local function export(...)
+            -- FiveM Lua exports discard the method-style self slot, so dynamic dot calls pass nil first
             return exports[LibName][index](nil, ...)
         end
 

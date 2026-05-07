@@ -5,6 +5,8 @@ interface TooltipProps {
     label?: string | undefined;
     children: React.ReactNode;
     withArrow?: boolean;
+    /** Allows form buttons to show response feedback without relying on hover state */
+    opened?: boolean;
     position?:
     | "bottom"
     | "left"
@@ -25,6 +27,7 @@ const Tooltip: React.FC<TooltipProps> = ({
     label,
     children,
     withArrow,
+    opened,
     position,
 }) => {
     return (
@@ -32,6 +35,7 @@ const Tooltip: React.FC<TooltipProps> = ({
             label={label || ""}
             disabled={!label || disabled}
             withArrow={withArrow}
+            opened={opened}
             arrowSize={11}
             position={position}
             multiline
