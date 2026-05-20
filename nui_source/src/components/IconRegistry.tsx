@@ -39,6 +39,7 @@ import RestoreIcon from "@mui/icons-material/Restore";
 import PropaneIcon from "@mui/icons-material/Propane";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import ColorLensIcon from "@mui/icons-material/ColorLens";
+import SmokingRoomsIcon from "@mui/icons-material/SmokingRooms";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CheckIcon from "@mui/icons-material/Check";
 import InfoIcon from "@mui/icons-material/Info";
@@ -95,6 +96,9 @@ const iconRegistry: Record<string, React.ReactNode> = {
 	transmission: <TbManualGearbox />,
 	turbo: <FaBolt />,
 	propane: <PropaneIcon />,
+
+	// ── Consumables / Effects ──────────────────────
+	smoking: <SmokingRoomsIcon />,
 
 	// ── Labels / Info ──────────────────────────────
 	receipt: <ReceiptLongIcon />,
