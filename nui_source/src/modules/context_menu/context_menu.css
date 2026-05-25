@@ -1,10 +1,11 @@
 .context-menu-list {
     display: flex;
     flex-direction: column;
-    overflow-y: scroll;
+    overflow-y: auto;
     overflow-x: hidden;
     flex: 1;
     min-height: 0;
+    overscroll-behavior: contain;
 }
 
 .context-menu-list::-webkit-scrollbar {

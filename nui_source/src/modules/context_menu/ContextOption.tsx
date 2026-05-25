@@ -103,6 +103,7 @@ const ContextOption: FC<ContextOptionProps> = ({
 				opacity: isDisabled ? 0.4 : 1,
 				display: "flex",
 				alignItems: "center",
+				flexShrink: 0,
 				overflow: "hidden",
 				...(selected
 					? {
