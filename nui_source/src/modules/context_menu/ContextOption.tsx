@@ -45,7 +45,8 @@ const ContextOption: FC<ContextOptionProps> = ({
 	const hasMenu = option.menu !== undefined && option.menu !== null;
 	const showArrow = option.arrow !== undefined ? option.arrow : hasMenu;
 	const [imgError, setImgError] = useState(false);
-	const hasImage = !!option.image;
+	const [imgLoaded, setImgLoaded] = useState(false);
+	const hasImage = !!option.image && imgLoaded && !imgError;
 	const hasExplicitIcon = !!option.icon;
 	const usesFallbackIcon = !hasImage && !hasExplicitIcon;
 
@@ -77,7 +78,26 @@ const ContextOption: FC<ContextOptionProps> = ({
 	const boxRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
+		setImgLoaded(false);
 		setImgError(false);
+
+		if (!option.image) return;
+
+		let active = true;
+		const img = new Image();
+		img.onload = () => {
+			if (!active) return;
+			setImgLoaded(true);
+		};
+		img.onerror = () => {
+			if (!active) return;
+			setImgError(true);
+		};
+		img.src = option.image;
+
+		return () => {
+			active = false;
+		};
 	}, [option.image]);
 
 	useEffect(() => {
@@ -164,7 +184,7 @@ const ContextOption: FC<ContextOptionProps> = ({
 						overflow: "hidden",
 						borderRadius: "0.3rem",
 						boxSizing: "border-box",
-						...(option.image && !imgError
+						...(hasImage
 							? {
 								padding: "0.5rem",
 							}
@@ -179,18 +199,17 @@ const ContextOption: FC<ContextOptionProps> = ({
 						}
 					}}
 				>
-					{option.image && !imgError ? (
+					{hasImage ? (
 						<img
 							src={option.image}
 							alt=""
-							onError={() => setImgError(true)}
 							style={{
 								width: "100%",
 								height: "100%",
 								objectFit: "contain",
 							}}
 						/>
-					) : option.image && imgError ? (
+					) : option.image ? (
 						<ImageNotSupportedIcon
 							sx={{
 								opacity: 0.4,
