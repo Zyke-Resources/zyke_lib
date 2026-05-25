@@ -1,6 +1,7 @@
 import { FC, useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useModalContext } from "../../context/ModalContext";
+import { Box } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
@@ -123,6 +124,41 @@ const resolveIcon = (icon?: any) => {
 		return <MaterialIcon name={icon} />;
 	}
 	return icon;
+};
+
+const HeaderIcon: FC<{ icon?: any }> = ({ icon }) => {
+	const resolvedIcon = resolveIcon(icon);
+	if (!resolvedIcon) return null;
+
+	return (
+		<Box
+			sx={{
+				display: "flex",
+				alignItems: "center",
+				justifyContent: "center",
+				width: "1.9rem",
+				height: "1.9rem",
+				color: "rgba(var(--icon))",
+				flexShrink: 0,
+				"& svg": {
+					width: "1.65rem",
+					height: "1.65rem",
+					fontSize: "1.65rem",
+					color: "rgba(var(--icon))",
+					fill: "rgba(var(--icon))",
+				},
+				"& .material-icons, & .material-icons-outlined": {
+					width: "1.65rem",
+					height: "1.65rem",
+					fontSize: "1.65rem",
+					color: "rgba(var(--icon))",
+					lineHeight: 1,
+				},
+			}}
+		>
+			{resolvedIcon}
+		</Box>
+	);
 };
 
 const getCornerPosition = (position?: string): React.CSSProperties => {
@@ -521,8 +557,7 @@ const ContextMenu: FC<ContextMenuProps> = ({
 											/>
 										</div>
 									)}
-									{activeData?.icon &&
-										resolveIcon(activeData.icon)}
+									<HeaderIcon icon={activeData?.icon} />
 									{activeData?.title && (
 										<h1
 											className="truncate"

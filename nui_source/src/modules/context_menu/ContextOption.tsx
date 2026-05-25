@@ -45,6 +45,9 @@ const ContextOption: FC<ContextOptionProps> = ({
 	const hasMenu = option.menu !== undefined && option.menu !== null;
 	const showArrow = option.arrow !== undefined ? option.arrow : hasMenu;
 	const [imgError, setImgError] = useState(false);
+	const hasImage = !!option.image;
+	const hasExplicitIcon = !!option.icon;
+	const usesFallbackIcon = !hasImage && !hasExplicitIcon;
 
 	const hasAmount = option.amount !== undefined;
 	const amountVars = option.amount?.vars;
@@ -134,52 +137,53 @@ const ContextOption: FC<ContextOptionProps> = ({
 				onMouseLeave={() => onHover(null, null)}
 				onClick={handleClick}
 			>
-				{(option.icon || option.image) && (
-					<Box
-						sx={{
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							flexShrink: 0,
-							width: "4rem",
-							height: "4rem",
-							overflow: "hidden",
-							borderRadius: "0.3rem",
-							boxSizing: "border-box",
-							...(option.image && !imgError
-								? {
-									padding: "0.5rem",
-								}
-								: {}),
-							color: option.iconColor || "rgb(var(--icon))",
-
-							["& svg"]: {
-								fontSize: iconSize,
+				<Box
+					sx={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						flexShrink: 0,
+						width: "4rem",
+						height: "4rem",
+						overflow: "hidden",
+						borderRadius: "0.3rem",
+						boxSizing: "border-box",
+						...(option.image && !imgError
+							? {
+								padding: "0.5rem",
 							}
-						}}
-					>
-						{option.image && !imgError ? (
-							<img
-								src={option.image}
-								alt=""
-								onError={() => setImgError(true)}
-								style={{
-									width: "100%",
-									height: "100%",
-									objectFit: "contain",
-								}}
-							/>
-						) : option.image && imgError ? (
-							<ImageNotSupportedIcon
-								sx={{
-									opacity: 0.4,
-								}}
-							/>
-						) : (
-							resolveIcon(option.icon)
-						)}
-					</Box>
-				)}
+							: {}),
+						color: usesFallbackIcon
+							? "rgba(var(--secIcon))"
+							: option.iconColor || "rgb(var(--icon))",
+						opacity: usesFallbackIcon ? 0.65 : 1,
+
+						["& svg"]: {
+							fontSize: iconSize,
+						}
+					}}
+				>
+					{option.image && !imgError ? (
+						<img
+							src={option.image}
+							alt=""
+							onError={() => setImgError(true)}
+							style={{
+								width: "100%",
+								height: "100%",
+								objectFit: "contain",
+							}}
+						/>
+					) : option.image && imgError ? (
+						<ImageNotSupportedIcon
+							sx={{
+								opacity: 0.4,
+							}}
+						/>
+					) : (
+						resolveIcon(option.icon || "label")
+					)}
+				</Box>
 
 				<div
 					style={{
