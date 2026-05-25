@@ -25,6 +25,7 @@
 ---@field readOnly? boolean @ Prevents interaction but keeps full opacity
 ---@field menu? string|table @ String id (registered menu) or inline ContextMenuData table
 ---@field onSelect? fun(args?: any, amount?: number)
+---@field onHover? fun(args?: any)
 ---@field event? string @ Client event to trigger on select
 ---@field serverEvent? string @ Server event to trigger on select
 ---@field args? any @ Data forwarded to onSelect, event, or serverEvent
@@ -47,6 +48,7 @@
 ---@field menu? string @ Parent menu id for back navigation
 ---@field onExit? fun() @ Callback fired when the menu closes
 ---@field onBack? fun() @ Callback fired when the player presses back
+---@field onHoverEnd? fun() @ Callback fired when the player stops hovering an option
 ---@field options ContextOption[]
 
 --- Registered menus indexed by ID. Populated by `registerContext()`.
@@ -65,6 +67,10 @@ local pending = {}
 ---@type string|nil
 local activeMenuId = nil
 
+--- ID of the menu that owns the pending promise for the current navigation tree.
+---@type string|nil
+local rootMenuId = nil
+
 --- Auto-incrementing counter used to generate unique menu IDs.
 ---@type integer
 local contextCounter = 0
@@ -82,14 +88,26 @@ local function resolveMenuData(data)
 end
 
 --- Clears the pending promise and active data for a given menu ID.
---- Resets `activeMenuId` if it matches.
+--- Resets all active context state because only one context tree can be open at a time.
 ---@param menuId string
 local function cleanupPending(menuId)
-    if (activeMenuId == menuId) then
-        activeMenuId = nil
+    local pendingMenuId = pending[menuId] and menuId or rootMenuId
+    if (pendingMenuId) then
+        pending[pendingMenuId] = nil
     end
-    pending[menuId] = nil
-    activeMenuData[menuId] = nil
+
+    activeMenuId = nil
+    rootMenuId = nil
+    activeMenuData = {}
+end
+
+---@param menuId string
+---@return promise? pendingPromise
+local function getPendingPromise(menuId)
+    if (pending[menuId]) then return pending[menuId] end
+    if (rootMenuId and pending[rootMenuId]) then return pending[rootMenuId] end
+
+    return nil
 end
 
 --- Fully closes a context menu: cleans up pending state, sends close to NUI, removes NUI focus,
@@ -97,10 +115,10 @@ end
 ---@param menuId string
 ---@param runOnExit? boolean @ Whether to fire the `onExit` callback
 local function doClose(menuId, runOnExit)
-    local p = pending[menuId]
+    local p = getPendingPromise(menuId)
     if (not p) then return end
 
-    local menuData = resolveMenuData(menuId)
+    local menuData = resolveMenuData(menuId) or (rootMenuId and resolveMenuData(rootMenuId))
     cleanupPending(menuId)
 
     SendNUIMessage({ event = "CloseContextMenu" })
@@ -128,7 +146,7 @@ RegisterNUICallback("Eventhandler:Context", function(passed, cb)
 
     if (action == "select") then
         local menuId = data.menuId
-        local p = pending[menuId]
+        local p = getPendingPromise(menuId)
         if (not p) then return end
 
         local menuData = resolveMenuData(menuId)
@@ -166,7 +184,7 @@ RegisterNUICallback("Eventhandler:Context", function(passed, cb)
         end
     elseif (action == "confirm") then
         local menuId = data.menuId
-        local p = pending[menuId]
+        local p = getPendingPromise(menuId)
         if (not p) then return end
 
         cleanupPending(menuId)
@@ -174,15 +192,42 @@ RegisterNUICallback("Eventhandler:Context", function(passed, cb)
         SetNuiFocus(false, false)
 
         p:resolve(data.selected)
+    elseif (action == "hover") then
+        local menuId = data.menuId
+        if (not getPendingPromise(menuId)) then return end
+
+        local menuData = resolveMenuData(menuId)
+        local optionIndex = data.optionIndex
+        local option = menuData and menuData.options and menuData.options[optionIndex]
+
+        if (option and option.onHover) then
+            option.onHover(option.args or option.value)
+        end
+    elseif (action == "hoverEnd") then
+        local menuId = data.menuId
+        if (not getPendingPromise(menuId)) then return end
+
+        local menuData = resolveMenuData(menuId)
+
+        if (menuData and menuData.onHoverEnd) then
+            menuData.onHoverEnd()
+        end
     elseif (action == "navigate") then
+        local menuId = data.menuId
         local targetId = data.targetId
         local targetData = resolveMenuData(targetId)
 
         if (targetData) then
-            if (type(targetId) ~= "string") then
+            if (type(targetId) ~= "string" and not targetData.menu) then
+                targetData.menu = menuId
+            end
+
+            if (not targetData.id) then
                 contextCounter = contextCounter + 1
                 targetData.id = "inline_" .. contextCounter
             end
+
+            activeMenuData[targetData.id] = targetData
 
             SendNUIMessage({
                 event = "NavigateContextMenu",
@@ -247,6 +292,7 @@ local function showContext(id)
     local p = promise.new()
     pending[menuId] = p
     activeMenuId = menuId
+    rootMenuId = menuId
     activeMenuData[menuId] = menuData
 
     SendNUIMessage({
@@ -275,6 +321,7 @@ local function openContext(data)
     local p = promise.new()
     pending[menuId] = p
     activeMenuId = menuId
+    rootMenuId = menuId
     activeMenuData[menuId] = data
 
     SendNUIMessage({

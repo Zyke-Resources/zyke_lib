@@ -37,6 +37,7 @@ export interface ContextOptionData {
 	readOnly?: boolean;
 	menu?: string | any;
 	onSelect?: any;
+	onHover?: any;
 	arrow?: boolean;
 	event?: string;
 	serverEvent?: string;
@@ -62,6 +63,7 @@ export interface ContextMenuData {
 	menu?: string;
 	onExit?: any;
 	onBack?: any;
+	onHoverEnd?: any;
 	options: ContextOptionData[];
 }
 
@@ -71,6 +73,7 @@ interface ContextMenuProps {
 	onSelect: (index: number, amount?: number) => void;
 	onConfirm: (selected: any[]) => void;
 	onNavigate: (target: string | any) => void;
+	onHover: (index: number | null) => void;
 	onBack: (menuId: string) => void;
 	onClose: () => void;
 }
@@ -238,6 +241,7 @@ const ContextMenu: FC<ContextMenuProps> = ({
 	onSelect,
 	onConfirm,
 	onNavigate,
+	onHover,
 	onBack,
 	onClose,
 }) => {
@@ -296,11 +300,13 @@ const ContextMenu: FC<ContextMenuProps> = ({
 
 			if (index === null) {
 				setHoveredIndex(null);
+				onHover(null);
 				return;
 			}
 
 			if (!activeData) return;
 			const opt = activeData.options[index];
+			onHover(index);
 
 			if (opt?.image && !failedImages.current.has(opt.image) && !loadedImages.current.has(opt.image)) {
 				const imgUrl = opt.image;
@@ -324,7 +330,7 @@ const ContextMenu: FC<ContextMenuProps> = ({
 
 			setHoveredIndex(index);
 		},
-		[activeData]
+		[activeData, onHover]
 	);
 
 	const handleAmountChange = useCallback(
@@ -410,8 +416,9 @@ const ContextMenu: FC<ContextMenuProps> = ({
 		if (!activeData) return;
 		setSelectedIndices(new Set());
 		setHoveredIndex(null);
+		onHover(null);
 		onBack(activeData.id || "");
-	}, [activeData, onBack]);
+	}, [activeData, onBack, onHover]);
 
 	const metadataAnchor: React.CSSProperties = leftSide
 		? { left: "100%", marginLeft: "0.8rem" }
