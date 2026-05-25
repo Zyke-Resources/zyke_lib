@@ -59,6 +59,14 @@ local registeredMenus = {}
 ---@type table<string, ContextMenuData>
 local activeMenuData = {}
 
+--- NUI-safe menu payloads for currently active menus.
+---@type table<string, ContextMenuData>
+local activeMenuPayloads = {}
+
+--- Parent menu IDs for active inline menus.
+---@type table<string, string>
+local activeMenuParents = {}
+
 --- Pending promises indexed by menu ID. Each promise resolves when the menu closes or an option is selected.
 ---@type table<string, promise>
 local pending = {}
@@ -76,15 +84,103 @@ local rootMenuId = nil
 local contextCounter = 0
 
 --- Resolves a menu reference to its ContextMenuData table.
---- If `data` is a string, looks up in `registeredMenus` then `activeMenuData`.
+--- If `data` is a string, looks up in `activeMenuData` then `registeredMenus`.
 --- If `data` is already a table, returns it as-is.
 ---@param data string|table
 ---@return ContextMenuData|nil
 local function resolveMenuData(data)
     if (type(data) == "string") then
-        return registeredMenus[data] or activeMenuData[data]
+        return activeMenuData[data] or registeredMenus[data]
     end
     return data
+end
+
+---@param menuData ContextMenuData
+---@param prefix? string
+---@return string menuId
+local function ensureMenuId(menuData, prefix)
+    if (menuData.id) then return menuData.id end
+
+    contextCounter = contextCounter + 1
+    menuData.id = (prefix or "context") .. "_" .. contextCounter
+
+    return menuData.id
+end
+
+---@param value any
+---@param seen? table<table, boolean>
+---@return any payloadValue
+local function copyPayloadValue(value, seen)
+    if (type(value) ~= "table") then return value end
+
+    seen = seen or {}
+    if (seen[value]) then return nil end
+    seen[value] = true
+
+    local copy = {}
+
+    for key, childValue in pairs(value) do
+        if (type(childValue) ~= "function") then
+            copy[key] = copyPayloadValue(childValue, seen)
+        end
+    end
+
+    seen[value] = nil
+
+    return copy
+end
+
+---@param option ContextOption
+---@param parentId string
+---@return ContextOption payload
+local function buildOptionPayload(option, parentId)
+    local payload = {}
+
+    for key, value in pairs(option) do
+        if (key ~= "menu" and type(value) ~= "function") then
+            payload[key] = copyPayloadValue(value)
+        end
+    end
+
+    if (type(option.menu) == "table") then
+        local childData = option.menu
+        local childId = ensureMenuId(childData, "inline")
+        activeMenuParents[childId] = childData.menu or parentId
+        activeMenuData[childId] = childData
+        payload.menu = childId
+    elseif (type(option.menu) == "string") then
+        payload.menu = option.menu
+    end
+
+    return payload
+end
+
+---@param menuData ContextMenuData
+---@param parentId? string
+---@return ContextMenuData payload
+local function buildMenuPayload(menuData, parentId)
+    local menuId = ensureMenuId(menuData)
+    local payload = {}
+
+    activeMenuData[menuId] = menuData
+
+    for key, value in pairs(menuData) do
+        if (key ~= "options" and type(value) ~= "function") then
+            payload[key] = copyPayloadValue(value)
+        end
+    end
+
+    payload.id = menuId
+    payload.menu = menuData.menu or parentId
+    payload.options = {}
+
+    for i = 1, #(menuData.options or {}) do
+        payload.options[i] = buildOptionPayload(menuData.options[i], menuId)
+    end
+
+    activeMenuPayloads[menuId] = payload
+
+    return payload
 end
 
 --- Clears the pending promise and active data for a given menu ID.
@@ -99,6 +195,8 @@ local function cleanupPending(menuId)
     activeMenuId = nil
     rootMenuId = nil
     activeMenuData = {}
+    activeMenuPayloads = {}
+    activeMenuParents = {}
 end
 
 ---@param menuId string
@@ -218,23 +316,14 @@ RegisterNUICallback("Eventhandler:Context", function(passed, cb)
         local targetData = resolveMenuData(targetId)
 
         if (targetData) then
-            if (type(targetId) ~= "string" and not targetData.menu) then
-                targetData.menu = menuId
-            end
-
-            if (not targetData.id) then
-                contextCounter = contextCounter + 1
-                targetData.id = "inline_" .. contextCounter
-            end
-
-            activeMenuData[targetData.id] = targetData
+            local targetPayload = buildMenuPayload(targetData, type(targetId) == "string" and activeMenuParents[targetId] or menuId)
 
             SendNUIMessage({
                 event = "NavigateContextMenu",
-                data = targetData,
+                data = targetPayload,
             })
 
-            activeMenuId = targetData.id
+            activeMenuId = targetPayload.id
         end
     elseif (action == "back") then
         local menuId = data.menuId
@@ -244,15 +333,20 @@ RegisterNUICallback("Eventhandler:Context", function(passed, cb)
             currentData.onBack()
         end
 
-        local parentId = currentData and currentData.menu
+        local parentId = currentData and currentData.menu or activeMenuParents[menuId]
         if (parentId) then
-            local parentData = resolveMenuData(parentId)
-            if (parentData) then
+            local parentPayload = activeMenuPayloads[parentId]
+            if (not parentPayload) then
+                local parentData = resolveMenuData(parentId)
+                parentPayload = parentData and buildMenuPayload(parentData) or nil
+            end
+
+            if (parentPayload) then
                 SendNUIMessage({
                     event = "NavigateContextMenu",
-                    data = parentData,
+                    data = parentPayload,
                 })
-                activeMenuId = parentData.id or parentId
+                activeMenuId = parentPayload.id or parentId
             end
         else
             doClose(menuId, true)
@@ -263,14 +357,32 @@ RegisterNUICallback("Eventhandler:Context", function(passed, cb)
     end
 end)
 
---- Registers a context menu by ID so it can be opened with `showContext()` or used as a sub-menu target.
---- Does not open the menu.
 ---@param context ContextMenuData
-local function registerContext(context)
+---@return nil
+local function registerSingleContext(context)
+    if (type(context) ~= "table") then return end
+
     local id = context.id
     if (not id) then return end
 
     registeredMenus[id] = context
+end
+
+--- Registers one or more context menus by ID so they can be opened with `showContext()` or used as sub-menu targets.
+--- Does not open the menu.
+---@param context ContextMenuData | ContextMenuData[]
+local function registerContext(context)
+    if (type(context) ~= "table") then return end
+
+    if (not context.id and type(context[1]) == "table") then
+        for i = 1, #context do
+            registerSingleContext(context[i])
+        end
+
+        return
+    end
+
+    registerSingleContext(context)
 end
 
 --- Opens a previously registered context menu by ID. Blocks until the player selects an option or closes the menu.
@@ -297,7 +409,7 @@ local function showContext(id)
 
     SendNUIMessage({
         event = "OpenContextMenu",
-        data = menuData,
+        data = buildMenuPayload(menuData),
     })
 
     SetNuiFocus(true, true)
@@ -326,7 +438,7 @@ local function openContext(data)
 
     SendNUIMessage({
         event = "OpenContextMenu",
-        data = data,
+        data = buildMenuPayload(data),
     })
 
     SetNuiFocus(true, true)

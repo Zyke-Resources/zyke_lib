@@ -189,6 +189,7 @@ const ContextOption: FC<ContextOptionProps> = ({
 					style={{
 						flex: 1,
 						minWidth: 0,
+						width: "100%",
 						overflow: "hidden",
 						display: "grid",
 						justifyItems: "start",
@@ -208,6 +209,7 @@ const ContextOption: FC<ContextOptionProps> = ({
 							textOverflow: "ellipsis",
 							userSelect: "none",
 							lineHeight: 1.5,
+							maxWidth: "100%",
 						}}
 					>
 						{resolvedTitle}
@@ -216,14 +218,15 @@ const ContextOption: FC<ContextOptionProps> = ({
 					{resolvedDescription && (
 						<p
 							style={{
-								margin: "-0.3rem 0 0 0",
+								margin: "-0.1rem 0 0 0",
 								color: "rgba(var(--secText))",
 								fontSize: "1.3rem",
-								whiteSpace: "nowrap",
-								overflow: "hidden",
-								textOverflow: "ellipsis",
+								whiteSpace: "pre-line",
+								overflowWrap: "anywhere",
 								userSelect: "none",
 								lineHeight: 1.3,
+								textAlign: "left",
+								width: "100%",
 							}}
 						>
 							{resolvedDescription}
