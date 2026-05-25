@@ -284,6 +284,8 @@ const ContextMenu: FC<ContextMenuProps> = ({
 	const { modalsOpen } = useModalContext();
 	const wrapperRef = useRef<HTMLDivElement>(null);
 	const hoveredElRef = useRef<HTMLElement | null>(null);
+	const hoverRequestRef = useRef(0);
+	const hoveredDataRef = useRef<ContextMenuData | null>(null);
 	const failedImages = useRef<Set<string>>(new Set());
 	const loadedImages = useRef<Set<string>>(new Set());
 	const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -294,9 +296,17 @@ const ContextMenu: FC<ContextMenuProps> = ({
 	const isOpen = !!modalsOpen[MODAL_ID];
 
 	useEffect(() => {
+		hoverRequestRef.current++;
+		hoveredElRef.current = null;
+		hoveredDataRef.current = null;
+		setHoveredIndex(null);
+	}, [activeData]);
+
+	useEffect(() => {
 		if (!isOpen) {
 			setHoveredIndex(null);
 			hoveredElRef.current = null;
+			hoveredDataRef.current = null;
 			setSelectedIndices(new Set());
 			setAmounts({});
 			failedImages.current.clear();
@@ -323,44 +333,59 @@ const ContextMenu: FC<ContextMenuProps> = ({
 	const leftSide = isLeftPosition(position);
 
 	const hoveredOption =
-		hoveredIndex !== null && activeData
+		hoveredIndex !== null && activeData && hoveredDataRef.current === activeData
 			? activeData.options[hoveredIndex]
 			: null;
+	const hoveredImage =
+		hoveredOption?.image && !failedImages.current.has(hoveredOption.image)
+			? hoveredOption.image
+			: undefined;
 	const hasMetadata =
-		hoveredOption &&
-		(hoveredOption.metadata?.length || hoveredOption.image);
+		!!hoveredOption &&
+		((hoveredOption.metadata?.length ?? 0) > 0 || !!hoveredImage);
 
 	const handleHover = useCallback(
 		(index: number | null, element?: HTMLElement | null) => {
+			const hoverRequest = ++hoverRequestRef.current;
 			hoveredElRef.current = element ?? null;
 
 			if (index === null) {
 				setHoveredIndex(null);
 				onHover(null);
+				hoveredDataRef.current = null;
 				return;
 			}
 
 			if (!activeData) return;
 			const opt = activeData.options[index];
 			onHover(index);
+			hoveredDataRef.current = activeData;
 
-			if (opt?.image && !failedImages.current.has(opt.image) && !loadedImages.current.has(opt.image)) {
+			if (
+				opt?.image &&
+				!failedImages.current.has(opt.image) &&
+				!loadedImages.current.has(opt.image)
+			) {
 				const imgUrl = opt.image;
 				const img = new Image();
 				img.onload = () => {
 					loadedImages.current.add(imgUrl);
-					setHoveredIndex(index);
+					if (hoverRequestRef.current === hoverRequest) {
+						setHoveredIndex(index);
+					}
 				};
 				img.onerror = () => {
 					failedImages.current.add(imgUrl);
-					setHoveredIndex(null);
+					if (hoverRequestRef.current === hoverRequest) {
+						setHoveredIndex(index);
+					}
 				};
 				img.src = imgUrl;
 				return;
 			}
 
 			if (opt?.image && failedImages.current.has(opt.image)) {
-				setHoveredIndex(null);
+				setHoveredIndex(index);
 				return;
 			}
 
@@ -452,6 +477,7 @@ const ContextMenu: FC<ContextMenuProps> = ({
 		if (!activeData) return;
 		setSelectedIndices(new Set());
 		setHoveredIndex(null);
+		hoveredDataRef.current = null;
 		onHover(null);
 		onBack(activeData.id || "");
 	}, [activeData, onBack, onHover]);
@@ -728,7 +754,7 @@ const ContextMenu: FC<ContextMenuProps> = ({
 						>
 							<MetadataPanel
 								title={hoveredOption!.title}
-								image={hoveredOption!.image}
+								image={hoveredImage}
 								metadata={hoveredOption!.metadata?.map((m) => ({
 									...m,
 									label: resolveTemplate(m.label, amounts[hoveredIndex!] ?? 0, hoveredOption!.amount?.vars),

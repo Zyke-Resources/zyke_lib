@@ -76,6 +76,21 @@ const ContextOption: FC<ContextOptionProps> = ({
 
 	const boxRef = useRef<HTMLDivElement>(null);
 
+	useEffect(() => {
+		setImgError(false);
+	}, [option.image]);
+
+	useEffect(() => {
+		const frame = window.requestAnimationFrame(() => {
+			const el = boxRef.current;
+			if (!el || isReadOnly || !el.matches(":hover")) return;
+
+			onHover(index, el);
+		});
+
+		return () => window.cancelAnimationFrame(frame);
+	}, [index, isReadOnly, onHover, option]);
+
 	const handleWheel = (e: WheelEvent) => {
 		if (!hasAmount || isDisabled || isReadOnly) return;
 		e.preventDefault();
