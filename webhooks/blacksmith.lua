@@ -1,13 +1,18 @@
 return {
 	-- Placements
 	["AnvilPlaced"] = "",
+	["AnvilPickedUp"] = "",
 	["FurnacePlaced"] = "",
+	["FurnacePickedUp"] = "",
 	["StoragePlaced"] = "",
-	["StorageRemoved"] = "",
+	["StorageMoved"] = "",
+	["StoragePickedUp"] = "",
 
 	-- Crafting
 	["CraftingStarted"] = "",
+	["CraftFailed"] = "",
 	["ItemCrafted"] = "",
+	["WeaponRepaired"] = "",
 
 	-- Furnace
 	["FurnaceStoked"] = "",
@@ -21,4 +26,23 @@ return {
 	["ExperienceRemoved"] = "",
 	["ExperienceSet"] = "",
 	["AdminXPCommand"] = "",
+
+	-- Blueprints
+	["BlueprintReceived"] = "",
+	["BlueprintUsed"] = "",
+	["BlueprintDocumentUsed"] = "",
+	["BlueprintAdminCommand"] = "",
+
+	-- Vendors
+	["VendorPurchase"] = "",
+	["VendorStockReset"] = "",
+
+	-- Configurator
+	["ConfiguratorSaved"] = "",
+	["ConfiguratorItemSaved"] = "",
+	["ConfiguratorItemDeleted"] = "",
+	["ConfiguratorItemDuplicated"] = "",
+
+	-- Admin tools
+	["AdminDebugCommand"] = "",
 }
