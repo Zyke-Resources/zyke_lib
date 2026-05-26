@@ -49,6 +49,7 @@ const ContextOption: FC<ContextOptionProps> = ({
 	const hasImage = !!option.image && imgLoaded && !imgError;
 	const hasExplicitIcon = !!option.icon;
 	const usesFallbackIcon = !hasImage && !hasExplicitIcon;
+	const useMutedIcon = isDisabled || isReadOnly || usesFallbackIcon;
 
 	const hasAmount = option.amount !== undefined;
 	const amountVars = option.amount?.vars;
@@ -189,10 +190,10 @@ const ContextOption: FC<ContextOptionProps> = ({
 								padding: "0.5rem",
 							}
 							: {}),
-						color: usesFallbackIcon
+						color: useMutedIcon
 							? "rgba(var(--secIcon))"
 							: option.iconColor || "rgb(var(--icon))",
-						opacity: usesFallbackIcon ? 0.65 : 1,
+						opacity: useMutedIcon ? 0.65 : 1,
 
 						["& svg"]: {
 							fontSize: iconSize,
