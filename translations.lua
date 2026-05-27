@@ -41,7 +41,7 @@ end
 
 ---@param key string | table
 ---@param formatting string[] | string | nil @We may use a single string if we are only formatting one value
----@return string | table, string | nil
+---@return string | table, string | nil, string | nil
 function Translate(key, formatting)
     if (key == nil) then return "MISSING KEY" end
 
@@ -52,6 +52,7 @@ function Translate(key, formatting)
     if (isNotification) then
         local msg = translation.msg
         local notiType = translation.type
+        local position = translation.position
 
         if (formatting) then
             if (type(formatting) == "string" or type(formatting) == "number") then -- Single string/number
@@ -61,7 +62,7 @@ function Translate(key, formatting)
             end
         end
 
-        return msg, notiType
+        return msg, notiType, position
     else
         -- If the translation is a single string
         if (type(formatting) == "string" or type(formatting) == "number") then -- Single string/number

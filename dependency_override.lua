@@ -11,7 +11,7 @@
 --   "<resource_name>"  - Use a specific resource (will wait for it to start)
 --   "none"             - Skip detection entirely, use your framework's built-in system
 --
--- NOTE: "none" is only valid for optional systems (gang, fuel, death, banking).
+-- NOTE: "none" is only valid for optional systems (gang, fuel, death, banking, notification).
 -- Setting "none" means the library will fall back to your framework's default behavior.
 -- For example, gang = "none" will use QB's built-in gang system.
 
@@ -53,4 +53,8 @@ return {
     -- Banking system (set to "none" if you don't use society banking)
     -- Options: "auto", "none", "Renewed-Banking", "RxBanking", "okokBanking", "bablo-banking"
     banking = "auto",
+
+    -- Notification system (set to "none" to use your framework's built-in notifications)
+    -- Options: "auto", "none", "ox_lib"
+    notification = "auto",
 }

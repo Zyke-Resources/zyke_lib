@@ -91,6 +91,9 @@ Functions.debug.internal("Loaded death", DeathSystem)
 loadSystem("banking", "banking")
 Functions.debug.internal("Loaded banking", BankingSystem)
 
+loadSystem("notification", "notification")
+Functions.debug.internal("Loaded notification", NotificationSystem)
+
 HasLoadedDependencies = true
 
 -- EXPERIMENTAL LOADER
