@@ -49,7 +49,7 @@ const ContextOption: FC<ContextOptionProps> = ({
 	const hasImage = !!option.image && imgLoaded && !imgError;
 	const hasExplicitIcon = !!option.icon;
 	const usesFallbackIcon = !hasImage && !hasExplicitIcon;
-	const useMutedIcon = isDisabled || isReadOnly || usesFallbackIcon;
+	const useMutedIcon = isDisabled || usesFallbackIcon;
 
 	const hasAmount = option.amount !== undefined;
 	const amountVars = option.amount?.vars;
@@ -104,13 +104,13 @@ const ContextOption: FC<ContextOptionProps> = ({
 	useEffect(() => {
 		const frame = window.requestAnimationFrame(() => {
 			const el = boxRef.current;
-			if (!el || isReadOnly || !el.matches(":hover")) return;
+			if (!el || isDisabled || !el.matches(":hover")) return;
 
 			onHover(index, el);
 		});
 
 		return () => window.cancelAnimationFrame(frame);
-	}, [index, isReadOnly, onHover, option]);
+	}, [index, isDisabled, onHover, option]);
 
 	const handleWheel = (e: WheelEvent) => {
 		if (!hasAmount || isDisabled || isReadOnly) return;
@@ -168,7 +168,7 @@ const ContextOption: FC<ContextOptionProps> = ({
 					},
 				}}
 				onMouseEnter={(e) => {
-					if (!isReadOnly)
+					if (!isDisabled)
 						onHover(index, e.currentTarget as HTMLElement);
 				}}
 				onMouseLeave={() => onHover(null, null)}
@@ -237,7 +237,7 @@ const ContextOption: FC<ContextOptionProps> = ({
 							margin: 0,
 							fontSize: "1.7rem",
 							fontWeight: 400,
-							color: isReadOnly
+							color: isDisabled
 								? "rgba(var(--secText))"
 								: "rgb(var(--text))",
 							whiteSpace: "nowrap",
@@ -336,7 +336,7 @@ const ContextOption: FC<ContextOptionProps> = ({
 							)}
 						</div>
 					)}
-					{showArrow && !isDisabled && (
+					{showArrow && !isDisabled && !isReadOnly && (
 						<ChevronRightIcon
 							sx={{
 								fontSize: "2rem",
@@ -344,7 +344,7 @@ const ContextOption: FC<ContextOptionProps> = ({
 							}}
 						/>
 					)}
-					{hasAmount && !showArrow && (
+					{hasAmount && !showArrow && !isDisabled && !isReadOnly && (
 						<MouseIcon
 							sx={{
 								fontSize: "1.4rem",

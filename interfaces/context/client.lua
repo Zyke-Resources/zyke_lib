@@ -22,7 +22,7 @@
 ---@field iconColor? string @ CSS color for the icon
 ---@field image? string @ Image URL (e.g. from `Z.getInventoryImagePath`). Takes priority over `icon`
 ---@field disabled? boolean @ Greys out the option and prevents interaction
----@field readOnly? boolean @ Prevents interaction but keeps full opacity
+---@field readOnly? boolean @ Prevents selection/navigation while keeping normal text, icon, hover, and metadata styling
 ---@field menu? string|table @ String id (registered menu) or inline ContextMenuData table
 ---@field onSelect? fun(args?: any, amount?: number)
 ---@field onHover? fun(args?: any)

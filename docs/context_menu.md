@@ -144,7 +144,7 @@ Each entry in the `options` array is a `ContextOption` table.
 | `iconColor` | string | no | CSS color for the icon. |
 | `image` | string | no | Image URL (e.g. from `Z.getInventoryImagePath`). Takes priority over `icon`. |
 | `disabled` | boolean | no | Greys out the option and prevents interaction. |
-| `readOnly` | boolean | no | Prevents interaction but keeps full opacity. |
+| `readOnly` | boolean | no | Prevents selection/navigation while keeping normal text, icon, hover, and metadata styling. |
 | `menu` | string \| table | no | Registered menu ID or inline `ContextMenuData` for sub-menu navigation. |
 | `onSelect` | function | no | Callback fired when the option is selected. Receives `args` and `amount` (if an amount tracker is set). |
 | `event` | string | no | Client event to trigger on select. |
