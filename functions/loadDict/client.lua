@@ -1,7 +1,8 @@
 ---@param dict string
 ---@param skipError? boolean
+---@param timeout? integer @ms
 ---@return boolean
-function Functions.loadDict(dict, skipError)
+function Functions.loadDict(dict, skipError, timeout)
     local isValid = DoesAnimDictExist(dict)
     if (not isValid) then
         if (not skipError) then
@@ -11,8 +12,14 @@ function Functions.loadDict(dict, skipError)
         return false
     end
 
+    local started = timeout and GetGameTimer() or nil
+
     RequestAnimDict(dict)
-    while (not HasAnimDictLoaded(dict)) do Wait(0) end
+    while (not HasAnimDictLoaded(dict)) do
+        Wait(0)
+
+        if (timeout and GetGameTimer() - started > timeout) then return false end
+    end
 
     return true
 end
