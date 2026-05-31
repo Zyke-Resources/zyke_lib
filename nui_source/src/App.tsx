@@ -4,6 +4,7 @@ import ClipboardModule from "./modules/clipboard";
 import ModalModule from "./modules/modal";
 import InputDialogModule from "./modules/input_dialog";
 import ContextMenuModule from "./modules/context_menu";
+import ProgressModule from "./modules/progress";
 
 const App = () => (
 	<ModalProvider>
@@ -12,6 +13,7 @@ const App = () => (
 		<ModalModule />
 		<InputDialogModule />
 		<ContextMenuModule />
+		<ProgressModule />
 	</ModalProvider>
 );
 

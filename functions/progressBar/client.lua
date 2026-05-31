@@ -7,64 +7,156 @@ Functions.progressBar = {}
 ---@field disableCombat boolean?
 
 ---@class ProgressBarAnimation
----@field type "anim" | "scenario"
----@field animDict string
----@field anim string
----@field flag integer
+---@field type "anim" | "scenario" | nil
+---@field animDict? string
+---@field dict? string
+---@field anim? string
+---@field clip? string
+---@field flag? integer
+---@field scenario? string
 
 ---@class ProgressBarData
----@field name string
----@field label string
+---@field name? string
+---@field label? string
+---@field description? string
+---@field icon? string @ Resolved via IconRegistry, falls back to Material Icons. Defaults to "time"
 ---@field duration integer
----@field useWhileDead boolean?
----@field canCancel boolean?
----@field disableControls table?
----@field animation ProgressBarAnimation?
----@field prop table? @Unused within our resources
----@field propTwo table? @Unused within our resources
----@field onFinish function?
----@field onCancel function?
+---@field position? "middle" | "bottom"
+---@field useWhileDead? boolean
+---@field allowRagdoll? boolean
 ---@field allowSwimming? boolean
+---@field allowCuffed? boolean
+---@field allowFalling? boolean
+---@field canCancel? boolean
+---@field disable? table
+---@field disableControls table | boolean | nil
+---@field animation? ProgressBarAnimation
+---@field anim? table
+---@field prop? table
+---@field propTwo? table
+---@field onFinish? function
+---@field onCancel? function
+
+---@param disableControls table | boolean | nil
+---@return table | nil
+local function normalizeDisableControls(disableControls)
+    if (disableControls == false or disableControls == nil) then return nil end
+
+    if (disableControls == true) then
+        return {
+            move = true,
+            car = true,
+            mouse = true,
+            combat = true,
+        }
+    end
+
+    if (type(disableControls) ~= "table") then return nil end
+
+    return {
+        move = disableControls.move or disableControls.disableMovement,
+        car = disableControls.car or disableControls.disableCarMovement,
+        mouse = disableControls.mouse or disableControls.disableMouse,
+        combat = disableControls.combat or disableControls.disableCombat,
+        sprint = disableControls.sprint,
+    }
+end
+
+---@param animation ProgressBarAnimation | nil
+---@return table | nil
+local function normalizeAnimation(animation)
+    if (type(animation) ~= "table") then return nil end
+
+    if (animation.type == "scenario" or animation.scenario) then
+        local anim = {}
+        for k, v in pairs(animation) do anim[k] = v end
+        anim.scenario = animation.scenario or animation.anim or animation.clip
+
+        return anim
+    end
+
+    local anim = {}
+    for k, v in pairs(animation) do anim[k] = v end
+
+    anim.dict = animation.dict or animation.animDict
+    anim.clip = animation.clip or animation.anim
+
+    return anim
+end
+
+---@param data ProgressBarData
+---@return table
+local function normalizeProgressData(data)
+    local normalized = {}
+
+    for k, v in pairs(data) do normalized[k] = v end
+
+    normalized.disable = data.disable or normalizeDisableControls(data.disableControls)
+    normalized.anim = data.anim or normalizeAnimation(data.animation)
+
+    if (data.prop and data.propTwo) then
+        normalized.prop = {data.prop, data.propTwo}
+    end
+
+    normalized.animation = nil
+    normalized.disableControls = nil
+    normalized.propTwo = nil
+    normalized.onFinish = nil
+    normalized.onCancel = nil
+
+    return normalized
+end
+
+---@param progressType "bar" | "circle"
+---@param data ProgressBarData
+---@return boolean @If finished
+local function start(progressType, data)
+    if (type(data) ~= "table") then return false end
+
+    local normalized = normalizeProgressData(data)
+    local state
+
+    if (progressType == "circle") then
+        state = exports[LibName]:progressCircle(normalized)
+    else
+        state = exports[LibName]:progressBar(normalized)
+    end
+
+    if (state == true) then
+        if (data.onFinish) then data.onFinish() end
+    else
+        if (data.onCancel) then data.onCancel() end
+    end
+
+    return state == true
+end
 
 ---@param data ProgressBarData
 ---@return boolean @If finished
 function Functions.progressBar.start(data)
-    local success = false
+    return start("bar", data)
+end
 
-    local state = lib.progressBar({
-        duration = data.duration,
-        label = data.label,
-        useWhileDead = data.useWhileDead,
-        canCancel = data.canCancel,
-        allowSwimming = data.allowSwimming,
-        anim = {
-            dict = data?.animation?.animDict,
-            clip = data?.animation?.anim,
-            flag = data?.animation?.flag or 49,
-        }
-    })
+---@param data ProgressBarData
+---@return boolean @If finished
+function Functions.progressBar.circle(data)
+    return start("circle", data)
+end
 
-    success = state
-    if (state == true) then
-        if (data.onFinish) then
-            data.onFinish()
-        end
-    else
-        if (data.onCancel) then
-            data.onCancel()
-        end
-    end
-
-    return success
+---@param data ProgressBarData
+---@return boolean @If finished
+function Functions.progressBar.startCircle(data)
+    return start("circle", data)
 end
 
 ---@return boolean
 function Functions.progressBar.active()
-    return lib.progressActive()
+    return exports[LibName]:progressActive()
 end
 
+---@return boolean
 function Functions.progressBar.cancel()
-    return lib.cancelProgress()
+    return exports[LibName]:cancelProgress()
 end
 
 return Functions.progressBar

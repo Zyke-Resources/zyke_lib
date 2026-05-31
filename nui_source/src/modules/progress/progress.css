@@ -1,0 +1,211 @@
+.progress-motion-root {
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	transform-origin: 50% 100%;
+}
+
+.progress-root {
+	position: absolute;
+	left: 50%;
+	transform: translateX(-50%);
+	pointer-events: none;
+	font-family: var(--font);
+	color: rgb(var(--text));
+	box-sizing: border-box;
+}
+
+.progress-position-bottom {
+	bottom: 7.5vh;
+}
+
+.progress-position-middle {
+	top: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.progress-root-bar {
+	width: min(53rem, calc(100vw - 4rem));
+	min-width: min(34rem, calc(100vw - 4rem));
+	background: rgb(var(--dark2));
+	border: 1px solid rgb(var(--grey5));
+	border-radius: 0.8rem;
+	box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+	padding: 1.65rem 2rem 1.5rem;
+}
+
+.progress-bar-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-bottom: 1.15rem;
+	min-height: 2.25rem;
+}
+
+.progress-has-description .progress-bar-header {
+	margin-bottom: 0.9rem;
+}
+
+.progress-title {
+	min-width: 0;
+	display: flex;
+	align-items: center;
+	gap: 0.9rem;
+}
+
+.progress-title-icon {
+	width: 2rem;
+	height: 2rem;
+	flex: 0 0 2rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: rgb(var(--secIcon));
+	fill: rgb(var(--secIcon));
+}
+
+.progress-title-icon svg,
+.progress-title-icon .material-icons,
+.progress-title-icon .material-icons-outlined {
+	width: 2rem;
+	height: 2rem;
+	font-size: 2rem;
+	color: rgb(var(--secIcon));
+	fill: rgb(var(--secIcon));
+}
+
+.progress-title-icon-default svg {
+	width: 1.68rem;
+	height: 1.68rem;
+	font-size: 1.68rem;
+	animation: ProgressHourglassFlip 1.45s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+	transform-origin: 50% 50%;
+}
+
+@keyframes ProgressHourglassFlip {
+	0% {
+		transform: translateY(-0.14rem) rotate(0deg) scale(1);
+	}
+	42% {
+		transform: translateY(-0.14rem) rotate(0deg) scale(1);
+	}
+	55% {
+		transform: translateY(-0.14rem) rotate(180deg) scale(1.08);
+	}
+	68% {
+		transform: translateY(-0.14rem) rotate(180deg) scale(1);
+	}
+	100% {
+		transform: translateY(-0.14rem) rotate(180deg) scale(1);
+	}
+}
+
+.progress-title p {
+	margin: 0;
+	font-size: 1.8rem;
+	line-height: 1.4;
+	font-weight: 400;
+	color: rgb(var(--text));
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.progress-percent {
+	margin: 0;
+	flex: 0 0 auto;
+	font-size: 1.55rem;
+	line-height: 1.4;
+	font-weight: 500;
+	color: rgb(var(--textMuted));
+}
+
+.progress-description {
+	margin: 0 0 1.15rem;
+	font-size: 1.45rem;
+	line-height: 1.35;
+	font-weight: 500;
+	color: rgb(var(--secText));
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.progress-footer {
+	width: calc(100% + 4rem);
+	margin: 1.5rem -2rem -1.5rem;
+	border-bottom-right-radius: 0.8rem;
+	border-bottom-left-radius: 0.8rem;
+	overflow: hidden;
+}
+
+.progress-footer.context-menu-footer {
+	background: rgb(var(--dark4));
+	border-top: 1px solid rgb(var(--grey2));
+	box-shadow: none;
+}
+
+.progress-footer .context-menu-footer-instruction {
+	color: rgb(var(--secText));
+}
+
+.progress-footer kbd {
+	color: rgb(var(--text));
+	border-color: rgb(var(--grey3));
+	border-bottom-color: rgb(var(--grey3));
+}
+
+.progress-root-circle {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.progress-circle-shell {
+	position: relative;
+	width: 10.8rem;
+	height: 10.8rem;
+	border-radius: 50%;
+	display: grid;
+	place-items: center;
+}
+
+.progress-circle-svg {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	transform: rotate(-90deg);
+}
+
+.progress-circle-track,
+.progress-circle-fill {
+	fill: none;
+	stroke-width: 9;
+}
+
+.progress-circle-track {
+	stroke: rgb(var(--dark4));
+}
+
+.progress-circle-fill {
+	stroke: rgb(var(--blue1));
+	stroke-linecap: round;
+}
+
+.progress-circle-inner {
+	position: relative;
+	width: 8rem;
+	height: 8rem;
+	border-radius: 50%;
+	display: grid;
+	place-items: center;
+}
+
+.progress-circle-inner span {
+	font-size: 1.9rem;
+	font-weight: 800;
+	color: rgb(var(--text));
+	text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 0 9px rgba(0, 0, 0, 0.55);
+}
