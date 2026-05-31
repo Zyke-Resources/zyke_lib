@@ -94,6 +94,9 @@ Functions.debug.internal("Loaded banking", BankingSystem)
 loadSystem("notification", "notification")
 Functions.debug.internal("Loaded notification", NotificationSystem)
 
+loadSystem("progressbar", "progressbar")
+Functions.debug.internal("Loaded progressbar", ProgressBarSystem)
+
 HasLoadedDependencies = true
 
 -- EXPERIMENTAL LOADER

@@ -57,4 +57,9 @@ return {
     -- Notification system (set to "none" to use your framework's built-in notifications)
     -- Options: "auto", "none", "ox_lib"
     notification = "auto",
+
+    -- Progressbar system
+    -- Options: "auto", "zyke_lib", "ox_lib"
+    -- Defaults to zyke_lib. You must explicitly set "ox_lib" here if you want to use ox progressbars.
+    progressbar = "auto",
 }

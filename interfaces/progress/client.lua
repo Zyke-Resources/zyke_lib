@@ -231,6 +231,18 @@ local function closeProgressUi(state, success, delay)
     end)
 end
 
+---@return boolean
+local function useOxProgressBar()
+    return ProgressBarSystem == "OX"
+end
+
+---@param firstArg any
+---@param data any
+---@return ProgressData
+local function resolveExportData(firstArg, data)
+    return type(data) == "table" and data or firstArg
+end
+
 ---@param progressType ProgressType
 ---@param data ProgressData
 ---@return boolean
@@ -294,22 +306,38 @@ end
 ---@param data ProgressData
 ---@return boolean
 local function progressBar(data)
+    if (useOxProgressBar()) then
+        return exports["ox_lib"]:progressBar(data)
+    end
+
     return startProgress("bar", data)
 end
 
 ---@param data ProgressData
 ---@return boolean
 local function progressCircle(data)
+    if (useOxProgressBar()) then
+        return exports["ox_lib"]:progressCircle(data)
+    end
+
     return startProgress("circle", data)
 end
 
 ---@return boolean
 local function progressActive()
+    if (useOxProgressBar()) then
+        return exports["ox_lib"]:progressActive()
+    end
+
     return activeProgress ~= nil
 end
 
 ---@return boolean
 local function cancelProgress()
+    if (useOxProgressBar()) then
+        return exports["ox_lib"]:cancelProgress()
+    end
+
     if (not activeProgress or not activeProgress.canCancel) then return false end
 
     activeProgress.cancelled = true
@@ -324,11 +352,11 @@ end, false)
 RegisterKeyMapping("zyke_lib_cancelprogress", "Cancel progress", "keyboard", "x")
 
 exports("progressBar", function(_, data)
-    return progressBar(type(data) == "table" and data or _)
+    return progressBar(resolveExportData(_, data))
 end)
 
 exports("progressCircle", function(_, data)
-    return progressCircle(type(data) == "table" and data or _)
+    return progressCircle(resolveExportData(_, data))
 end)
 
 exports("progressActive", progressActive)
@@ -355,7 +383,7 @@ RegisterNetEvent("onPlayerDropped", function(serverId)
     deleteProgressProps(serverId)
 end)
 
--- Match ox_lib's progress prop state for backwards compatibility
+-- Mirror ox_lib's progress prop state behavior on our own key to avoid collisions when both libraries run.
 AddStateBagChangeHandler(progressPropsStateKey, nil, function(bagName, key, value, reserved, replicated)
     if (replicated) then return end
 
