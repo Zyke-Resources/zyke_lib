@@ -95,15 +95,18 @@ end
 local func, err = load(foundTranslations, ("@@%s/locales/%s.lua"):format(ResName, language))
 if (not func or err) then return notFound() end
 
+translations = func()
+
 -- If you are not using the English version, which is our basic language, validate that you have all translations
 if (language ~= "en") then
     local baseTranslations = load(LoadResourceFile(ResName, ("locales/%s.lua"):format("en")), ("@@%s/locales/%s.lua"):format(ResName, "en"))()
     local currTranslations = func()
 
     local missingTranslations = {}
-    for key in pairs(baseTranslations) do
+    for key, baseTranslation in pairs(baseTranslations) do
         if (currTranslations[key] == nil) then
             missingTranslations[#missingTranslations+1] = key
+            translations[key] = baseTranslation
         end
     end
 
@@ -117,7 +120,5 @@ if (language ~= "en") then
         print("^1It is recommended that you fix these.^7")
     end
 end
-
-translations = func()
 
 return Translate, translations
