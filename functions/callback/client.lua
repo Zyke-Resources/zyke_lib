@@ -145,6 +145,7 @@ local function triggerServerCallback(event, cbExtras, ...)
     end
 end
 
+---@deprecated
 ---@param event string
 ---@param ... any @Arguments to be passed to the server
 ---@diagnostic disable-next-line: duplicate-set-field

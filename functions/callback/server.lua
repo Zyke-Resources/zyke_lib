@@ -151,6 +151,7 @@ local function triggerClientCallback(plyId, event, cbExtras, ...)
     end
 end
 
+---@deprecated
 ---@param plyId integer @Player ID to trigger callback on
 ---@param event string
 ---@param ... any @Arguments to be passed to the client
