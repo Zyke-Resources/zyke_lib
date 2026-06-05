@@ -1,4 +1,4 @@
-Functions.society = Functions.society or {}
+Functions.society = {}
 
 ---@param name string @ Society account name
 ---@return number? balance
