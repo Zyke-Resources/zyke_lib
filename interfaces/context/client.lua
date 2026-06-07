@@ -23,7 +23,7 @@
 ---@field image? string @ Image URL (e.g. from `Z.getInventoryImagePath`). Takes priority over `icon`
 ---@field disabled? boolean @ Greys out the option and prevents interaction
 ---@field readOnly? boolean @ Prevents selection/navigation while keeping normal text, icon, hover, and metadata styling
----@field menu? string|table @ String id (registered menu) or inline ContextMenuData table
+---@field menu? string | table @ String id (registered menu) or inline ContextMenuData table
 ---@field close? boolean @ If false, runs this option's action without closing the context menu
 ---@field onSelect? fun(args?: any, amount?: number)
 ---@field onHover? fun(args?: any)
@@ -209,6 +209,16 @@ local function getPendingPromise(menuId)
     return nil
 end
 
+---@param option? ContextOption @ Selected context option
+---@return boolean shouldClose
+local function shouldCloseOption(option)
+    if (not option) then return true end
+    if (option.close == false) then return false end
+    if (type(option.args) == "table" and option.args.close == false) then return false end
+
+    return true
+end
+
 --- Fully closes a context menu: cleans up pending state, sends close to NUI, removes NUI focus,
 --- optionally fires the menu's `onExit` callback, and resolves the pending promise as `nil`.
 ---@param menuId string
@@ -251,7 +261,7 @@ RegisterNUICallback("Eventhandler:Context", function(passed, cb)
         local menuData = resolveMenuData(menuId)
         local optionIndex = data.optionIndex
         local option = menuData and menuData.options and menuData.options[optionIndex]
-        local shouldClose = not option or option.close ~= false
+        local shouldClose = shouldCloseOption(option)
 
         if (shouldClose) then
             cleanupPending(menuId)
