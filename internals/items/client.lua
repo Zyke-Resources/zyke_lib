@@ -89,6 +89,9 @@ end)
 ---@param item string
 ---@param metadata table<string, boolean>
 RegisterNetEvent("zyke_lib:EnsureSingleMetadata", function(item, metadata)
+    local _, itemName = Functions.getItem(item)
+    item = itemName or item
+
     ensuredMetadata[item] = metadata
 
     local found = false

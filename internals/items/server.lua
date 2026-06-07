@@ -24,7 +24,12 @@ RegisterNetEvent("zyke_lib:MissingMetadata", function(slot)
     end
     local added = 0
 
-    local desiredMetadata = ensuredMetadata[item.name]
+    local itemName
+    if (item.name) then
+        _, itemName = Functions.getItem(item.name)
+    end
+
+    local desiredMetadata = ensuredMetadata[itemName or item.name]
 
     if (isFuncRef(desiredMetadata)) then
         desiredMetadata = desiredMetadata()
@@ -63,6 +68,9 @@ end)
 ---@param item string
 ---@param metadata table<string, any> | fun(): table<string, any>
 exports("EnsureMetadata", function(item, metadata)
+    local _, itemName = Functions.getItem(item)
+    item = itemName or item
+
     ensuredMetadata[item] = metadata
 
     if (isFuncRef(metadata)) then

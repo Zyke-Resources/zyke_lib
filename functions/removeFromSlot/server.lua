@@ -3,6 +3,9 @@
 ---@param amount integer
 ---@param slot integer
 function Functions.removeFromSlot(plyId, item, amount, slot)
+    local _, itemName = Functions.getItem(item)
+    item = itemName or item
+
     if (Inventory == "OX") then
         exports["ox_inventory"]:RemoveItem(plyId, item, amount, nil, slot)
         return

@@ -34,7 +34,8 @@ function Functions.getPlayerItems(toInclude, options)
     local _toInclude = {}
     if (toInclude) then
         for i = 1, #toInclude do
-            _toInclude[toInclude[i]] = true
+            local _, itemName = Functions.getItem(toInclude[i])
+            _toInclude[itemName or toInclude[i]] = true
         end
     end
 
@@ -45,6 +46,10 @@ function Functions.getPlayerItems(toInclude, options)
     local formattedInventory = {}
     for _, _item in pairs(inventory) do
         local item = Formatting.formatItem(_item)
+        if (item.name) then
+            local _, itemName = Functions.getItem(item.name)
+            if (itemName) then item.name = itemName end
+        end
 
         if (toInclude and not _toInclude[item.name]) then goto continue end
 

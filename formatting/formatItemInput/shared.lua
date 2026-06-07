@@ -12,6 +12,18 @@
 ---@param amount? integer
 ---@return InputtedItem[] | Item[], string[]
 function Formatting.formatItemInput(item, amount, metadata)
+    ---@param itemData table
+    ---@return Item
+    local function formatInputItem(itemData)
+        local formattedItem = Formatting.formatItem(itemData)
+        if (formattedItem.name) then
+            local _, itemName = Functions.getItem(formattedItem.name)
+            if (itemName) then formattedItem.name = itemName end
+        end
+
+        return formattedItem
+    end
+
     ---@type InputtedItem[] | Item[]
     local formattedItems = {}
 
@@ -19,7 +31,7 @@ function Formatting.formatItemInput(item, amount, metadata)
     local included = {}
 
     if (type(item) == "string") then -- Simple add to the table and return
-        formattedItems[#formattedItems+1] = Formatting.formatItem({name = item, amount = amount or 1, metadata = metadata})
+        formattedItems[#formattedItems+1] = formatInputItem({name = item, amount = amount or 1, metadata = metadata})
     else
         -- Check for various table structures
         local isArray = Functions.table.isArray(item)
@@ -35,9 +47,9 @@ function Formatting.formatItemInput(item, amount, metadata)
                 local _amount = isKeyName and v or 1
 
                 ---@diagnostic disable-next-line: assign-type-mismatch
-                formattedItems[#formattedItems+1] = Formatting.formatItem({name = _name, amount = _amount})
+                formattedItems[#formattedItems+1] = formatInputItem({name = _name, amount = _amount})
             else
-                formattedItems[#formattedItems+1] = Formatting.formatItem(v)
+                formattedItems[#formattedItems+1] = formatInputItem(v)
             end
         end
     end

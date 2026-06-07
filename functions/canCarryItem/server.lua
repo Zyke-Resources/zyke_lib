@@ -6,11 +6,13 @@ function Functions.canCarryItem(player, itemName, itemAmount)
     local plyId = Functions.getPlayerId(player)
     if (not plyId) then return false end
 
-    if (not Items[itemName]) then
+    local _, normalizedName = Functions.getItem(itemName)
+    if (not normalizedName) then
         error("^1[zyke_lib] Item not found: " .. itemName .. "^7")
         return false
     end
 
+    itemName = normalizedName
     itemAmount = itemAmount or 1
 
     if (Inventory == "OX") then return exports["ox_inventory"]:CanCarryItem(plyId, itemName, itemAmount) and true or false end

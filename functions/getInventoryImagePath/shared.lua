@@ -13,6 +13,9 @@ local frameworkFallbacks = {
 ---@param itemName string
 ---@return string
 function Functions.getInventoryImagePath(itemName)
+    local _, normalizedName = Functions.getItem(itemName)
+    itemName = normalizedName or itemName
+
     local resourceName = inventoryResources[Inventory]
 
     if (not resourceName) then

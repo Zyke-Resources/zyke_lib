@@ -3,6 +3,9 @@
 ---@param item string
 ---@param func function
 function Functions.registerUsableItem(item, func)
+    local _, itemName = Functions.getItem(item)
+    item = itemName or item
+
     if (Framework == "ESX") then
         ESX.RegisterUsableItem(item, function(source, itemName, itemData)
             if (Inventory == "QS") then
