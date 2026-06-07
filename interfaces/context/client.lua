@@ -219,6 +219,22 @@ local function shouldCloseOption(option)
     return true
 end
 
+---@param menuId string @ Active menu ID
+local function refreshOpenMenu(menuId)
+    local menuData = resolveMenuData(menuId)
+    if (not menuData) then return end
+
+    local parentId = activeMenuParents[menuId] or menuData.menu
+    local payload = buildMenuPayload(menuData, parentId)
+    activeMenuId = payload.id
+
+    SendNUIMessage({
+        event = menuId == rootMenuId and "OpenContextMenu" or "NavigateContextMenu",
+        data = payload,
+    })
+    SetNuiFocus(true, true)
+end
+
 --- Fully closes a context menu: cleans up pending state, sends close to NUI, removes NUI focus,
 --- optionally fires the menu's `onExit` callback, and resolves the pending promise as `nil`.
 ---@param menuId string
@@ -293,6 +309,8 @@ RegisterNUICallback("Eventhandler:Context", function(passed, cb)
 
             if (shouldClose) then
                 p:resolve(result)
+            else
+                refreshOpenMenu(menuId)
             end
         else
             p:resolve(nil)
