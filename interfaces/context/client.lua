@@ -401,6 +401,10 @@ local function registerSingleContext(context)
     if (not id) then return end
 
     registeredMenus[id] = context
+    if (activeMenuData[id]) then
+        activeMenuData[id] = context
+        activeMenuPayloads[id] = nil
+    end
 end
 
 --- Registers one or more context menus by ID so they can be opened with `showContext()` or used as sub-menu targets.
