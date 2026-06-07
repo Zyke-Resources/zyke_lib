@@ -24,6 +24,7 @@
 ---@field disabled? boolean @ Greys out the option and prevents interaction
 ---@field readOnly? boolean @ Prevents selection/navigation while keeping normal text, icon, hover, and metadata styling
 ---@field menu? string|table @ String id (registered menu) or inline ContextMenuData table
+---@field close? boolean @ If false, runs this option's action without closing the context menu
 ---@field onSelect? fun(args?: any, amount?: number)
 ---@field onHover? fun(args?: any)
 ---@field event? string @ Client event to trigger on select
@@ -250,10 +251,13 @@ RegisterNUICallback("Eventhandler:Context", function(passed, cb)
         local menuData = resolveMenuData(menuId)
         local optionIndex = data.optionIndex
         local option = menuData and menuData.options and menuData.options[optionIndex]
+        local shouldClose = not option or option.close ~= false
 
-        cleanupPending(menuId)
-        SendNUIMessage({ event = "CloseContextMenu" })
-        SetNuiFocus(false, false)
+        if (shouldClose) then
+            cleanupPending(menuId)
+            SendNUIMessage({ event = "CloseContextMenu" })
+            SetNuiFocus(false, false)
+        end
 
         if (option) then
             if (option.onSelect) then
@@ -276,7 +280,10 @@ RegisterNUICallback("Eventhandler:Context", function(passed, cb)
                     result = { value = result, amount = data.amount }
                 end
             end
-            p:resolve(result)
+
+            if (shouldClose) then
+                p:resolve(result)
+            end
         else
             p:resolve(nil)
         end
