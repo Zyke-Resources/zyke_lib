@@ -6,10 +6,14 @@
 ---@field name string
 ---@field label string
 ---@field grade PlayerJobGrade
+---@field onDuty boolean?
 
 ---@param rawJob table
 ---@return PlayerJob?
 function Formatting.formatPlayerJob(rawJob)
+    local onDuty = rawJob.onduty
+    if (onDuty == nil) then onDuty = rawJob.onDuty end
+
     if (Framework == "ESX") then
         local formattedJob = {
             name = rawJob.name,
@@ -17,7 +21,8 @@ function Formatting.formatPlayerJob(rawJob)
             grade = {
                 level = rawJob.grade,
                 name = rawJob.grade_name
-            }
+            },
+            onDuty = onDuty
         }
 
         return formattedJob
@@ -28,7 +33,8 @@ function Formatting.formatPlayerJob(rawJob)
             grade = {
                 level = rawJob.grade.level,
                 name = rawJob.grade.name
-            }
+            },
+            onDuty = onDuty
         }
 
         return formattedJob

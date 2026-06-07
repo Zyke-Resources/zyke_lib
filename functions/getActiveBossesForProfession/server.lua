@@ -2,8 +2,9 @@
 
 ---@param name string
 ---@param professionType "job" | "gang"
+---@param onDuty boolean? @Only return job bosses whose duty state matches this value
 ---@return PlayerId[]
-function Functions.getActiveBossesForProfession(name, professionType)
+function Functions.getActiveBossesForProfession(name, professionType, onDuty)
     local bossRanks = Functions.getBossRanks(name, professionType)
 
     ---@type PlayerId[]
@@ -11,7 +12,7 @@ function Functions.getActiveBossesForProfession(name, professionType)
     local players, ranks = {}, {}
 
     if (professionType == "job") then
-        players, ranks = Functions.getPlayersOnJob(name, true)
+        players, ranks = Functions.getPlayersOnJob(name, true, onDuty)
     elseif (professionType == "gang") then
         players, ranks = Functions.getPlayersOnGang(name, true)
     end
