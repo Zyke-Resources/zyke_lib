@@ -198,6 +198,7 @@ local forceLoad = {
     "getVehicleClass/server.lua",
     "getModelMaxSeats/server.lua",
     "getModelLabel/server.lua",
+    "translateVehicleModelHash/server.lua",
 }
 
 for i = 1, #forceLoad do
