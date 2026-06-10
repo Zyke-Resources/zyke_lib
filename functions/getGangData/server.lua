@@ -5,10 +5,6 @@ function Functions.getGangData(gangName)
     local gang
     if (Framework == "QB") then
         gang = QB.Shared.Gangs[gangName]
-    elseif (Framework == "ESX") then
-        if (GangSystem == "zyke") then
-            gang = exports["zyke_gangs"]:GetGang(gangName)
-        end
     end
 
     if (not gang) then return nil end
@@ -16,6 +12,8 @@ function Functions.getGangData(gangName)
     return Formatting.formatGang(gang)
 end
 
+---@param gangName string @ Gang name
+---@return Gang | nil gang
 Functions.callback.register(ResName .. ":GetGangData", function(_, gangName)
     return Functions.getGangData(gangName)
 end)

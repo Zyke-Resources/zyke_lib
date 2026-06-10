@@ -5,9 +5,7 @@ if (override == "none") then
     return
 end
 
-local systems = {
-    {fileName = "zyke_gangs", variable = "zyke"}
-}
+local systems = {}
 
 if (override ~= "auto") then
     for i = 1, #systems do
@@ -28,7 +26,7 @@ if (override ~= "auto") then
         end
     end
 
-    local valid = {}
+    local valid = {"auto", "none"}
     for i = 1, #systems do valid[#valid+1] = systems[i].fileName end
     print(("^1[zyke_lib] Invalid gang override '%s'. Valid options: %s^7"):format(override, table.concat(valid, ", ")))
 else

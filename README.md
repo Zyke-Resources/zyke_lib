@@ -131,7 +131,7 @@ Each system supports the following values:
 
 | System | Options |
 |---|---|
-| `gang` | `"auto"`, `"none"`, `"zyke_gangs"` |
+| `gang` | `"auto"`, `"none"` |
 | `fuel` | `"auto"`, `"none"`, `"ox_fuel"`, `"LegacyFuel"`, `"cdn-fuel"`, `"lc_fuel"` |
 | `death` | `"auto"`, `"none"`, `"wasabi_ambulance"` |
 | `banking` | `"auto"`, `"none"`, `"Renewed-Banking"`, `"RxBanking"`, `"okokBanking"`, `"bablo-banking"` |

@@ -3,9 +3,7 @@
 ---@diagnostic disable-next-line: duplicate-set-field
 function Functions.getGangData(gangName)
     local gang
-    if (Framework == "ESX") then
-        return Functions.callback.await(ResName .. ":GetJobData", gangName) -- Already formatted from server
-    elseif (Framework == "QB") then
+    if (Framework == "QB") then
         gang = QB.Shared.Gangs[gangName]
     end
 

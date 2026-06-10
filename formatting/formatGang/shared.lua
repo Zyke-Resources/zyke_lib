@@ -38,36 +38,6 @@ function Formatting.formatGang(rawGang)
             grades = grades,
             bossRanks = bossRanks
         }
-    elseif (Framework == "ESX") then
-        if (GangSystem == "zyke") then
-            ---@type GangGrade[]
-            local grades = {}
-
-            ---@type table<string, boolean>
-            local bossRanks = {}
-
-            for idx, value in pairs(rawGang.ranks) do
-                local isBoss = idx == 1
-
-                grades[idx] = {
-                    name = value.name,
-                    label = value.label,
-                    boss = isBoss
-                }
-
-                if (isBoss) then
-                    bossRanks[value.name] = true
-                end
-            end
-
-            ---@type Gang
-            return {
-                name = rawGang.id,
-                label = rawGang.name,
-                grades = grades,
-                bossRanks = bossRanks
-            }
-        end
     end
 
     return nil
