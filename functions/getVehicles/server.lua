@@ -75,7 +75,7 @@ function Functions.getVehicles(_, options)
         end
 
         if (options.netId) then
-            local netId = NetworkGetNetworkIdFromEntity(veh)
+            local netId = Functions.network.getNetId(veh)
             if (netId ~= options.netId) then goto continue end
         end
 
@@ -83,7 +83,7 @@ function Functions.getVehicles(_, options)
         if (options.detailed) then
             vehicleDetails = {
                 pos = GetEntityCoords(veh),
-                netId = NetworkGetNetworkIdFromEntity(veh),
+                netId = Functions.network.getNetId(veh),
                 plate = GetVehicleNumberPlateText(veh),
                 vehicleType = GetVehicleType(veh),
                 model = GetEntityModel(veh),

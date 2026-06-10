@@ -8,7 +8,7 @@ function Functions.getVehicleByPlate(plate)
 
     for i = 1, #vehicles do
         if (GetVehicleNumberPlateText(vehicles[i]):gsub("%s+", "") == plate) then
-            return vehicles[i], NetworkGetNetworkIdFromEntity(vehicles[i])
+            return vehicles[i], Functions.network.getNetId(vehicles[i])
         end
     end
 

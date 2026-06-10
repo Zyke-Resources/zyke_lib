@@ -53,8 +53,8 @@ end
 function Functions.sessions.setEntity(netId, sessionId)
     ensureSessionId(sessionId)
 
-    local entity = NetworkGetEntityFromNetworkId(netId)
-    if (not entity or not DoesEntityExist(entity)) then return end
+    local entity = Functions.network.getEntity(netId)
+    if (not entity) then return end
 
     local prevId = GetEntityRoutingBucket(entity)
     if (prevId and prevId ~= 0) then
@@ -89,7 +89,9 @@ end
 ---@param netId NetId
 ---@param blockRelieve? boolean @When chaining multiple together, sometimes you want to wait to relieve
 function Functions.sessions.clearEntity(netId, blockRelieve)
-    local entity = NetworkGetEntityFromNetworkId(netId)
+    local entity = Functions.network.getEntity(netId)
+    if (not entity) then return end
+
     local id = GetEntityRoutingBucket(entity)
     if (not id or id == 0 or not sessions[id]) then return end
 

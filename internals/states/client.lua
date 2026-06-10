@@ -12,7 +12,7 @@ CreateThread(function()
         if (prevVeh ~= veh) then
             LocalPlayer.state:set("currentVehicle", veh ~= 0 and veh or nil, false)
 
-            local netId = veh and veh ~= 0 and VehToNet(veh) or nil
+            local netId = Functions.network.getNetId(veh)
             LocalPlayer.state:set("currentVehicleNetId", netId, true)
 
             prevVeh = veh
