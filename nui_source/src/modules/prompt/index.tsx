@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { listen } from "../../utils/Nui";
-import type { PromptData } from "../../types";
+import type { PromptData, RemovePromptData } from "../../types";
 import Prompt from "./Prompt";
 import "./prompt.css";
+
+const getPromptKey = (prompt: Pick<PromptData, "id" | "resource">) =>
+	`${prompt.resource}:${prompt.id}`;
 
 /**
  * Prompt Module
@@ -13,23 +16,25 @@ import "./prompt.css";
 const PromptModule = () => {
 	const [prompts, setPrompts] = useState<PromptData[]>([]);
 
-	listen("ShowPrompt", ({ id, key, label }: PromptData) => {
+	listen("ShowPrompt", (prompt: PromptData) => {
 		setPrompts(prev =>
-			prev.some(p => p.id === id)
-				? prev.map(p => (p.id === id ? { id, key, label } : p))
-				: [...prev, { id, key, label }]
+			prev.some(p => getPromptKey(p) === getPromptKey(prompt))
+				? prev.map(p => (getPromptKey(p) === getPromptKey(prompt) ? prompt : p))
+				: [...prev, prompt]
 		);
 	});
 
-	listen("RemovePrompt", ({ id }: { id: string }) => {
-		setPrompts(prev => prev.filter(p => p.id !== id));
+	listen("RemovePrompt", ({ id, resource }: RemovePromptData) => {
+		setPrompts(prev =>
+			prev.filter(p => p.resource !== resource || (typeof id === "string" && p.id !== id))
+		);
 	});
 
 	return (
 		<div className="prompt-container">
 			<AnimatePresence>
 				{prompts.map(prompt => (
-					<Prompt key={prompt.id} prompt={prompt} />
+					<Prompt key={getPromptKey(prompt)} prompt={prompt} />
 				))}
 			</AnimatePresence>
 		</div>

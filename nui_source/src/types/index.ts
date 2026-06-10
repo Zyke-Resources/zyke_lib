@@ -1,8 +1,14 @@
 // Prompt
 export interface PromptData {
     id: string;
+    resource: string;
     key: string;
     label: string;
+}
+
+export interface RemovePromptData {
+    id?: string;
+    resource: string;
 }
 
 // Modal
