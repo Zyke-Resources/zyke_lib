@@ -109,6 +109,21 @@ function Functions.sessions.clearEntity(netId, blockRelieve)
     end
 end
 
+---@param playerId PlayerId
+---@return integer sessionId
+function Functions.sessions.getPlayerSession(playerId)
+    return GetPlayerRoutingBucket(tostring(playerId)) or 0
+end
+
+---@param netId NetId
+---@return integer sessionId
+function Functions.sessions.getEntitySession(netId)
+    local entity = Functions.network.getEntity(netId)
+    if (not entity) then return 0 end
+
+    return GetEntityRoutingBucket(entity) or 0
+end
+
 ---@param sessionId integer
 ---@return Session
 function Functions.sessions.getSession(sessionId)
