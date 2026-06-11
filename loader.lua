@@ -188,7 +188,7 @@ local function extractMetadataDetails(filePath)
         if (context and filePath) then
             local importName = getImportName(filePath)
             if (importName) then
-                filePath = filePath:sub(importName:len() + 2)
+                filePath = filePath:sub(importName:len() + 3)
             end
 
             return filePath, context, importName
@@ -249,14 +249,14 @@ for i = 1, #toLoad do
 
 	local chunk = LoadResourceFile(resourceName, fileName)
 	if (not chunk) then
-		error("Failed to load " .. "(" .. toLoad[i].fileName .. ")")
+		error(("Failed to load %s (%s)"):format(resourceName, fileName))
 	end
 
     Functions.debug.internal("Loaded chunk! Attempting to execute function...")
 
 	local func = load(chunk, ("@@%s/%s"):format(resourceName, toLoad[i].fileName))
 	if (not func) then
-		error("Failed to load " .. "(" .. toLoad[i].fileName .. ")")
+		error(("Failed to load %s (%s)"):format(resourceName, fileName))
 	end
 
     func()
