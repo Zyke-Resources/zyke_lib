@@ -9,10 +9,17 @@ const resolveIcon = (icon: string) => {
 	return <MaterialIcon name={icon} />;
 };
 
+const clampPercent = (value: number | undefined) => {
+	if (typeof value !== "number" || !Number.isFinite(value)) return 0;
+	return Math.min(100, Math.max(0, value));
+};
+
 export interface ProgressData {
 	id: number;
 	type: "bar" | "circle";
-	duration: number;
+	duration?: number;
+	manual?: boolean;
+	progress?: number;
 	label?: string;
 	description?: string;
 	icon?: string;
@@ -28,17 +35,24 @@ const Progress = ({ data }: ProgressProps) => {
 	const [percent, setPercent] = useState(0);
 	const circleRadius = 41;
 	const circleCircumference = 2 * Math.PI * circleRadius;
+	const positionClass = data.position === "middle" ? "progress-position-middle" : "progress-position-bottom";
 
 	useEffect(() => {
+		if (data.manual) {
+			setPercent(clampPercent(data.progress));
+			return;
+		}
+
 		setPercent(0);
 		let frame = 0;
 		let startedAt = 0;
+		const duration = Math.max(1, data.duration ?? 1);
 
 		const tick = (timestamp: number) => {
 			if (!startedAt) startedAt = timestamp;
 
 			const elapsed = timestamp - startedAt;
-			const nextPercent = Math.min(100, (elapsed / data.duration) * 100);
+			const nextPercent = Math.min(100, (elapsed / duration) * 100);
 
 			setPercent(nextPercent);
 			if (nextPercent < 100) frame = window.requestAnimationFrame(tick);
@@ -47,7 +61,7 @@ const Progress = ({ data }: ProgressProps) => {
 		frame = window.requestAnimationFrame(tick);
 
 		return () => window.cancelAnimationFrame(frame);
-	}, [data.id, data.duration]);
+	}, [data.id, data.duration, data.manual, data.progress]);
 
 	const barTransition = "width 80ms linear";
 	const circleTransition = "stroke-dashoffset 80ms linear";
@@ -57,7 +71,7 @@ const Progress = ({ data }: ProgressProps) => {
 
 	if (data.type === "circle") {
 		return (
-			<div className="progress-root progress-root-circle progress-position-bottom">
+			<div className={`progress-root progress-root-circle ${positionClass}`}>
 				<div className="progress-circle-shell">
 					<svg viewBox="0 0 96 96" className="progress-circle-svg" aria-label={data.label || "Progress"}>
 						<circle className="progress-circle-track" cx="48" cy="48" r={circleRadius} />
@@ -81,7 +95,7 @@ const Progress = ({ data }: ProgressProps) => {
 
 	return (
 		<div
-			className={`progress-root progress-root-bar progress-position-bottom ${
+			className={`progress-root progress-root-bar ${positionClass} ${
 				data.description ? "progress-has-description" : ""
 			}`}
 		>

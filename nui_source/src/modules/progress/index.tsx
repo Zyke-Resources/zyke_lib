@@ -4,6 +4,10 @@ import { listen } from "../../utils/Nui";
 import Progress, { type ProgressData } from "./Progress";
 import "./progress.css";
 
+type ProgressUpdateData = Partial<ProgressData> & {
+	id: number;
+};
+
 const ProgressModule = () => {
 	const [data, setData] = useState<ProgressData | null>(null);
 	const cleanupTimer = useRef<number | null>(null);
@@ -18,6 +22,17 @@ const ProgressModule = () => {
 	listen("OpenProgress", (progressData: ProgressData) => {
 		clearCleanupTimer();
 		setData(progressData);
+	});
+
+	listen("UpdateProgress", (progressData: ProgressUpdateData) => {
+		setData((current) => {
+			if (!current || current.id !== progressData.id) return current;
+
+			return {
+				...current,
+				...progressData,
+			};
+		});
 	});
 
 	listen("CloseProgress", ({ id }: { id: number }) => {

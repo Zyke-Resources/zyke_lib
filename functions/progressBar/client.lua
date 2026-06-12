@@ -1,13 +1,13 @@
 Functions.progressBar = {}
 
 ---@class ProgressBarDisableControls
----@field disableMovement boolean?
----@field disableCarMovement boolean?
----@field disableMouse boolean?
----@field disableCombat boolean?
+---@field disableMovement? boolean
+---@field disableCarMovement? boolean
+---@field disableMouse? boolean
+---@field disableCombat? boolean
 
 ---@class ProgressBarAnimation
----@field type "anim" | "scenario" | nil
+---@field type? "anim" | "scenario"
 ---@field animDict? string
 ---@field dict? string
 ---@field anim? string
@@ -29,13 +29,50 @@ Functions.progressBar = {}
 ---@field allowFalling? boolean
 ---@field canCancel? boolean
 ---@field disable? table
----@field disableControls table | boolean | nil
+---@field disableControls? table | boolean
 ---@field animation? ProgressBarAnimation
 ---@field anim? table
 ---@field prop? table
 ---@field propTwo? table
 ---@field onFinish? function
 ---@field onCancel? function
+
+---@class ManualProgressBarData
+---@field type? "bar" | "circle"
+---@field progress? number
+---@field percent? number
+---@field percentage? number
+---@field value? number
+---@field label? string
+---@field description? string
+---@field icon? string @ Resolved via IconRegistry, falls back to Material Icons. Defaults to "time"
+---@field position? "middle" | "bottom"
+---@field useWhileDead? boolean
+---@field allowRagdoll? boolean
+---@field allowSwimming? boolean
+---@field allowCuffed? boolean
+---@field allowFalling? boolean
+---@field canCancel? boolean
+---@field disable? table
+---@field disableControls? table | boolean
+---@field animation? ProgressBarAnimation
+---@field anim? table
+---@field prop? table
+---@field propTwo? table
+
+---@class ManualProgressBarCloseOptions
+---@field success? boolean
+---@field type? "bar" | "circle"
+---@field progress? number
+---@field percent? number
+---@field percentage? number
+---@field value? number
+---@field label? string
+---@field description? string
+---@field icon? string @ Resolved via IconRegistry, falls back to Material Icons. Defaults to "time"
+---@field position? "middle" | "bottom"
+---@field canCancel? boolean
+---@field delay? integer
 
 ---@param disableControls table | boolean | nil
 ---@return table | nil
@@ -84,7 +121,7 @@ local function normalizeAnimation(animation)
     return anim
 end
 
----@param data ProgressBarData
+---@param data ProgressBarData | ManualProgressBarData | ManualProgressBarCloseOptions
 ---@return table
 local function normalizeProgressData(data)
     local normalized = {}
@@ -129,6 +166,32 @@ local function start(progressType, data)
     end
 
     return state == true
+end
+
+---@param data ManualProgressBarData
+---@return boolean
+function Functions.progressBar.show(data)
+    if (type(data) ~= "table") then return false end
+
+    return exports[LibName]:showProgress(normalizeProgressData(data))
+end
+
+---@param data ManualProgressBarData
+---@return boolean
+function Functions.progressBar.update(data)
+    if (type(data) ~= "table") then return false end
+
+    return exports[LibName]:updateProgress(normalizeProgressData(data))
+end
+
+---@param options? boolean | ManualProgressBarCloseOptions
+---@return boolean
+function Functions.progressBar.hide(options)
+    if (type(options) == "table") then
+        return exports[LibName]:hideProgress(normalizeProgressData(options))
+    end
+
+    return exports[LibName]:hideProgress(options)
 end
 
 ---@param data ProgressBarData

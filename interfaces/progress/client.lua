@@ -44,10 +44,47 @@
 ---@field prop? ProgressProp | ProgressProp[]
 ---@field disable? ProgressDisable
 
+---@class ManualProgressData
+---@field type? ProgressType
+---@field progress? number @ Manual progress value (0-100)
+---@field percent? number @ Alias for progress
+---@field percentage? number @ Alias for progress
+---@field value? number @ Alias for progress
+---@field label? string
+---@field description? string
+---@field icon? string @ Resolved via IconRegistry, falls back to Material Icons. Defaults to "time"
+---@field position? "middle" | "bottom"
+---@field useWhileDead? boolean
+---@field allowRagdoll? boolean
+---@field allowSwimming? boolean
+---@field allowCuffed? boolean
+---@field allowFalling? boolean
+---@field canCancel? boolean
+---@field anim? ProgressAnim
+---@field prop? ProgressProp | ProgressProp[]
+---@field disable? ProgressDisable
+
+---@class ManualProgressCloseOptions
+---@field success? boolean
+---@field type? ProgressType
+---@field progress? number @ Optional final progress value (0-100)
+---@field percent? number @ Alias for progress
+---@field percentage? number @ Alias for progress
+---@field value? number @ Alias for progress
+---@field label? string
+---@field description? string
+---@field icon? string @ Resolved via IconRegistry, falls back to Material Icons. Defaults to "time"
+---@field position? "middle" | "bottom"
+---@field canCancel? boolean
+---@field delay? integer @ Delay before the UI closes after the final update
+
 ---@class ActiveProgress
 ---@field id integer
 ---@field canCancel boolean
 ---@field cancelled boolean
+---@field manual? boolean
+---@field hasProps? boolean
+---@field disable? ProgressDisable
 ---@field animType? "dict" | "scenario"
 ---@field animDict? string
 ---@field animClip? string
@@ -64,7 +101,25 @@ local carControls = {59, 60, 61, 62, 63, 64, 71, 72, 75, 76, 86, 87, 88, 89, 90,
 local combatControls = {24, 25, 37, 44, 45, 47, 58, 140, 141, 142, 143, 257, 263, 264}
 local mouseControls = {1, 2, 106}
 
----@param data ProgressData
+---@param value number
+---@return number
+local function clampProgressValue(value)
+    return math.min(100, math.max(0, value))
+end
+
+---@param data ManualProgressData | ManualProgressCloseOptions
+---@return number?
+local function resolveManualProgressValue(data)
+    local progress = data.progress
+    if (progress == nil) then progress = data.percent end
+    if (progress == nil) then progress = data.percentage end
+    if (progress == nil) then progress = data.value end
+    if (progress == nil) then return nil end
+
+    return clampProgressValue(tonumber(progress) or 0)
+end
+
+---@param data ProgressData | ManualProgressData
 ---@return boolean
 local function shouldCancelForPedState(data)
     local ped = PlayerPedId()
@@ -231,6 +286,60 @@ local function closeProgressUi(state, success, delay)
     end)
 end
 
+---@param state ActiveProgress
+---@param progressType ProgressType
+---@param data ProgressData | ManualProgressData
+---@param manual boolean
+---@param progress? number
+local function openProgressUi(state, progressType, data, manual, progress)
+    SendNUIMessage({
+        event = "OpenProgress",
+        data = {
+            id = state.id,
+            type = progressType,
+            duration = data.duration,
+            manual = manual,
+            progress = progress,
+            label = data.label,
+            description = data.description,
+            icon = data.icon,
+            position = data.position,
+            canCancel = state.canCancel,
+        }
+    })
+end
+
+---@param state ActiveProgress
+---@param data ManualProgressData | ManualProgressCloseOptions
+local function updateProgressUi(state, data)
+    SendNUIMessage({
+        event = "UpdateProgress",
+        data = {
+            id = state.id,
+            type = data.type,
+            progress = resolveManualProgressValue(data),
+            label = data.label,
+            description = data.description,
+            icon = data.icon,
+            position = data.position,
+            canCancel = data.canCancel,
+        }
+    })
+end
+
+---@param state ActiveProgress
+---@param success boolean
+---@param delay? integer
+local function finishProgress(state, success, delay)
+    if (state.hasProps) then playerState:set(progressPropsStateKey, nil, true) end
+
+    cleanupProgress(state)
+    playerState.invBusy = false
+
+    if (activeProgress == state) then activeProgress = nil end
+    closeProgressUi(state, success, delay)
+end
+
 ---@return boolean
 local function useOxProgressBar()
     return ProgressBarSystem == "OX"
@@ -238,9 +347,18 @@ end
 
 ---@param firstArg any
 ---@param data any
----@return ProgressData
+---@return any
 local function resolveExportData(firstArg, data)
     return type(data) == "table" and data or firstArg
+end
+
+---@param firstArg any
+---@param data any
+---@return any
+local function resolveExportValue(firstArg, data)
+    if (data ~= nil) then return data end
+
+    return firstArg
 end
 
 ---@param progressType ProgressType
@@ -257,6 +375,7 @@ local function startProgress(progressType, data)
         id = progressId,
         canCancel = data.canCancel == true,
         cancelled = false,
+        hasProps = data.prop ~= nil,
     }
 
     activeProgress = state
@@ -268,19 +387,7 @@ local function startProgress(progressType, data)
         playerState:set(progressPropsStateKey, data.prop, true)
     end
 
-    SendNUIMessage({
-        event = "OpenProgress",
-        data = {
-            id = state.id,
-            type = progressType,
-            duration = data.duration,
-            label = data.label,
-            description = data.description,
-            icon = data.icon,
-            position = data.position,
-            canCancel = state.canCancel,
-        }
-    })
+    openProgressUi(state, progressType, data, false)
 
     local endsAt = GetGameTimer() + data.duration
 
@@ -293,19 +400,96 @@ local function startProgress(progressType, data)
 
     local success = activeProgress == state and not state.cancelled and not shouldCancelForPedState(data)
 
-    if (data.prop) then playerState:set(progressPropsStateKey, nil, true) end
-    cleanupProgress(state)
-    playerState.invBusy = false
-
-    if (activeProgress == state) then activeProgress = nil end
-    closeProgressUi(state, success, success and 100 or 0)
+    finishProgress(state, success, success and 100 or 0)
 
     return success
+end
+
+---@param data ManualProgressData
+---@return boolean
+local function showProgress(data)
+    if (activeProgress) then return false end
+    if (type(data) ~= "table") then return false end
+    if (useOxProgressBar() and exports["ox_lib"]:progressActive()) then return false end
+    if (shouldCancelForPedState(data)) then return false end
+
+    progressId = progressId + 1
+
+    local state = {
+        id = progressId,
+        canCancel = data.canCancel == true,
+        cancelled = false,
+        manual = true,
+        hasProps = data.prop ~= nil,
+        disable = data.disable,
+    }
+
+    activeProgress = state
+    playerState.invBusy = true
+    startProgressAnim(data.anim, state)
+
+    if (data.prop) then
+        playerState:set(progressPropsStateKey, data.prop, true)
+    end
+
+    local progressType = data.type == "circle" and "circle" or "bar"
+    openProgressUi(state, progressType, data, true, resolveManualProgressValue(data) or 0)
+
+    CreateThread(function()
+        while (activeProgress == state) do
+            if (state.cancelled or shouldCancelForPedState(data)) then
+                finishProgress(state, false, 0)
+                return
+            end
+
+            disableProgressControls(state.disable)
+            Wait(0)
+        end
+    end)
+
+    return true
+end
+
+---@param data ManualProgressData
+---@return boolean
+local function updateProgress(data)
+    if (not activeProgress or not activeProgress.manual) then return false end
+    if (type(data) ~= "table") then return false end
+
+    if (data.canCancel ~= nil) then activeProgress.canCancel = data.canCancel == true end
+    if (data.disable ~= nil) then activeProgress.disable = data.disable end
+
+    updateProgressUi(activeProgress, data)
+
+    return true
+end
+
+---@param options? boolean | ManualProgressCloseOptions
+---@return boolean
+local function hideProgress(options)
+    if (not activeProgress or not activeProgress.manual) then return false end
+
+    local state = activeProgress
+    local success = options ~= false
+    local delay = 0
+
+    if (type(options) == "table") then
+        updateProgressUi(state, options)
+
+        if (options.success ~= nil) then success = options.success == true end
+        delay = math.max(0, math.floor(tonumber(options.delay) or 0))
+    end
+
+    finishProgress(state, success, delay)
+
+    return true
 end
 
 ---@param data ProgressData
 ---@return boolean
 local function progressBar(data)
+    if (activeProgress) then return false end
+
     if (useOxProgressBar()) then
         return exports["ox_lib"]:progressBar(data)
     end
@@ -316,6 +500,8 @@ end
 ---@param data ProgressData
 ---@return boolean
 local function progressCircle(data)
+    if (activeProgress) then return false end
+
     if (useOxProgressBar()) then
         return exports["ox_lib"]:progressCircle(data)
     end
@@ -325,24 +511,30 @@ end
 
 ---@return boolean
 local function progressActive()
+    if (activeProgress) then return true end
+
     if (useOxProgressBar()) then
         return exports["ox_lib"]:progressActive()
     end
 
-    return activeProgress ~= nil
+    return false
 end
 
 ---@return boolean
 local function cancelProgress()
+    if (activeProgress) then
+        if (not activeProgress.canCancel) then return false end
+
+        activeProgress.cancelled = true
+
+        return true
+    end
+
     if (useOxProgressBar()) then
         return exports["ox_lib"]:cancelProgress()
     end
 
-    if (not activeProgress or not activeProgress.canCancel) then return false end
-
-    activeProgress.cancelled = true
-
-    return true
+    return false
 end
 
 RegisterCommand("zyke_lib_cancelprogress", function()
@@ -351,12 +543,34 @@ end, false)
 
 RegisterKeyMapping("zyke_lib_cancelprogress", "Cancel progress", "keyboard", "x")
 
-exports("progressBar", function(_, data)
-    return progressBar(resolveExportData(_, data))
+---@param firstArg any @ Direct export data or ignored self argument
+---@param data? ProgressData @ Progress data from dynamic callers
+exports("progressBar", function(firstArg, data)
+    return progressBar(resolveExportData(firstArg, data))
 end)
 
-exports("progressCircle", function(_, data)
-    return progressCircle(resolveExportData(_, data))
+---@param firstArg any @ Direct export data or ignored self argument
+---@param data? ProgressData @ Progress data from dynamic callers
+exports("progressCircle", function(firstArg, data)
+    return progressCircle(resolveExportData(firstArg, data))
+end)
+
+---@param firstArg any @ Direct export data or ignored self argument
+---@param data? ManualProgressData @ Manual progress data from dynamic callers
+exports("showProgress", function(firstArg, data)
+    return showProgress(resolveExportData(firstArg, data))
+end)
+
+---@param firstArg any @ Direct export data or ignored self argument
+---@param data? ManualProgressData @ Manual progress data from dynamic callers
+exports("updateProgress", function(firstArg, data)
+    return updateProgress(resolveExportData(firstArg, data))
+end)
+
+---@param firstArg any @ Direct export close options or ignored self argument
+---@param data? boolean | ManualProgressCloseOptions @ Close options from dynamic callers
+exports("hideProgress", function(firstArg, data)
+    return hideProgress(resolveExportValue(firstArg, data))
 end)
 
 exports("progressActive", progressActive)
@@ -364,7 +578,7 @@ exports("cancelProgress", cancelProgress)
 
 ---@param resName string
 AddEventHandler("onClientResourceStop", function(resName)
-    if (resName ~= GetCurrentResourceName()) then return end
+    if (resName ~= ResName) then return end
 
     playerState:set(progressPropsStateKey, nil, true)
     if (activeProgress) then
@@ -384,6 +598,11 @@ RegisterNetEvent("onPlayerDropped", function(serverId)
 end)
 
 -- Mirror ox_lib's progress prop state behavior on our own key to avoid collisions when both libraries run.
+---@param bagName string
+---@param key string
+---@param value ProgressProp | ProgressProp[] | nil
+---@param reserved integer
+---@param replicated boolean
 AddStateBagChangeHandler(progressPropsStateKey, nil, function(bagName, key, value, reserved, replicated)
     if (replicated) then return end
 
