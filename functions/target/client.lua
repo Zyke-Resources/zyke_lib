@@ -1,8 +1,17 @@
 Functions.target = {}
 
+---@alias TargetModel string | integer
+
+---@class RegisteredTarget
+---@field type "entity" | "zone" | "model"
+---@field models? TargetModel | TargetModel[]
+---@field names? string[]
+---@field labels? string[]
+
+---@type table<string | integer, RegisteredTarget>
 local targets = {}
 
----@return integer
+---@return integer id
 local function generateId()
     local id
 
@@ -14,17 +23,20 @@ local function generateId()
 end
 
 ---@class TargetOption
----@field num number? @Index in menu, probably never used
+---@field num? number @Index in menu, probably never used
+---@field name? string @Option identifier
 ---@field icon string
 ---@field label string
 ---@field canInteract? function @Returns boolean if possible to interact
 ---@field action? function @qb-target
 ---@field onSelect? function @ox_target
----@field distance number? @ox_target
+---@field distance? number @ox_target
 
 ---@class EntityTargetDetails
----@field distance number? @2.0 default
+---@field distance? number @2.0 default
 ---@field options TargetOption[]
+
+---@class ModelTargetDetails : EntityTargetDetails
 
 ---@class BoxTargetDetails
 ---@field name string @id
@@ -36,10 +48,11 @@ end
 ---@field heading number
 ---@field debugPoly boolean
 ---@field options TargetOption[]
----@field distance number? @2.0 default
+---@field distance? number @2.0 default
 
 -- Translating and ensuring distance exists properly
----@param targetDetails EntityTargetDetails | BoxTargetDetails
+---@param targetDetails EntityTargetDetails | ModelTargetDetails | BoxTargetDetails
+---@return EntityTargetDetails | ModelTargetDetails | BoxTargetDetails targetDetails
 local function ensureTargetDetails(targetDetails)
     if (not targetDetails.distance) then
         targetDetails.distance = 2.0
@@ -54,9 +67,34 @@ local function ensureTargetDetails(targetDetails)
     return targetDetails
 end
 
+---@param options TargetOption[]
+---@param key "name" | "label"
+---@return string[] values
+local function getTargetOptionValues(options, key)
+    local values = {}
+
+    for i = 1, #options do
+        local value = options[i][key]
+        if (value) then values[#values+1] = value end
+    end
+
+    return values
+end
+
+---@param options TargetOption[]
+---@param id integer
+---@return nil
+local function ensureModelTargetOptionNames(options, id)
+    for i = 1, #options do
+        if (not options[i].name) then
+            options[i].name = ("zyke_lib:model:%s:%s"):format(id, i)
+        end
+    end
+end
+
 ---@param entity integer
 ---@param targetDetails EntityTargetDetails
----@return integer | nil @Id
+---@return integer | nil id
 function Functions.target.addEntity(entity, targetDetails)
     ---@type EntityTargetDetails
     ---@diagnostic disable-next-line: assign-type-mismatch
@@ -87,7 +125,7 @@ function Functions.target.addEntity(entity, targetDetails)
 end
 
 ---@param targetDetails BoxTargetDetails
----@return string | integer | nil @id
+---@return string | integer | nil id
 function Functions.target.addBox(targetDetails)
     ---@type BoxTargetDetails
     ---@diagnostic disable-next-line: assign-type-mismatch
@@ -147,14 +185,24 @@ function Functions.target.remove(id)
     elseif (zoneType == "zone") then
         if (Target == "OX") then return exports["ox_target"]:removeZone(id) end
         if (Target == "QB") then return exports["qb-target"]:RemoveZone(id) end
+    elseif (zoneType == "model") then
+        if (Target == "OX") then return exports["ox_target"]:removeModel(details.models, details.names) end
+        if (Target == "QB") then return exports["qb-target"]:RemoveTargetModel(details.models, details.labels) end
     end
 end
 
----@param targetDetails EntityTargetDetails
+---@param model TargetModel | TargetModel[]
+---@param targetDetails ModelTargetDetails
+---@return integer | nil id
 function Functions.target.addModel(model, targetDetails)
-    ---@type EntityTargetDetails
+    if (Target ~= "OX" and Target ~= "QB") then return nil end
+
+    ---@type ModelTargetDetails
     ---@diagnostic disable-next-line: assign-type-mismatch
     targetDetails = ensureTargetDetails(targetDetails)
+
+    local id = generateId()
+    ensureModelTargetOptionNames(targetDetails.options, id)
 
     if (Target == "OX") then
         exports["ox_target"]:addModel(model, targetDetails.options)
@@ -164,6 +212,15 @@ function Functions.target.addModel(model, targetDetails)
             distance = targetDetails.distance
         })
     end
+
+    targets[id] = {
+        type = "model",
+        models = model,
+        names = getTargetOptionValues(targetDetails.options, "name"),
+        labels = getTargetOptionValues(targetDetails.options, "label"),
+    }
+
+    return id
 end
 
 ---@return boolean
@@ -173,6 +230,7 @@ function Functions.target.isTargeting()
     return IsControlPressed(0, key) or IsDisabledControlPressed(0, key)
 end
 
+---@param resName string
 AddEventHandler("onResourceStop", function(resName)
     if (resName ~= ResName) then return end
 
