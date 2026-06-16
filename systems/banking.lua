@@ -6,6 +6,7 @@ if (override == "none") then
 end
 
 local systems = {
+    {fileName = "tgg-banking", variable = "TGG_BANKING"},
     {fileName = "Renewed-Banking", variable = "RENEWED_BANKING"},
     {fileName = "RxBanking", variable = "RX_BANKING"},
     {fileName = "okokBanking", variable = "OKOK_BANKING"},
