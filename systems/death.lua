@@ -7,7 +7,8 @@ end
 
 local systems = {
     {fileName = "wasabi_ambulance_v2", variable = "wasabi_ambulance_v2"},
-    {fileName = "wasabi_ambulance", variable = "wasabi_ambulance"}
+    {fileName = "wasabi_ambulance", variable = "wasabi_ambulance"},
+    {fileName = "osp_ambulance", variable = "osp_ambulance"}
 }
 
 if (override ~= "auto") then
