@@ -5,7 +5,9 @@ if (override == "none") then
     return
 end
 
-local systems = {}
+local systems = {
+    {fileName = "pug-gangs", variable = "pug"}
+}
 
 if (override ~= "auto") then
     for i = 1, #systems do

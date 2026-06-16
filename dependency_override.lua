@@ -39,8 +39,8 @@ return {
     ---========================================---
 
     -- Gang system (set to "none" to use your framework's built-in gangs)
-    -- Options: "auto", "none"
-    gang = "none",
+    -- Options: "auto", "none", "pug-gangs"
+    gang = "auto",
 
     -- Fuel system (set to "none" if you don't need fuel management)
     -- Options: "auto", "none", "ox_fuel", "LegacyFuel", "cdn-fuel", "lc_fuel"

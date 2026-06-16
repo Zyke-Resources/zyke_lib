@@ -3,7 +3,9 @@
 ---@diagnostic disable-next-line: duplicate-set-field
 function Functions.getGangData(gangName)
     local gang
-    if (Framework == "QB") then
+    if (GangSystem == "pug") then
+        return Functions.callback.request(ResName .. ":GetGangData", nil, gangName)
+    elseif (Framework == "QB") then
         gang = QB.Shared.Gangs[gangName]
     end
 
