@@ -1,5 +1,9 @@
 ---@return boolean
 function Functions.isPlayerDead()
+    if (DeathSystem == "sky_ambulancejob") then
+        return exports["sky_ambulancejob"]:isDead()
+    end
+
     if (DeathSystem == "wasabi_ambulance") then
         return exports["wasabi_ambulance"]:isPlayerDead()
     end

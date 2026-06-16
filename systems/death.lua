@@ -6,6 +6,7 @@ if (override == "none") then
 end
 
 local systems = {
+    {fileName = "sky_ambulancejob", variable = "sky_ambulancejob"},
     {fileName = "wasabi_ambulance_v2", variable = "wasabi_ambulance_v2"},
     {fileName = "wasabi_ambulance", variable = "wasabi_ambulance"},
     {fileName = "osp_ambulance", variable = "osp_ambulance"}
