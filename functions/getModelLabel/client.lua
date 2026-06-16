@@ -1,4 +1,5 @@
 -- Resolves a vehicle model label from its hash, with a title-cased fallback if no GXT label exists
+-- This method assumes that the vehicle is actually valid on your server
 
 -- Known GTA base-game models that have no valid GXT label, so we can suppress warnings for these
 local ignoredModels = {
@@ -11,9 +12,20 @@ local ignoredModels = {
 
 local debug = LibConfig.debug
 
----@param modelHash number
+---@param modelHash string | integer
 ---@return string
 function Functions.getModelLabel(modelHash)
+    -- If we have an integer hash, try to grab the translated model name to work off of
+    -- There are various edge cases based on how you triggered this and what the input is,
+    -- so we validate that the input would be a valid hash and not some invalid hash
+    local isInteger = math.tointeger(modelHash) ~= nil
+    if (isInteger) then
+        local modelName = Functions.translateVehicleModelHash(modelHash)
+        if (modelName) then
+            modelHash = modelName
+        end
+    end
+
     local displayName = GetDisplayNameFromVehicleModel(modelHash)
     local label = GetLabelText(displayName)
 
