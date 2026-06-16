@@ -13,7 +13,7 @@
 ---@field min number @ Minimum value (default: 1)
 ---@field max number @ Maximum value
 ---@field step? number @ Increment per scroll tick (default: 1)
----@field vars? table<string, number> @ Named variables accessible in template expressions (e.g. `{ price = 30 }`)
+---@field vars? table<string, number> @ Named variables accessible in template expressions. Numeric expressions support `floor(...)`
 
 ---@class ContextOption
 ---@field title string @ Supports `{amount}` templates when `amount` is set

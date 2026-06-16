@@ -99,16 +99,23 @@ export const resolveTemplate = (
 				);
 			}
 		}
-		if (/^[\d\s+\-*/().]+$/.test(resolved)) {
+
+		const floorMatch = resolved.match(/^floor\(([\d\s+\-*/().]+)\)$/);
+		const numericExpression = floorMatch ? floorMatch[1] : resolved;
+
+		if (/^[\d\s+\-*/().]+$/.test(numericExpression)) {
 			try {
 				const result = new Function(
-					'"use strict"; return (' + resolved + ")"
+					'"use strict"; return (' + numericExpression + ")"
 				)();
-				return typeof result === "number"
-					? Number.isInteger(result)
-						? String(result)
-						: result.toFixed(2)
-					: String(result);
+				const formattedResult = floorMatch && typeof result === "number"
+					? Math.floor(result)
+					: result;
+				return typeof formattedResult === "number"
+					? Number.isInteger(formattedResult)
+						? String(formattedResult)
+						: formattedResult.toFixed(2)
+					: String(formattedResult);
 			} catch {
 				return resolved;
 			}
