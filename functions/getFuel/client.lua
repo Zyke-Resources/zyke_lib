@@ -1,12 +1,23 @@
 ---@param veh integer
----@return number
+---@return number fuel
 function Functions.getFuel(veh)
-    if (FuelSystem == "LegacyFuel") then return Functions.numbers.round(exports["LegacyFuel"]:GetFuel(veh), 1) end
-    if (FuelSystem == "OX") then return Functions.numbers.round(GetVehicleFuelLevel(veh), 1) end
-    if (FuelSystem == "CDNFuel") then return Functions.numbers.round(exports["cdn-fuel"]:GetFuel(veh), 1) end
-    if (FuelSystem == "LCFuel") then return Functions.numbers.round(exports["lc_fuel"]:GetFuel(veh), 1) end
+    local fuel
 
-    return Functions.numbers.round(GetVehicleFuelLevel(veh), 1)
+    if (FuelSystem == "LegacyFuel") then
+        fuel = exports["LegacyFuel"]:GetFuel(veh)
+    elseif (FuelSystem == "OX") then
+        fuel = GetVehicleFuelLevel(veh)
+    elseif (FuelSystem == "CDNFuel") then
+        fuel = exports["cdn-fuel"]:GetFuel(veh)
+    elseif (FuelSystem == "LCFuel") then
+        fuel = exports["lc_fuel"]:GetFuel(veh)
+    else
+        fuel = GetVehicleFuelLevel(veh)
+    end
+
+    fuel = (fuel and tonumber(fuel)) or GetVehicleFuelLevel(veh) or 100.0
+
+    return Functions.numbers.round(fuel, 1)
 end
 
 return Functions.getFuel
