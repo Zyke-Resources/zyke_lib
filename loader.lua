@@ -32,12 +32,13 @@ local function awaitSystemStarting(fileName)
     -- This is a more foolproof approach to avoid having exact resource starting sequences
     if (resState == "starting" or resState == "stopping" or resState == "stopped") then
         local started = GetGameTimer()
+        local silenceWarnings = LibConfig.silenceWarnings
 
         while (1) do
             resState = GetResourceState(fileName)
             if (resState == "started") then Wait(50) return resState end
 
-            if (GetGameTimer() - started > warnDependencyLoadingTime) then
+            if (silenceWarnings ~= true and GetGameTimer() - started > warnDependencyLoadingTime) then
                 print("^1========== [WARNING] ==========^7")
                 print("^1> \"" .. fileName .. "\" is taking a long time to start...^7")
                 print("^1> If this warning persists & our resources are not behaving as expected, please visit:^7")
