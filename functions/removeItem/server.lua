@@ -23,7 +23,7 @@ function Functions.removeItem(player, item, amount, metadata)
 
         for i = 1, #toRemove do
             local success = true
-            local isUnique = Items[toRemove[i].name].unique == true
+            local isUnique = Functions.isItemUnique(toRemove[i].name)
 
             if (isUnique) then
                 for _ = 1, toRemove[i].amount do
