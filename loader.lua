@@ -17,6 +17,52 @@ do
     end
 end
 
+local preloadedLoaderFiles = {}
+
+---@param fileName string
+---@param context "shared" | "server" | "client"
+---@param resourceName string @ Resource that owns the file
+---@return string key
+local function getLoaderFileKey(fileName, context, resourceName)
+    return ("%s:%s:%s"):format(resourceName, context, fileName)
+end
+
+---@param fileName string
+---@param resourceName string @ Resource that owns the file
+local function loadLoaderFile(fileName, resourceName)
+    Functions.debug.internal("Attempting to load", resourceName, fileName)
+
+    local chunk = LoadResourceFile(resourceName, fileName)
+    if (not chunk) then
+        error(("Failed to load %s (%s)"):format(resourceName, fileName))
+    end
+
+    Functions.debug.internal("Loaded chunk! Attempting to execute function...")
+
+    local func, err = load(chunk, ("@@%s/%s"):format(resourceName, fileName))
+    if (not func or err) then
+        error(err)
+    end
+
+    func()
+
+    Functions.debug.internal("Function executed!")
+end
+
+---@param fileName string
+---@param context "shared" | "server" | "client"
+local function preloadLoaderFile(fileName, context)
+    if (context ~= "shared" and context ~= Context) then return end
+
+    loadLoaderFile(fileName, ResName)
+    preloadedLoaderFiles[getLoaderFileKey(fileName, context, ResName)] = true
+end
+
+if (ResName == LibName) then
+    -- Central cache exports must exist even while dependency detection is waiting
+    preloadLoaderFile("internals/centralCache/server.lua", "server")
+end
+
 -- Warning for extensive dependency loading time
 -- Usually warning about dependency loading would only happen if we have debug enabled
 --- But through testing it appears that quite a few servers keep scripts in their servers without starting them
@@ -244,25 +290,13 @@ end
 Functions.debug.internal("Loading files...")
 for i = 1, #toLoad do
     local fileName = toLoad[i].fileName
-    local resourceName = toLoad[i].importName or GetCurrentResourceName()
+    local context = toLoad[i].context
+    local resourceName = toLoad[i].importName or ResName
+    local loaderFileKey = getLoaderFileKey(fileName, context, resourceName)
 
-    Functions.debug.internal("Attempting to load", resourceName, fileName)
-
-	local chunk = LoadResourceFile(resourceName, fileName)
-	if (not chunk) then
-		error(("Failed to load %s (%s)"):format(resourceName, fileName))
-	end
-
-    Functions.debug.internal("Loaded chunk! Attempting to execute function...")
-
-	local func = load(chunk, ("@@%s/%s"):format(resourceName, toLoad[i].fileName))
-	if (not func) then
-		error(("Failed to load %s (%s)"):format(resourceName, fileName))
-	end
-
-    func()
-
-    Functions.debug.internal("Function executed!")
+    if (not preloadedLoaderFiles[loaderFileKey]) then
+        loadLoaderFile(fileName, resourceName)
+    end
 end
 
 Functions.debug.internal("Finished loading files!")

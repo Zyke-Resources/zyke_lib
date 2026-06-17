@@ -23,6 +23,8 @@ files {
 }
 
 loader {
+    "server:internals/centralCache/server.lua",
+
     "@ox_lib/init.lua", -- Progressbar & skillcheck
     "shared:config.lua",
     "shared:internals/internals.lua",
@@ -33,7 +35,6 @@ loader {
     "internals/items/server.lua",
     "internals/playerIdentifiers/server.lua",
     "internals/states/server.lua",
-    "internals/centralCache/server.lua",
 
     "functions/debug/shared.lua",
 
