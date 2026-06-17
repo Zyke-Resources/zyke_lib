@@ -5,6 +5,7 @@ import ModalModule from "./modules/modal";
 import InputDialogModule from "./modules/input_dialog";
 import ContextMenuModule from "./modules/context_menu";
 import ProgressModule from "./modules/progress";
+import SkillCheckModule from "./modules/skill_check";
 
 const App = () => (
 	<ModalProvider>
@@ -14,6 +15,7 @@ const App = () => (
 		<InputDialogModule />
 		<ContextMenuModule />
 		<ProgressModule />
+		<SkillCheckModule />
 	</ModalProvider>
 );
 

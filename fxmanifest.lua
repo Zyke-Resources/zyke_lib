@@ -25,7 +25,6 @@ files {
 loader {
     "server:internals/centralCache/server.lua",
 
-    "@ox_lib/init.lua", -- Progressbar & skillcheck
     "shared:config.lua",
     "shared:internals/internals.lua",
 
@@ -44,10 +43,6 @@ loader {
     "internals/events/client.lua",
     "internals/items/client.lua",
     "internals/states/client.lua",
-}
-
-dependencies {
-    "ox_lib", -- Skillcheck
 }
 
 client_scripts {

@@ -41,7 +41,6 @@ Please be aware that heavily modified servers may cause our library to struggle 
 
 ## Dependencies
 
--   [ox_lib (Skillcheck)](https://github.com/overextended/ox_lib)
 - [A compatible framework](#framework-support)
 - [A compatible inventory](#inventory-support)
 
