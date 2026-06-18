@@ -114,7 +114,7 @@ Each system supports the following values:
 | `"<resource_name>"` | Use a specific resource (will wait for it to start) |
 | `"none"` | Skip detection entirely, fall back to your framework's built-in system |
 
-> **Note:** `"none"` is only valid for **optional** systems (gang, fuel, death, banking). Setting it means the library will use your framework's default behavior instead.
+> **Note:** `"none"` is only valid for **optional** systems (gang, fuel, death, banking, notification). Setting it means the library will use your framework's default behavior instead.
 
 ### Available Systems
 
@@ -130,10 +130,12 @@ Each system supports the following values:
 
 | System | Options |
 |---|---|
-| `gang` | `"auto"`, `"none"` |
+| `gang` | `"auto"`, `"none"`, `"pug-gangs"` |
 | `fuel` | `"auto"`, `"none"`, `"ox_fuel"`, `"LegacyFuel"`, `"cdn-fuel"`, `"lc_fuel"` |
-| `death` | `"auto"`, `"none"`, `"wasabi_ambulance"` |
-| `banking` | `"auto"`, `"none"`, `"Renewed-Banking"`, `"RxBanking"`, `"okokBanking"`, `"bablo-banking"` |
+| `death` | `"auto"`, `"none"`, `"sky_ambulancejob"`, `"wasabi_ambulance"`, `"wasabi_ambulance_v2"`, `"osp_ambulance"` |
+| `banking` | `"auto"`, `"none"`, `"tgg-banking"`, `"Renewed-Banking"`, `"RxBanking"`, `"okokBanking"`, `"bablo-banking"` |
+| `notification` | `"auto"`, `"none"`, `"ox_lib"` |
+| `progressbar` | `"auto"`, `"zyke_lib"`, `"ox_lib"` |
 
 ### Example
 
@@ -148,6 +150,8 @@ return {
     fuel = "ox_fuel",
     death = "auto",
     banking = "none",
+    notification = "auto",
+    progressbar = "auto",
 }
 ```
 
