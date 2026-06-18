@@ -795,6 +795,7 @@ const FormHint: FC<{ input: FormInput }> = ({ input }) => {
 	const title = input.title ?? input.label;
 	const config = getHintConfig(input.severity);
 	const hintColor = `rgba(${config.color}, 1)`;
+	const contentSize = "1.25rem";
 	const icon = getColoredHintIcon(
 		input.icon === false ? undefined : resolveIcon(input.icon || config.icon),
 		hintColor
@@ -808,9 +809,9 @@ const FormHint: FC<{ input: FormInput }> = ({ input }) => {
 					alignItems: "flex-start",
 					justifyContent: "center",
 					width: "1.8rem",
-					paddingTop: "0.05rem",
 					color: hintColor,
 					flexShrink: 0,
+					lineHeight: 1,
 				}}
 			>
 				{icon}
@@ -822,53 +823,31 @@ const FormHint: FC<{ input: FormInput }> = ({ input }) => {
 			style={{
 				margin: "0.15rem 0 0.35rem 0",
 				borderRadius: "var(--mborderRadius)",
-				border: "1px solid rgba(var(--grey5), 0.85)",
-				borderLeft: `0.3rem solid ${hintColor}`,
-				background: "rgba(var(--dark3), 0.92)",
+				background: `rgba(${config.color}, 0.24)`,
 				boxSizing: "border-box",
 				color: "rgba(var(--textMuted))",
-				overflow: "hidden",
+				display: "flex",
+				alignItems: "flex-start",
+				gap: "0.75rem",
+				padding: title ? "0.85rem 1rem" : "0.6rem 1rem",
 				width: "100%",
 			}}
 		>
-			{title && (
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: "0.75rem",
-						padding: "0.65rem 0.85rem",
-						background: `rgba(${config.color}, 0.16)`,
-						boxSizing: "border-box",
-					}}
-				>
-					{renderIcon()}
+			{renderIcon()}
+			<div style={{ minWidth: 0 }}>
+				{title && (
 					<p
 						style={{
-							margin: 0,
+							margin: "0 0 0.35rem 0",
 							color: "rgba(var(--text))",
-							fontSize: "1.22rem",
-							fontWeight: 600,
-							lineHeight: 1.35,
+							fontSize: "1.45rem",
+							lineHeight: 1.15,
 						}}
 					>
 						{title}
 					</p>
-				</div>
-			)}
-			<div
-				style={{
-					display: title ? "block" : "flex",
-					gap: "0.75rem",
-					padding:
-						title && icon
-							? "0.85rem 1rem 0.9rem calc(0.85rem + 1.8rem + 0.75rem)"
-							: "0.85rem 1rem 0.9rem 0.85rem",
-					boxSizing: "border-box",
-				}}
-			>
-				{!title && renderIcon()}
-				<div style={{ minWidth: 0 }}>
+				)}
+				<div>
 					{paragraphs.map((paragraph, idx) => (
 						<p
 							key={`${input.name || title || "hint"}-${idx}`}
@@ -877,8 +856,9 @@ const FormHint: FC<{ input: FormInput }> = ({ input }) => {
 									idx === paragraphs.length - 1
 										? "0"
 										: "0 0 0.55rem 0",
-								fontSize: "1.12rem",
-								lineHeight: 1.45,
+								color: "rgba(var(--textMuted))",
+								fontSize: contentSize,
+								lineHeight: title ? 1.45 : 1.25,
 								whiteSpace: "pre-wrap",
 								wordBreak: "break-word",
 							}}
