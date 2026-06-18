@@ -121,4 +121,7 @@ if (language ~= "en") then
     end
 end
 
+translations.localeString = LibConfig.localeString
+translations.currencyFormat = LibConfig.currencyFormat
+
 return Translate, translations
