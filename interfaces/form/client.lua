@@ -13,6 +13,7 @@
 ---@field severity? FormHintSeverity @ Hint color/icon severity when type is "hint" (default "info")
 ---@field disabled? boolean
 ---@field defaultValue? any
+---@field forceUppercase? boolean @ text: convert entered characters to uppercase
 ---@field content? { label: string, value: any }[] @ select/multiselect options
 ---@field searchable? boolean @ select: enable search filtering (default true)
 ---@field multiselect? boolean @ select: allow multiple selections

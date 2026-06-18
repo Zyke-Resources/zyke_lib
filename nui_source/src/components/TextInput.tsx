@@ -24,6 +24,7 @@ interface TextInput {
     blurOnEnter?: boolean;
     forceFocus?: boolean;
     maxLength?: number;
+    forceUppercase?: boolean;
 }
 
 const characterCountSectionWidth = "5rem";
@@ -48,6 +49,7 @@ const TextInput: React.FC<TextInput> = ({
     blurOnEnter,
     forceFocus,
     maxLength,
+    forceUppercase,
 }) => {
     const [isFocused, setIsFocused] = useState(false);
     const [computedWidthPx, setComputedWidthPx] = useState<number | undefined>(
@@ -87,6 +89,14 @@ const TextInput: React.FC<TextInput> = ({
     const mirrorRef = useRef<HTMLSpanElement>(null);
 
     const shouldBlurOnEnter = blurOnEnter ?? true;
+
+    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (forceUppercase) {
+            event.currentTarget.value = event.currentTarget.value.toUpperCase();
+        }
+
+        onChange?.(event);
+    };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (
@@ -178,7 +188,7 @@ const TextInput: React.FC<TextInput> = ({
             <MantineTextInput
                 id={id}
                 value={value}
-                onChange={onChange}
+                onChange={handleChange}
                 placeholder={placeholder}
                 description={description}
                 error={error}
@@ -191,6 +201,7 @@ const TextInput: React.FC<TextInput> = ({
                 variant={variant}
                 inputContainer={(children) => <>{children}</>}
                 onKeyDown={handleKeyDown}
+                autoCapitalize={forceUppercase ? "characters" : undefined}
                 maxLength={characterLimit}
                 rightSection={
                     hasCharacterLimit ? (

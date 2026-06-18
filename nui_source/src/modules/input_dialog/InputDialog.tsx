@@ -56,6 +56,7 @@ interface FormInput {
 	severity?: "info" | "warning" | "error" | "danger";
 	disabled?: boolean;
 	defaultValue?: any;
+	forceUppercase?: boolean;
 
 	// Select-specific
 	content?: any[];
@@ -429,6 +430,14 @@ const InputDialog: FC = () => {
 						break;
 				}
 			}
+
+			if (
+				input.type === "text" &&
+				input.forceUppercase &&
+				typeof defaults[input.name] === "string"
+			) {
+				defaults[input.name] = defaults[input.name].toUpperCase();
+			}
 		});
 
 		valuesRef.current = defaults;
@@ -532,6 +541,7 @@ const InputDialog: FC = () => {
 						}
 						disabled={input.disabled}
 						maxLength={input.maxLength}
+						forceUppercase={input.forceUppercase}
 					/>
 				);
 
