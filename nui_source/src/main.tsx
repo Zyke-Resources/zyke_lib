@@ -3,6 +3,7 @@ import App from "./App";
 
 import "./styling/index.css"
 import "./styling/base_defaults.css"
+import "./styling/codeblock.css"
 import "./styling/kbd.css"
 import "./styling/inputs.css"
 import "./styling/select.css"

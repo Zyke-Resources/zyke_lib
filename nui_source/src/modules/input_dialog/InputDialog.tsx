@@ -8,6 +8,7 @@ import {
 	type FC,
 	type ReactNode,
 } from "react";
+import { Code } from "@mantine/core";
 import { callback, listen, send } from "../../utils/Nui";
 import Modal from "../modal/Modal";
 import { useModalContext } from "../../context/ModalContext";
@@ -108,6 +109,11 @@ interface FormData {
 	options?: FormOptions;
 }
 
+type FormTextSegment =
+	| { type: "text"; content: string }
+	| { type: "inlineCode"; content: string }
+	| { type: "blockCode"; content: string };
+
 const MODAL_ID = "zyke_form";
 
 const DEFAULT_FORM_BUTTON_COLOR = "var(--blue2)";
@@ -197,6 +203,72 @@ const getColoredHintIcon = (icon: ReactNode, color: string) => {
 		},
 	});
 };
+
+const parseFormTextSegments = (text: string): FormTextSegment[] => {
+	const segments: FormTextSegment[] = [];
+	const markerRegex = /```([\s\S]*?)```|``([^`\n]+)``|`([^`\n]+)`/g;
+	let cursor = 0;
+	let match: RegExpExecArray | null;
+
+	while ((match = markerRegex.exec(text))) {
+		if (match.index > cursor) {
+			segments.push({
+				type: "text",
+				content: text.slice(cursor, match.index),
+			});
+		}
+
+		if (match[1] !== undefined) {
+			segments.push({
+				type: "blockCode",
+				content: match[1].replace(/^\n/, "").replace(/\n$/, ""),
+			});
+		} else {
+			segments.push({
+				type: "inlineCode",
+				content: match[2] ?? match[3],
+			});
+		}
+
+		cursor = markerRegex.lastIndex;
+	}
+
+	if (cursor < text.length) {
+		segments.push({ type: "text", content: text.slice(cursor) });
+	}
+
+	return segments.length > 0 ? segments : [{ type: "text", content: text }];
+};
+
+const renderFormattedFormText = (text: string, keyPrefix: string) =>
+	parseFormTextSegments(text).map((segment, idx) => {
+		const key = `${keyPrefix}-${idx}`;
+
+		if (segment.type === "inlineCode") {
+			return (
+				<Code key={key}>
+					{segment.content}
+				</Code>
+			);
+		}
+
+		if (segment.type === "blockCode") {
+			return (
+				<Code
+					key={key}
+					block
+					style={{
+						margin: "0.3rem 0",
+						whiteSpace: "pre-wrap",
+					}}
+				>
+					{segment.content}
+				</Code>
+			);
+		}
+
+		return <span key={key}>{segment.content}</span>;
+	});
 
 const InputDialog: FC = () => {
 	const { openModal, closeModal } = useModalContext();
@@ -748,6 +820,7 @@ const FormParagraph: FC<{ input: FormInput }> = ({ input }) => {
 				padding: "0.15rem 0 0.35rem 0",
 				color: "rgba(var(--textMuted))",
 				boxSizing: "border-box",
+				fontFamily: "var(--font)",
 			}}
 		>
 			{icon && (
@@ -780,7 +853,7 @@ const FormParagraph: FC<{ input: FormInput }> = ({ input }) => {
 					</p>
 				)}
 				{paragraphs.map((paragraph, idx) => (
-					<p
+					<div
 						key={`${input.name || input.label || "paragraph"}-${idx}`}
 						style={{
 							margin:
@@ -792,8 +865,11 @@ const FormParagraph: FC<{ input: FormInput }> = ({ input }) => {
 							whiteSpace: "pre-wrap",
 						}}
 					>
-						{paragraph}
-					</p>
+						{renderFormattedFormText(
+							paragraph,
+							`${input.name || input.label || "paragraph"}-${idx}`
+						)}
+					</div>
 				))}
 			</div>
 		</div>
@@ -837,6 +913,7 @@ const FormHint: FC<{ input: FormInput }> = ({ input }) => {
 				background: `rgba(${config.color}, 0.24)`,
 				boxSizing: "border-box",
 				color: "rgba(var(--textMuted))",
+				fontFamily: "var(--font)",
 				display: "flex",
 				alignItems: "flex-start",
 				gap: "0.75rem",
@@ -860,7 +937,7 @@ const FormHint: FC<{ input: FormInput }> = ({ input }) => {
 				)}
 				<div>
 					{paragraphs.map((paragraph, idx) => (
-						<p
+						<div
 							key={`${input.name || title || "hint"}-${idx}`}
 							style={{
 								margin:
@@ -874,8 +951,11 @@ const FormHint: FC<{ input: FormInput }> = ({ input }) => {
 								wordBreak: "break-word",
 							}}
 						>
-							{paragraph}
-						</p>
+							{renderFormattedFormText(
+								paragraph,
+								`${input.name || title || "hint"}-${idx}`
+							)}
+						</div>
 					))}
 				</div>
 			</div>

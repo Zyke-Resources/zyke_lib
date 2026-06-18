@@ -1,0 +1,7 @@
+.mantine-Code-root {
+    background: rgb(var(--grey2));
+    color: #ddd;
+    font-size: 1.2rem;
+    width: fit-content;
+    padding: 0.1rem 0.25rem;
+}
