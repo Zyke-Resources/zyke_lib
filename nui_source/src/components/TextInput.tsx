@@ -23,7 +23,10 @@ interface TextInput {
     autoWidth?: boolean;
     blurOnEnter?: boolean;
     forceFocus?: boolean;
+    maxLength?: number;
 }
+
+const characterCountSectionWidth = "5rem";
 
 const TextInput: React.FC<TextInput> = ({
     label,
@@ -44,11 +47,19 @@ const TextInput: React.FC<TextInput> = ({
     autoWidth,
     blurOnEnter,
     forceFocus,
+    maxLength,
 }) => {
     const [isFocused, setIsFocused] = useState(false);
     const [computedWidthPx, setComputedWidthPx] = useState<number | undefined>(
         undefined
     );
+    const characterCount = value.length;
+    const characterLimit =
+        maxLength !== undefined && maxLength > 0 ? maxLength : undefined;
+    const hasCharacterLimit = characterLimit !== undefined;
+    const characterLimitLabel = hasCharacterLimit
+        ? `${characterCount}/${characterLimit}`
+        : "";
 
     const styling = {
         width: autoWidth
@@ -59,6 +70,18 @@ const TextInput: React.FC<TextInput> = ({
         display: autoWidth ? "inline-block" : undefined,
         ...style,
     } as React.CSSProperties;
+    const rootStyle = hasCharacterLimit
+        ? ({
+              "--text-input-character-count-width": characterCountSectionWidth,
+          } as React.CSSProperties)
+        : undefined;
+    const rootClassName = [
+        "input-root",
+        variant,
+        hasCharacterLimit ? "has-character-count" : undefined,
+    ]
+        .filter(Boolean)
+        .join(" ");
 
     const elementRef = useRef<HTMLInputElement>(null);
     const mirrorRef = useRef<HTMLSpanElement>(null);
@@ -137,7 +160,7 @@ const TextInput: React.FC<TextInput> = ({
     }, [autoWidth, value, placeholder, variant, icon]);
 
     return (
-        <Box className={`input-root ${variant && variant}`} sx={sx}>
+        <Box className={rootClassName} sx={sx} style={rootStyle}>
             <div
                 style={{
                     display: "flex",
@@ -168,6 +191,21 @@ const TextInput: React.FC<TextInput> = ({
                 variant={variant}
                 inputContainer={(children) => <>{children}</>}
                 onKeyDown={handleKeyDown}
+                maxLength={characterLimit}
+                rightSection={
+                    hasCharacterLimit ? (
+                        <span
+                            className={`text-input-character-count ${
+                                characterCount >= characterLimit ? "full" : ""
+                            }`}
+                        >
+                            {characterLimitLabel}
+                        </span>
+                    ) : undefined
+                }
+                rightSectionWidth={
+                    hasCharacterLimit ? characterCountSectionWidth : undefined
+                }
             />
             {autoWidth && (
                 <span

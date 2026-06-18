@@ -57,6 +57,30 @@
     padding-left: 2.5rem !important;
 }
 
+.input-root.has-character-count .mantine-Input-input {
+    padding-right: var(--text-input-character-count-width) !important;
+}
+
+.input-root .text-input-character-count {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    padding-right: var(--mpadding);
+    color: rgb(var(--secText));
+    font-family: var(--font);
+    font-size: 1.1rem;
+    font-weight: 500;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.input-root .text-input-character-count.full {
+    color: rgb(var(--red2));
+}
+
 .mantine-Input-icon svg {
     color: rgb(var(--secIcon));
     fill: rgb(var(--secIcon));

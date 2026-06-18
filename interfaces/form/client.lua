@@ -22,7 +22,7 @@
 ---@field marks? { value: number, label?: string }[] @ slider tick marks
 ---@field minRows? number @ textarea (default 3)
 ---@field maxRows? number @ textarea (default 6)
----@field maxLength? number @ textarea
+---@field maxLength? number @ text/textarea
 
 ---@class FormButton
 ---@field text string

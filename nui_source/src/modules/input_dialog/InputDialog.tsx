@@ -70,7 +70,7 @@ interface FormInput {
 	// Slider-specific
 	marks?: { value: number; label?: string }[];
 
-	// TextArea-specific
+	// Text/TextArea-specific
 	minRows?: number;
 	maxRows?: number;
 	maxLength?: number;
@@ -531,6 +531,7 @@ const InputDialog: FC = () => {
 							input.name && setValue(input.name, e.target.value)
 						}
 						disabled={input.disabled}
+						maxLength={input.maxLength}
 					/>
 				);
 
