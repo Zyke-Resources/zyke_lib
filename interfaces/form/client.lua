@@ -1,5 +1,7 @@
----@alias FormInputType "paragraph" | "hint" | "info" | "text" | "number" | "select" | "select-player" | "checkbox" | "slider" | "textarea"
+---@alias FormInputType "paragraph" | "hint" | "info" | "separator" | "text" | "number" | "select" | "select-player" | "checkbox" | "slider" | "textarea"
 ---@alias FormHintSeverity "info" | "warning" | "error" | "danger"
+---@alias FormSeparatorSize "small" | "big"
+---@alias FormSeparatorDistance "none" | "small" | "big"
 
 ---@class FormInfoRow
 ---@field title? string @ Left-side row title
@@ -19,6 +21,10 @@
 ---@field value? string | number | boolean @ info: right-side value when rendering a single row
 ---@field rows? FormInfoRow[] @ info: rows with left-side labels and right-side values
 ---@field plain? boolean @ info: render rows without card background, border, radius, or shadow
+---@field size? FormSeparatorSize @ separator: spacing/thickness preset, default "small"
+---@field distance? FormSeparatorDistance @ separator: vertical distance on both sides, defaults from size
+---@field distanceTop? FormSeparatorDistance @ separator: vertical distance above the line, overrides distance
+---@field distanceBottom? FormSeparatorDistance @ separator: vertical distance below the line, overrides distance
 ---@field disabled? boolean
 ---@field defaultValue? any
 ---@field forceUppercase? boolean @ text: convert entered characters to uppercase

@@ -42,6 +42,7 @@ interface FormInput {
 		| "paragraph"
 		| "hint"
 		| "info"
+		| "separator"
 		| "text"
 		| "number"
 		| "select"
@@ -59,6 +60,10 @@ interface FormInput {
 	value?: FormInfoValue;
 	rows?: FormInfoRow[];
 	plain?: boolean;
+	size?: FormSeparatorSize;
+	distance?: FormSeparatorDistance;
+	distanceTop?: FormSeparatorDistance;
+	distanceBottom?: FormSeparatorDistance;
 	disabled?: boolean;
 	defaultValue?: any;
 	forceUppercase?: boolean;
@@ -83,6 +88,8 @@ interface FormInput {
 }
 
 type FormInfoValue = string | number | boolean | null | undefined;
+type FormSeparatorSize = "small" | "big";
+type FormSeparatorDistance = "none" | "small" | "big";
 
 interface FormInfoRow {
 	title?: string;
@@ -300,6 +307,31 @@ const getFormInfoRows = (input: FormInput): FormInfoRow[] => {
 	];
 };
 
+const getSeparatorSize = (size?: FormSeparatorSize) => {
+	if (size === "big") {
+		return {
+			height: "2px",
+			distance: "0.68rem",
+		};
+	}
+
+	return {
+		height: "1px",
+		distance: "0.35rem",
+	};
+};
+
+const getSeparatorDistance = (
+	distance: FormSeparatorDistance | undefined,
+	fallback: string
+) => {
+	if (distance === "none") return "0";
+	if (distance === "big") return "0.68rem";
+	if (distance === "small") return "0.35rem";
+
+	return fallback;
+};
+
 const InputDialog: FC = () => {
 	const { openModal, closeModal } = useModalContext();
 	const [formData, setFormData] = useState<FormData | null>(null);
@@ -510,6 +542,7 @@ const InputDialog: FC = () => {
 				input.type === "paragraph" ||
 				input.type === "hint" ||
 				input.type === "info" ||
+				input.type === "separator" ||
 				!input.name
 			) {
 				return;
@@ -634,6 +667,9 @@ const InputDialog: FC = () => {
 
 			case "info":
 				return <FormInfo input={input} />;
+
+			case "separator":
+				return <FormSeparator input={input} />;
 
 			case "text":
 				return (
@@ -1078,6 +1114,38 @@ const FormInfo: FC<{ input: FormInput }> = ({ input }) => {
 					);
 				})}
 			</div>
+		</div>
+	);
+};
+
+const FormSeparator: FC<{ input: FormInput }> = ({ input }) => {
+	const separatorSize = getSeparatorSize(input.size);
+	const distanceTop = getSeparatorDistance(
+		input.distanceTop ?? input.distance,
+		separatorSize.distance
+	);
+	const distanceBottom = getSeparatorDistance(
+		input.distanceBottom ?? input.distance,
+		separatorSize.distance
+	);
+
+	return (
+		<div
+			style={{
+				display: "flex",
+				justifyContent: "center",
+				padding: `${distanceTop} 0 ${distanceBottom}`,
+				boxSizing: "border-box",
+				width: "100%",
+			}}
+		>
+			<div
+				style={{
+					width: "100%",
+					height: separatorSize.height,
+					background: "rgb(var(--grey3))",
+				}}
+			/>
 		</div>
 	);
 };
