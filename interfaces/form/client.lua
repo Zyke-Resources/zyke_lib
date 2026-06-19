@@ -1,9 +1,14 @@
----@alias FormInputType "paragraph" | "hint" | "text" | "number" | "select" | "select-player" | "checkbox" | "slider" | "textarea"
+---@alias FormInputType "paragraph" | "hint" | "info" | "text" | "number" | "select" | "select-player" | "checkbox" | "slider" | "textarea"
 ---@alias FormHintSeverity "info" | "warning" | "error" | "danger"
+
+---@class FormInfoRow
+---@field title? string @ Left-side row title
+---@field label? string @ Left-side row title, alias of title
+---@field value? string | number | boolean @ Right-side row value
 
 ---@class FormInput
 ---@field type FormInputType
----@field name? string @ Key used in the returned values table. Not required for static paragraph/hint inputs
+---@field name? string @ Key used in the returned values table. Not required for static paragraph/hint/info inputs
 ---@field label? string
 ---@field title? string @ Hint title when type is "hint". Falls back to label
 ---@field text? string | string[] @ Static text for paragraph/hint inputs
@@ -11,6 +16,9 @@
 ---@field description? string
 ---@field icon? string | false @ Resolved via IconRegistry, falls back to Material Icons. Set false on hints to hide the default icon
 ---@field severity? FormHintSeverity @ Hint color/icon severity when type is "hint" (default "info")
+---@field value? string | number | boolean @ info: right-side value when rendering a single row
+---@field rows? FormInfoRow[] @ info: rows with left-side labels and right-side values
+---@field plain? boolean @ info: render rows without card background, border, radius, or shadow
 ---@field disabled? boolean
 ---@field defaultValue? any
 ---@field forceUppercase? boolean @ text: convert entered characters to uppercase

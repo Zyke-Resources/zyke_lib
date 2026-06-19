@@ -41,6 +41,7 @@ interface FormInput {
 	type:
 		| "paragraph"
 		| "hint"
+		| "info"
 		| "text"
 		| "number"
 		| "select"
@@ -55,6 +56,9 @@ interface FormInput {
 	description?: string;
 	icon?: any;
 	severity?: "info" | "warning" | "error" | "danger";
+	value?: FormInfoValue;
+	rows?: FormInfoRow[];
+	plain?: boolean;
 	disabled?: boolean;
 	defaultValue?: any;
 	forceUppercase?: boolean;
@@ -76,6 +80,14 @@ interface FormInput {
 	minRows?: number;
 	maxRows?: number;
 	maxLength?: number;
+}
+
+type FormInfoValue = string | number | boolean | null | undefined;
+
+interface FormInfoRow {
+	title?: string;
+	label?: string;
+	value?: FormInfoValue;
 }
 
 interface FormButton {
@@ -269,6 +281,24 @@ const renderFormattedFormText = (text: string, keyPrefix: string) =>
 
 		return <span key={key}>{segment.content}</span>;
 	});
+
+const formatFormInfoValue = (value: FormInfoValue) => {
+	if (value === null || value === undefined) return "";
+	if (typeof value === "boolean") return value ? "true" : "false";
+
+	return String(value);
+};
+
+const getFormInfoRows = (input: FormInput): FormInfoRow[] => {
+	if (Array.isArray(input.rows) && input.rows.length > 0) return input.rows;
+
+	return [
+		{
+			title: input.title ?? input.label,
+			value: input.value,
+		},
+	];
+};
 
 const InputDialog: FC = () => {
 	const { openModal, closeModal } = useModalContext();
@@ -479,6 +509,7 @@ const InputDialog: FC = () => {
 			if (
 				input.type === "paragraph" ||
 				input.type === "hint" ||
+				input.type === "info" ||
 				!input.name
 			) {
 				return;
@@ -600,6 +631,9 @@ const InputDialog: FC = () => {
 
 			case "hint":
 				return <FormHint input={input} />;
+
+			case "info":
+				return <FormInfo input={input} />;
 
 			case "text":
 				return (
@@ -958,6 +992,91 @@ const FormHint: FC<{ input: FormInput }> = ({ input }) => {
 						</div>
 					))}
 				</div>
+			</div>
+		</div>
+	);
+};
+
+const FormInfo: FC<{ input: FormInput }> = ({ input }) => {
+	const rows = getFormInfoRows(input);
+	const plain = input.plain === true;
+
+	return (
+		<div
+			style={{
+				margin: "0.15rem 0 0.35rem 0",
+				minWidth: 0,
+				display: "flex",
+				flexDirection: "column",
+				overflow: plain ? undefined : "hidden",
+				border: plain ? undefined : "1px solid rgb(var(--grey3))",
+				borderRadius: plain ? undefined : "var(--lborderRadius)",
+				background: plain ? undefined : "rgb(var(--dark4))",
+				boxShadow: plain
+					? undefined
+					: "0 0 3px rgba(0, 0, 0, 0.2)",
+				boxSizing: "border-box",
+				fontFamily: "var(--font)",
+				width: "100%",
+			}}
+		>
+			<div
+				style={{
+					display: "flex",
+					flexDirection: "column",
+					padding: "0.48rem 0.65rem 0.58rem",
+				}}
+			>
+				{rows.map((row, idx) => {
+					const label = row.title ?? row.label ?? "";
+					const value = formatFormInfoValue(row.value);
+
+					return (
+						<div
+							key={`${input.name || input.label || "info"}-${idx}`}
+							style={{
+								minWidth: 0,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "space-between",
+								gap: "1rem",
+								padding: "0.34rem 0",
+								boxSizing: "border-box",
+							}}
+						>
+							<span
+								style={{
+									minWidth: 0,
+									overflow: "hidden",
+									textOverflow: "ellipsis",
+									whiteSpace: "nowrap",
+									lineHeight: 1.25,
+									color: "rgb(var(--secText))",
+									fontSize: "1.16rem",
+									fontWeight: 500,
+									textTransform: "uppercase",
+								}}
+							>
+								{label}
+							</span>
+							<strong
+								style={{
+									minWidth: 0,
+									overflow: "hidden",
+									textOverflow: "ellipsis",
+									whiteSpace: "nowrap",
+									lineHeight: 1.25,
+									color: "rgb(var(--text))",
+									fontSize: "1.24rem",
+									fontWeight: 600,
+									textAlign: "right",
+								}}
+							>
+								{value}
+							</strong>
+						</div>
+					);
+				})}
 			</div>
 		</div>
 	);
