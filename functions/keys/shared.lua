@@ -33,7 +33,7 @@ local availableKeys = {
     ["S"] = {keyCode = 8, name = "~INPUT_SCRIPTED_FLY_UD~", keyMapping = {type = "keyboard", keyMappingKey = "S"}},
     ["D"] = {keyCode = 9, name = "~INPUT_SCRIPTED_FLY_LR~", keyMapping = {type = "keyboard", keyMappingKey = "D"}},
     ["PAGEUP"] = {keyCode = 10, name = "~INPUT_SCRIPTED_FLY_ZUP~", keyMapping = {type = "keyboard", keyMappingKey = "PAGEUP"}},
-    ["PAGEDOWN"] = {keyCode = 11, name = "~INPUT_SCRIPTED_FLY_ZDOWN~", keyMapping = {type = "keyboard", keyMappingKey = "PAGEDOWN",}},
+    ["PAGEDOWN"] = {keyCode = 11, name = "~INPUT_SCRIPTED_FLY_ZDOWN~", keyMapping = {type = "keyboard", keyMappingKey = "PAGEDOWN"}},
     ["SCROLLDOWN"] = {keyCode = 14, name = "~INPUT_WEAPON_WHEEL_NEXT~", keyMapping = {type = "mouse_wheel", keyMappingKey = "IOM_WHEEL_DOWN", label = "S.Down"}},
     ["SCROLLUP"] = {keyCode = 15, name = "~INPUT_WEAPON_WHEEL_PREV~", keyMapping = {type = "mouse_wheel", keyMappingKey = "IOM_WHEEL_UP", label = "S.Up"}},
     ["ENTER"] = {keyCode = 201, name = "~INPUT_FRONTEND_ACCEPT~", keyMapping = {type = "keyboard", keyMappingKey = "RETURN", label = "Enter", minimalLabel = "⤶"}},
