@@ -59,7 +59,7 @@ const ProgressModule = () => {
 						opacity: 1,
 						y: 0,
 						scale: 1,
-						filter: "blur(0)",
+						filter: "blur(0rem)",
 					}}
 					exit={{
 						opacity: 0,
