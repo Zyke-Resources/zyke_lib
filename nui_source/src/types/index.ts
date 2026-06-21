@@ -2,7 +2,7 @@
 export interface PromptData {
     id: string;
     resource: string;
-    key: string;
+    key: string | string[];
     label: string;
 }
 

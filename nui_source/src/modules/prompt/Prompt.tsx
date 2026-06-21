@@ -5,6 +5,8 @@ interface Props {
     prompt: PromptData;
 }
 
+const getPromptKeys = (key: PromptData["key"]) => Array.isArray(key) ? key : [key];
+
 const Prompt = ({ prompt }: Props) => (
     <motion.div
         className="prompt-item"
@@ -13,7 +15,11 @@ const Prompt = ({ prompt }: Props) => (
         exit={{ marginLeft: "-20rem", opacity: 0 }}
         transition={{ duration: 0.15, ease: "easeOut" }}
     >
-        <kbd>{prompt.key}</kbd>
+        <div className="prompt-keys">
+            {getPromptKeys(prompt.key).map((key, idx) => (
+                <kbd key={`${key}:${idx}`}>{key}</kbd>
+            ))}
+        </div>
         <p>{prompt.label}</p>
     </motion.div>
 );

@@ -6,6 +6,7 @@
     height: 100vh;
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     justify-content: center;
     gap: 0.6rem;
     pointer-events: none;
@@ -20,6 +21,12 @@
 	border-radius: var(--lborderRadius);
 	border: 1px solid rgb(var(--grey3));
 	box-shadow: 0 0 5px -1px rgba(0, 0, 0, 0.2);
+}
+
+.prompt-keys {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .prompt-item p {

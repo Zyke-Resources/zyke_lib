@@ -17,19 +17,36 @@ local function getPromptResourceName()
     return GetInvokingResource() or ResName
 end
 
--- Show a prompt / text ui on screen
--- Possibility to automatically resolve key label from command name to get the actual key bound to the action, without extra work
----@param id string @ Unique identifier (allows updates & removal)
----@param key string @ Key label to display in the kbd element (ex. "E", "U"), or a command name prefixed with "+" (ex. "+storeVehicle") to auto-resolve the key label
----@param label string @ Text label next to the key
-Functions.showPrompt = function(id, key, label)
-    local resourceName = getPromptResourceName()
-    local resolvedKey = key
+---@param key string | string[] @ Key label or key labels to display, command names prefixed with "+" are resolved
+---@return string | string[] resolvedKey
+local function resolvePromptKey(key)
+    if (type(key) == "table") then
+        local resolvedKeys = {}
+
+        for i = 1, #key do
+            resolvedKeys[i] = resolvePromptKey(key[i])
+        end
+
+        return resolvedKeys
+    end
 
     if (#key > 1 and key:byte(1) == 43) then
         local keyData = Functions.keys.getKeyDataForCommand(key)
-        resolvedKey = keyData and keyData.label or "?"
+
+        return keyData and keyData.label or "?"
     end
+
+    return key
+end
+
+-- Show a prompt / text ui on screen
+-- Possibility to automatically resolve key label from command name to get the actual key bound to the action, without extra work
+---@param id string @ Unique identifier (allows updates & removal)
+---@param key string | string[] @ Key label(s) to display in kbd elements (ex. "E", "U"), or command names prefixed with "+" (ex. "+storeVehicle") to auto-resolve the key label
+---@param label string @ Text label next to the key
+Functions.showPrompt = function(id, key, label)
+    local resourceName = getPromptResourceName()
+    local resolvedKey = resolvePromptKey(key)
 
     SendNUIMessage({
         event = "ShowPrompt",
