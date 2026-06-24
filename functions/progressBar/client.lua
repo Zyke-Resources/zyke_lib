@@ -217,9 +217,10 @@ function Functions.progressBar.active()
     return exports[LibName]:progressActive()
 end
 
+---@param force? boolean
 ---@return boolean
-function Functions.progressBar.cancel()
-    return exports[LibName]:cancelProgress()
+function Functions.progressBar.cancel(force)
+    return exports[LibName]:cancelProgress(force)
 end
 
 return Functions.progressBar

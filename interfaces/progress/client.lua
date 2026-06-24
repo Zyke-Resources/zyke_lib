@@ -520,10 +520,11 @@ local function progressActive()
     return false
 end
 
+---@param force? boolean
 ---@return boolean
-local function cancelProgress()
+local function cancelProgress(force)
     if (activeProgress) then
-        if (not activeProgress.canCancel) then return false end
+        if (not force and not activeProgress.canCancel) then return false end
 
         activeProgress.cancelled = true
 
@@ -574,7 +575,12 @@ exports("hideProgress", function(firstArg, data)
 end)
 
 exports("progressActive", progressActive)
-exports("cancelProgress", cancelProgress)
+
+---@param firstArg any @ Direct force value or ignored self argument
+---@param data? boolean @ Force value from dynamic callers
+exports("cancelProgress", function(firstArg, data)
+    return cancelProgress(resolveExportValue(firstArg, data))
+end)
 
 ---@param resName string
 AddEventHandler("onClientResourceStop", function(resName)
