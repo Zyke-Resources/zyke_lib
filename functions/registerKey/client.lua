@@ -7,6 +7,8 @@
 ---@param onRelease function?
 ---@param keyType string? @keyboard, mouse_button
 function Functions.registerKey(id, key, description, onPress, onRelease, keyType)
+    if (type(key) ~= "string") then error(("[zyke_lib] Z.registerKey expected key string for %s, got %s (%s)"):format(tostring(id), type(key), tostring(key)), 2) end
+
     local _keyType = keyType or Functions.keys.get(key)?.keyMapping?.type or "keyboard"
 
     RegisterKeyMapping("+" .. id, description, _keyType, key)

@@ -180,6 +180,8 @@ local keyMapping = {
 ---@param key string
 ---@return FullKeyData | nil
 function Functions.keys.getKeyMapping(key)
+    if (type(key) ~= "string") then error(("[zyke_lib] Z.keys.getKeyMapping expected key mapping string, got %s (%s)"):format(type(key), tostring(key)), 2) end
+
     local isSpecialCharacter = keyMapping[key] ~= nil
     if (isSpecialCharacter) then
         local keyData =
@@ -232,6 +234,8 @@ function Functions.keys.get(key)
         return availableKeys[key] or availableKeys[keyMappingTranslation[key]]
     end
 
+    if (type(key) ~= "table") then error(("[zyke_lib] Z.keys.get expected key string or string[], got %s (%s)"):format(type(key), tostring(key)), 2) end
+
     local keys = {}
     for i = 1, #key do
         keys[i] = Functions.keys.get(key[i])
@@ -247,10 +251,16 @@ end
 ---@param keys string[]
 ---@return table<string, integer>
 function Functions.keys.getTranslations(keys)
+    if (type(keys) ~= "table") then error(("[zyke_lib] Z.keys.getTranslations expected string[], got %s (%s)"):format(type(keys), tostring(keys)), 2) end
+
     local translatedKeys = {}
 
     for i = 1, #keys do
-        translatedKeys[keys[i]] = availableKeys[keys[i]].keyCode
+        local key = keys[i]
+        local keyData = Functions.keys.get(key)
+        if (not keyData) then error(("[zyke_lib] Z.keys.getTranslations expected known key string, got %s (%s)"):format(type(key), tostring(key)), 2) end
+
+        translatedKeys[key] = keyData.keyCode
     end
 
     return translatedKeys
