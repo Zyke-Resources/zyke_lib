@@ -1,5 +1,12 @@
 Functions.network = {}
 
+-- OAL can return 0/1 for native booleans, and Lua treats 0 as truthy
+---@param value boolean | integer @ Native boolean result
+---@return boolean isTrue
+local function isNativeBoolTrue(value)
+    return value == true or value == 1
+end
+
 ---@param entity? Entity
 ---@return boolean valid
 function Functions.network.isEntityValid(entity)
@@ -10,7 +17,7 @@ end
 ---@return Entity? entity
 function Functions.network.getEntity(netId)
     if (not netId or netId <= 0) then return nil end
-    if (Context == "client" and not NetworkDoesNetworkIdExist(netId)) then return nil end
+    if (Context == "client" and not isNativeBoolTrue(NetworkDoesNetworkIdExist(netId))) then return nil end
 
     local entity = NetworkGetEntityFromNetworkId(netId)
     if (not Functions.network.isEntityValid(entity)) then return nil end
@@ -22,7 +29,7 @@ end
 ---@return NetId? netId
 function Functions.network.getNetId(entity)
     if (not Functions.network.isEntityValid(entity)) then return nil end
-    if (Context == "client" and NetworkGetEntityIsNetworked(entity) ~= 1) then return nil end
+    if (Context == "client" and not isNativeBoolTrue(NetworkGetEntityIsNetworked(entity))) then return nil end
 
     local netId = NetworkGetNetworkIdFromEntity(entity)
     if (not netId or netId == 0) then return nil end
