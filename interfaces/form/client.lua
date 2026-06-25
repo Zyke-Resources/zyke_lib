@@ -45,6 +45,7 @@
 ---@field color? string @ CSS color (e.g. "var(--blue2)")
 ---@field action? string @ Forwarded to caller via `result._action`
 ---@field timeout? number @ Seconds the button stays disabled after the form opens
+---@field holdToSelect? boolean @ If true, the button must be held before it runs
 ---@field close? boolean @ If false, runs this button's onSelect without closing the form
 ---@field onSelect? fun(values: table, formId: string, action: string): table | nil @ Handles this button when `close = false`
 

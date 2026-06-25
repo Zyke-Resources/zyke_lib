@@ -21,6 +21,7 @@ import Slider from "../../components/mantine/Slider";
 import TextArea from "../../components/TextArea";
 import MaterialIcon from "../../components/MaterialIcon";
 import Button from "../../components/Button";
+import HoldToSelectButton from "../../components/HoldToSelectButton";
 import Tooltip from "../../components/Tooltip";
 import iconRegistry from "../../components/IconRegistry";
 
@@ -103,6 +104,7 @@ interface FormButton {
 	color?: string;
 	action?: string;
 	timeout?: number;
+	holdToSelect?: boolean;
 	close?: boolean;
 	buttonKey?: string;
 }
@@ -631,7 +633,9 @@ const InputDialog: FC = () => {
 					return;
 				}
 
-				if (primaryButton) pressButton(primaryButton, false);
+				if (primaryButton && !primaryButton.holdToSelect) {
+					pressButton(primaryButton, false);
+				}
 			}
 		};
 
@@ -833,40 +837,52 @@ const InputDialog: FC = () => {
 							const buttonKey = getButtonKey(btn);
 							const buttonTooltip = buttonTooltips[buttonKey];
 							const isNonClosingAction = btn.close === false;
+							const isLoadingButton = Boolean(loadingButtons[buttonKey]);
+							const buttonText = isWaiting
+								? `${btn.text} (${remaining}s)`
+								: btn.text;
+							const tooltipLabel = buttonTooltip || (
+								btn.holdToSelect && !isWaiting && !isLoadingButton
+									? "Hold to confirm"
+									: undefined
+							);
+							const commonButtonProps = {
+								icon: resolveIcon(btn.icon),
+								color: btn.color || DEFAULT_FORM_BUTTON_COLOR,
+								wide: !hasMultipleButtons,
+								disabled: isWaiting,
+								loading: isLoadingButton,
+								iconStyling: {
+									marginRight: "0.5rem",
+								},
+							};
 
 							return (
 								<Tooltip
 									key={buttonKey}
-									label={buttonTooltip}
+									label={tooltipLabel}
 									position="bottom"
 									withArrow
-									opened={Boolean(buttonTooltip)}
+									opened={buttonTooltip ? true : undefined}
 								>
-									<Button
-										icon={resolveIcon(btn.icon)}
-										color={
-											btn.color ||
-											DEFAULT_FORM_BUTTON_COLOR
-										}
-										wide={!hasMultipleButtons}
-										disabled={isWaiting}
-										loading={Boolean(
-											loadingButtons[buttonKey]
-										)}
-										onClick={() =>
-											pressButton(btn, isWaiting)
-										}
-										loadDelay={
-											isNonClosingAction ? undefined : 300
-										}
-										iconStyling={{
-											marginRight: "0.5rem",
-										}}
-									>
-										{isWaiting
-											? `${btn.text} (${remaining}s)`
-											: btn.text}
-									</Button>
+									{btn.holdToSelect ? (
+										<HoldToSelectButton
+											{...commonButtonProps}
+											onSelect={() => pressButton(btn, isWaiting)}
+										>
+											{buttonText}
+										</HoldToSelectButton>
+									) : (
+										<Button
+											{...commonButtonProps}
+											onClick={() => pressButton(btn, isWaiting)}
+											loadDelay={
+												isNonClosingAction ? undefined : 300
+											}
+										>
+											{buttonText}
+										</Button>
+									)}
 								</Tooltip>
 							);
 						})}
