@@ -2,7 +2,14 @@
 ---@diagnostic disable-next-line: duplicate-set-field
 function Functions.getGang()
     if (GangSystem == "pug") then
-        return Functions.callback.request(ResName .. ":GetPugPlayerGang", nil)
+        local status, gang = Functions.callback.request(ResName .. ":GetPugPlayerGang", {
+            timeout = 2000,
+            retry = 2,
+            status = true
+        })
+        if (status.ok ~= true) then return nil end
+
+        return gang
     end
 
     local player = Functions.getPlayerData()

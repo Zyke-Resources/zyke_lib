@@ -4,7 +4,14 @@
 function Functions.getGangData(gangName)
     local gang
     if (GangSystem == "pug") then
-        return Functions.callback.request(ResName .. ":GetGangData", nil, gangName)
+        local status, gangData = Functions.callback.request(ResName .. ":GetGangData", {
+            timeout = 2000,
+            retry = 2,
+            status = true
+        }, gangName)
+        if (status.ok ~= true) then return nil end
+
+        return gangData
     elseif (Framework == "QB") then
         gang = QB.Shared.Gangs[gangName]
     end
