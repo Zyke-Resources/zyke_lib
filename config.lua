@@ -5,7 +5,7 @@ return {
     -- If enabled, it will silence slow loading warnings
     -- This could potentially silence a useful indicator that something is wrong,
     -- so it's a trade-off between a cleaner console log and info
-    silenceWarnings = true,
+    silenceWarnings = false,
 
     -- Formats numbers using JavaScript Intl.NumberFormat.
     -- Injects automatically to your locales during runtime
