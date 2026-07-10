@@ -3,7 +3,7 @@ Functions.target = {}
 ---@alias TargetModel string | integer
 
 ---@class RegisteredTarget
----@field type "entity" | "zone" | "model"
+---@field type "entity" | "zone" | "model" | "globalVehicle"
 ---@field models? TargetModel | TargetModel[]
 ---@field names? string[]
 ---@field labels? string[]
@@ -38,6 +38,8 @@ end
 
 ---@class ModelTargetDetails : EntityTargetDetails
 
+---@class GlobalVehicleTargetDetails : EntityTargetDetails
+
 ---@class BoxTargetDetails
 ---@field name string @id
 ---@field pos vector3
@@ -51,8 +53,8 @@ end
 ---@field distance? number @2.0 default
 
 -- Translating and ensuring distance exists properly
----@param targetDetails EntityTargetDetails | ModelTargetDetails | BoxTargetDetails
----@return EntityTargetDetails | ModelTargetDetails | BoxTargetDetails targetDetails
+---@param targetDetails EntityTargetDetails | ModelTargetDetails | GlobalVehicleTargetDetails | BoxTargetDetails
+---@return EntityTargetDetails | ModelTargetDetails | GlobalVehicleTargetDetails | BoxTargetDetails targetDetails
 local function ensureTargetDetails(targetDetails)
     if (not targetDetails.distance) then
         targetDetails.distance = 2.0
@@ -83,11 +85,11 @@ end
 
 ---@param options TargetOption[]
 ---@param id integer
----@return nil
-local function ensureModelTargetOptionNames(options, id)
+---@param targetType "model" | "globalVehicle"
+local function ensureTargetOptionNames(options, id, targetType)
     for i = 1, #options do
         if (not options[i].name) then
-            options[i].name = ("zyke_lib:model:%s:%s"):format(id, i)
+            options[i].name = ("zyke_lib:%s:%s:%s"):format(targetType, id, i)
         end
     end
 end
@@ -188,6 +190,9 @@ function Functions.target.remove(id)
     elseif (zoneType == "model") then
         if (Target == "OX") then return exports["ox_target"]:removeModel(details.models, details.names) end
         if (Target == "QB") then return exports["qb-target"]:RemoveTargetModel(details.models, details.labels) end
+    elseif (zoneType == "globalVehicle") then
+        if (Target == "OX") then return exports["ox_target"]:removeGlobalVehicle(details.names) end
+        if (Target == "QB") then return exports["qb-target"]:RemoveGlobalVehicle(details.labels) end
     end
 end
 
@@ -202,7 +207,7 @@ function Functions.target.addModel(model, targetDetails)
     targetDetails = ensureTargetDetails(targetDetails)
 
     local id = generateId()
-    ensureModelTargetOptionNames(targetDetails.options, id)
+    ensureTargetOptionNames(targetDetails.options, id, "model")
 
     if (Target == "OX") then
         exports["ox_target"]:addModel(model, targetDetails.options)
@@ -216,6 +221,36 @@ function Functions.target.addModel(model, targetDetails)
     targets[id] = {
         type = "model",
         models = model,
+        names = getTargetOptionValues(targetDetails.options, "name"),
+        labels = getTargetOptionValues(targetDetails.options, "label"),
+    }
+
+    return id
+end
+
+---@param targetDetails GlobalVehicleTargetDetails
+---@return integer | nil id
+function Functions.target.addGlobalVehicle(targetDetails)
+    if (Target ~= "OX" and Target ~= "QB") then return nil end
+
+    ---@type GlobalVehicleTargetDetails
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    targetDetails = ensureTargetDetails(targetDetails)
+
+    local id = generateId()
+    ensureTargetOptionNames(targetDetails.options, id, "globalVehicle")
+
+    if (Target == "OX") then
+        exports["ox_target"]:addGlobalVehicle(targetDetails.options)
+    elseif (Target == "QB") then
+        exports["qb-target"]:AddGlobalVehicle({
+            options = targetDetails.options,
+            distance = targetDetails.distance
+        })
+    end
+
+    targets[id] = {
+        type = "globalVehicle",
         names = getTargetOptionValues(targetDetails.options, "name"),
         labels = getTargetOptionValues(targetDetails.options, "label"),
     }
