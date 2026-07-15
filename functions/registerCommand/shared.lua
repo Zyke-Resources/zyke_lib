@@ -49,7 +49,7 @@ function Functions.registerCommand(commands, fn, helperMsg, args, permission)
                 end, false)
             else
                 RegisterCommand(commands[i], function(plyId, ...)
-                    if (Functions.hasPermission(plyId, permission.permission)) then
+                    if (Functions.hasPermission(permission.permission)) then
                         fn(plyId, ...)
                     else
                         ---@diagnostic disable-next-line: missing-parameter
