@@ -9,25 +9,20 @@
 ---@diagnostic disable-next-line: duplicate-set-field
 function Functions.hasItem(player, item, amount)
     local items, included = Formatting.formatItemInput(item, amount)
-    local playerItems = Functions.getPlayerItems(player, included)
 
     if (Inventory == "TGIANN") then
         local plyId = Functions.getPlayerId(player)
+        local requiredItems = {}
 
-        local formattedItems = {}
-        for i = 1, #playerItems do
-            local name = playerItems[i].name
-            local _amount = playerItems[i].amount or 1
-
-            if (not formattedItems[name]) then
-                formattedItems[name] = _amount
-            else
-                formattedItems[name] += _amount
-            end
+        for i = 1, #items do
+            local itemData = items[i]
+            requiredItems[itemData.name] = (requiredItems[itemData.name] or 0) + itemData.amount
         end
 
-        return exports["tgiann-inventory"]:HasItem(plyId, formattedItems)
+        return exports["tgiann-inventory"]:HasItem(plyId, requiredItems)
     end
+
+    local playerItems = Functions.getPlayerItems(player, included)
 
     -- Iterate our items we are checking for
     -- Remove the amount as they are found in our inventory
