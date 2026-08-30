@@ -63,8 +63,6 @@ const Progress = ({ data }: ProgressProps) => {
 		return () => window.cancelAnimationFrame(frame);
 	}, [data.id, data.duration, data.manual, data.progress]);
 
-	const barTransition = "width 80ms linear";
-	const circleTransition = "stroke-dashoffset 80ms linear";
 	const circleOffset = circleCircumference - (percent / 100) * circleCircumference;
 	const usesDefaultIcon = !data.icon;
 	const icon = data.icon ? resolveIcon(data.icon) : <HourglassEmptyIcon />;
@@ -82,7 +80,7 @@ const Progress = ({ data }: ProgressProps) => {
 							r={circleRadius}
 							strokeDasharray={circleCircumference}
 							strokeDashoffset={circleOffset}
-							style={{ transition: circleTransition }}
+							style={{ transition: data.manual ? "stroke-dashoffset 80ms linear" : "none" }}
 						/>
 					</svg>
 					<div className="progress-circle-inner">
@@ -127,7 +125,7 @@ const Progress = ({ data }: ProgressProps) => {
 						backgroundSize: "1.85rem 1.85rem",
 						backgroundImage:
 							"linear-gradient(45deg, rgb(var(--blue1)) 25%, transparent 25%, transparent 50%, rgb(var(--blue1)) 50%, rgb(var(--blue1)) 75%, transparent 75%, transparent)",
-						transition: barTransition,
+						transition: data.manual ? "width 80ms linear" : "none",
 					},
 				}}
 			/>
