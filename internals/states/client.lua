@@ -8,11 +8,12 @@ CreateThread(function()
         local ply = PlayerPedId()
         local veh = GetVehiclePedIsIn(ply, false)
         local entering = GetVehiclePedIsEntering(ply)
+        local currentVehicle = veh ~= 0 and veh or nil
+        local netId = Functions.network.getNetId(veh)
 
-        if (prevVeh ~= veh) then
-            LocalPlayer.state:set("currentVehicle", veh ~= 0 and veh or nil, false)
-
-            local netId = Functions.network.getNetId(veh)
+        -- Rapid entity replacement can leave the shared state behind the native vehicle
+        if (prevVeh ~= veh or LocalPlayer.state.currentVehicle ~= currentVehicle or LocalPlayer.state.currentVehicleNetId ~= netId) then
+            LocalPlayer.state:set("currentVehicle", currentVehicle, false)
             LocalPlayer.state:set("currentVehicleNetId", netId, true)
 
             prevVeh = veh
