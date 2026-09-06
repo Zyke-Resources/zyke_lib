@@ -89,6 +89,8 @@ local availableKeys = {
     ["L"] = {keyCode = 182, name = "~INPUT_CELLPHONE_CAMERA_FOCUS_LOCK~", keyMapping = {type = "keyboard", keyMappingKey = "L"}},
     ["BACKSPACE"] = {keyCode = 202, name = "~INPUT_FRONTEND_CANCEL~", keyMapping = {type = "keyboard", keyMappingKey = "CANCEL", label = "Backspace", minimalLabel = "⟵"}},
     ["HOME"] = {keyCode = 213, name = "~INPUT_FRONTEND_SOCIAL_CLUB_SECONDARY~", keyMapping = {type = "keyboard", keyMappingKey = "HOME"}},
+    ["END"] = {keyMapping = {type = "keyboard", keyMappingKey = "END"}},
+    ["INSERT"] = {keyMapping = {type = "keyboard", keyMappingKey = "INSERT"}},
     ["~"] = {keyCode = 243, name = "~INPUT_ENTER_CHEAT_CODE~", keyMapping = {type = "keyboard", keyMappingKey = "UNUSED"}},
     ["M"] = {keyCode = 244, name = "~INPUT_INTERACTION_MENU~", keyMapping = {type = "keyboard", keyMappingKey = "M"}},
     ["T"] = {keyCode = 245, name = "~INPUT_MP_TEXT_CHAT_ALL~", keyMapping = {type = "keyboard", keyMappingKey = "T"}},
