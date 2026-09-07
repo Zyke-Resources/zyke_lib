@@ -1,6 +1,7 @@
 import { FC, useState, useRef, useEffect, useMemo } from "react";
 import { Box, ButtonBase } from "@mui/material";
 import MaterialIcon from "../../components/MaterialIcon";
+import Tooltip from "../../components/Tooltip";
 import iconRegistry from "../../components/IconRegistry";
 import CheckIcon from "@mui/icons-material/Check";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -141,6 +142,7 @@ const ContextOption: FC<ContextOptionProps> = ({
 				alignItems: "center",
 				flexShrink: 0,
 				overflow: "hidden",
+				"& > div": { width: "100%" },
 				...(selected
 					? {
 						background: "rgb(var(--grey))",
@@ -153,6 +155,7 @@ const ContextOption: FC<ContextOptionProps> = ({
 					}),
 			}}
 		>
+			<Tooltip label={isDisabled ? option.disabledTooltip : undefined} position="left" withArrow>
 			<ButtonBase
 				disableRipple={isDisabled || isReadOnly}
 				sx={{
@@ -355,6 +358,7 @@ const ContextOption: FC<ContextOptionProps> = ({
 					)}
 				</div>
 			</ButtonBase>
+			</Tooltip>
 		</Box>
 	);
 };
