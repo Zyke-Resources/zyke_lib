@@ -11,9 +11,11 @@
 ---@class PlayerContainerItem
 ---@field containerId string
 
----@param item table
----@return Item
+---@param item? table
+---@return Item? formatted
 function Formatting.formatItem(item)
+    if (not item) then return nil end
+
     local formatted = {}
     if Inventory == "TGIANN" then
         formatted = {
