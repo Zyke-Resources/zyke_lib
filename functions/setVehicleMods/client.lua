@@ -89,6 +89,12 @@ function Functions.setVehicleMods(veh, mods)
         QB.Functions.SetVehicleProperties(veh, mods)
     end
 
+    -- Frameworks also apply modLivery as the native livery, and unset native liveries spawn randomized
+    -- Older QB saves omit livery, where a modLivery of -1 means the native livery was 0
+    local livery = mods.livery
+    if (livery == nil and mods.modLivery == -1) then livery = 0 end
+    if (livery and livery >= 0 and livery < GetVehicleLiveryCount(veh)) then SetVehicleLivery(veh, livery) end
+
     -- Apply RGB after indexed paint so provider ordering cannot overwrite custom colors
     if (primary) then SetVehicleCustomPrimaryColour(veh, primary[1], primary[2], primary[3]) end
     if (secondary) then SetVehicleCustomSecondaryColour(veh, secondary[1], secondary[2], secondary[3]) end
