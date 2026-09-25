@@ -15,7 +15,8 @@ function Functions.hasPermission(player, permission)
             end
         end
     else
-        return IsPlayerAceAllowed(tostring(plyId), permission)
+        -- The native answers 1 when allowed, and client checks compare against true
+        return IsPlayerAceAllowed(tostring(plyId), permission) and true or false
     end
 
     return false
