@@ -664,7 +664,7 @@ const ContextMenu: FC<ContextMenuProps> = ({
 										{activeData.options.map(
 											(option, i) => (
 												<ContextOption
-													key={i}
+													key={`${activeData.id ?? ""}:${i}`}
 													option={option}
 													index={i}
 													mode={mode}
