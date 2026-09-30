@@ -9,6 +9,9 @@ function Functions.removeFromSlot(plyId, item, amount, slot)
     if (Inventory == "OX") then
         exports["ox_inventory"]:RemoveItem(plyId, item, amount, nil, slot)
         return
+    elseif (Inventory == "ONE") then
+        exports["one_inventory"]:RemoveItem(plyId, item, amount, nil, slot)
+        return
     elseif (Inventory == "TGIANN") then
         exports["tgiann-inventory"]:RemoveItem(plyId, item, amount, slot)
         return

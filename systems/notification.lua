@@ -6,6 +6,7 @@ if (override == "none") then
 end
 
 local systems = {
+    {fileName = "lation_ui", variable = "LATION"},
     {fileName = "ox_lib", variable = "OX"},
 }
 

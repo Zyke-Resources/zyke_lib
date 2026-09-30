@@ -21,6 +21,8 @@ function Functions.getPlayerItems(player, toInclude, options)
         inventory = exports["codem-inventory"]:GetInventory(nil, plyId) or {}
     elseif (_inv == "OX") then
         inventory = exports["ox_inventory"]:GetInventory(plyId)?.items or {}
+    elseif (_inv == "ONE") then
+        inventory = exports["one_inventory"]:GetInventoryItems(plyId) or {}
     else
         local player = Functions.getPlayerData(player)
         if (not player) then return inventory end
@@ -70,6 +72,14 @@ function Functions.getPlayerItems(player, toInclude, options)
                         if (container?.items and #container.items > 0) then
                             iterateInventory(container?.items, newInv, containerId)
                         end
+                    end
+                elseif (_inv == "ONE") then
+                    -- One Inventory container support
+                    local container = exports["one_inventory"]:GetContainerFromSlot(plyId, item.slot)
+                    local containerItems = container?.metadata?.items
+
+                    if (containerItems and next(containerItems)) then
+                        iterateInventory(containerItems, newInv, item?.metadata?.container)
                     end
                 end
             end

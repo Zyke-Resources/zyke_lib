@@ -345,6 +345,11 @@ local function useOxProgressBar()
     return ProgressBarSystem == "OX"
 end
 
+---@return boolean
+local function useLationProgressBar()
+    return ProgressBarSystem == "LATION"
+end
+
 ---@param firstArg any
 ---@param data any
 ---@return any
@@ -411,6 +416,7 @@ local function showProgress(data)
     if (activeProgress) then return false end
     if (type(data) ~= "table") then return false end
     if (useOxProgressBar() and exports["ox_lib"]:progressActive()) then return false end
+    if (useLationProgressBar() and exports.lation_ui:progressActive()) then return false end
     if (shouldCancelForPedState(data)) then return false end
 
     progressId = progressId + 1
@@ -494,6 +500,10 @@ local function progressBar(data)
         return exports["ox_lib"]:progressBar(data)
     end
 
+    if (useLationProgressBar()) then
+        return exports.lation_ui:progressBar(data)
+    end
+
     return startProgress("bar", data)
 end
 
@@ -506,6 +516,11 @@ local function progressCircle(data)
         return exports["ox_lib"]:progressCircle(data)
     end
 
+    -- Lation UI currently exposes one progress-bar component rather than a separate circle component.
+    if (useLationProgressBar()) then
+        return exports.lation_ui:progressBar(data)
+    end
+
     return startProgress("circle", data)
 end
 
@@ -515,6 +530,10 @@ local function progressActive()
 
     if (useOxProgressBar()) then
         return exports["ox_lib"]:progressActive()
+    end
+
+    if (useLationProgressBar()) then
+        return exports.lation_ui:progressActive()
     end
 
     return false
@@ -536,6 +555,11 @@ local function cancelProgress(force)
     if (useOxProgressBar()) then
         exports["ox_lib"]:cancelProgress()
 
+        return true
+    end
+
+    if (useLationProgressBar()) then
+        exports.lation_ui:cancelProgress()
         return true
     end
 

@@ -18,11 +18,6 @@ function Functions.isPlayerDead()
         return bodyDamage.isDead == true or bodyDamage.inLastStand == true
     end
 
-    if (DeathSystem == "p_ambulancejob") then
-        local bodyState = exports['p_ambulancejob']:getDeathInfo()
-        return bodyState.isDead
-    end
-
     if (Framework == "ESX") then return IsEntityDead(PlayerPedId()) end
     if (Framework == "QB") then
         local player = Functions.getPlayerData()

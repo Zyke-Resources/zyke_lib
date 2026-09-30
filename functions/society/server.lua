@@ -5,7 +5,9 @@ Functions.society = {}
 function Functions.society.get(name)
     if (type(name) ~= "string" or name == "") then return nil end
 
-    if (BankingSystem == "TGG_BANKING") then
+    if (BankingSystem == "KARTIK_BANKING") then
+        return exports["kartik-banking"]:GetAccountMoney(name)
+    elseif (BankingSystem == "TGG_BANKING") then
         return exports["tgg-banking"]:GetSocietyAccountMoney(name)
     elseif (BankingSystem == "RENEWED_BANKING") then
         return exports["Renewed-Banking"]:getAccountMoney(name)
@@ -47,7 +49,9 @@ function Functions.society.add(name, amount)
     amount = math.floor(tonumber(amount) or 0)
     if (amount <= 0) then return false end
 
-    if (BankingSystem == "TGG_BANKING") then
+    if (BankingSystem == "KARTIK_BANKING") then
+        return exports["kartik-banking"]:AddAccountMoney(name, amount) ~= false
+    elseif (BankingSystem == "TGG_BANKING") then
         return exports["tgg-banking"]:AddSocietyMoney(name, amount)
     elseif (BankingSystem == "RENEWED_BANKING") then
         return exports["Renewed-Banking"]:addAccountMoney(name, amount) ~= false
@@ -93,7 +97,9 @@ function Functions.society.remove(name, amount)
     amount = math.floor(tonumber(amount) or 0)
     if (amount <= 0) then return false end
 
-    if (BankingSystem == "TGG_BANKING") then
+    if (BankingSystem == "KARTIK_BANKING") then
+        return exports["kartik-banking"]:RemoveAccountMoney(name, amount) ~= false
+    elseif (BankingSystem == "TGG_BANKING") then
         return exports["tgg-banking"]:RemoveSocietyMoney(name, amount)
     elseif (BankingSystem == "RENEWED_BANKING") then
         return exports["Renewed-Banking"]:removeAccountMoney(name, amount) ~= false

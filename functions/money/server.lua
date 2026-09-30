@@ -48,7 +48,7 @@ function Functions.money.add(player, account, amount, details)
 
     -- Hotfix for qbox servers because they don't carry the dirty cash feature??
     if (
-        Inventory == "OX"
+        (Inventory == "OX" or Inventory == "ONE")
         and (account == "black_money" or account == "dirty_cash")
     ) then
         return Functions.addItem(player, "black_money", amount)
@@ -71,7 +71,7 @@ function Functions.money.get(player, account)
 
     -- Hotfix for qbox servers because they don't carry the dirty cash feature??
     if (
-        Inventory == "OX"
+        (Inventory == "OX" or Inventory == "ONE")
         and (account == "black_money" or account == "dirty_cash")
     ) then
         local invItem = Functions.getPlayerItem(player, "black_money", false, true)[1]
@@ -97,7 +97,7 @@ function Functions.money.remove(player, account, amount, details)
 
     -- Hotfix for qbox servers because they don't carry the dirty cash feature??
     if (
-        Inventory == "OX"
+        (Inventory == "OX" or Inventory == "ONE")
         and (account == "black_money" or account == "dirty_cash")
     ) then
         return Functions.removeItem(player, "black_money", amount)
