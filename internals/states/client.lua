@@ -1,21 +1,33 @@
 -- Set the vehicle you are currently in
 CreateThread(function()
     local prevVeh = nil
+    local prevNetId = nil
     local prevEntering = nil
+    local nextReconcileAt = 0
 
     while (true) do
         local sleep = 250
         local ply = PlayerPedId()
         local veh = GetVehiclePedIsIn(ply, false)
         local entering = GetVehiclePedIsEntering(ply)
+        local currentVehicle = veh ~= 0 and veh or nil
+        local netId = Functions.network.getNetId(veh)
+        -- Rapid entity replacement keeps the handle but changes the network id
+        local changed = prevVeh ~= veh or prevNetId ~= netId
 
-        if (prevVeh ~= veh) then
-            LocalPlayer.state:set("currentVehicle", veh ~= 0 and veh or nil, false)
+        -- Every LocalPlayer.state read builds a proxy and decodes the bag, so external drift is reconciled less often
+        if (not changed and GetGameTimer() >= nextReconcileAt) then
+            local state = LocalPlayer.state
+            nextReconcileAt = GetGameTimer() + 2000
+            changed = state.currentVehicle ~= currentVehicle or state.currentVehicleNetId ~= netId
+        end
 
-            local netId = Functions.network.getNetId(veh)
+        if (changed) then
+            LocalPlayer.state:set("currentVehicle", currentVehicle, false)
             LocalPlayer.state:set("currentVehicleNetId", netId, true)
 
             prevVeh = veh
+            prevNetId = netId
         end
 
         -- Maybe doesn't really fit in here, but we'll run it for now

@@ -7,18 +7,19 @@ function Functions.registerUsableItem(item, func)
     item = itemName or item
 
     if (Framework == "ESX") then
-        ESX.RegisterUsableItem(item, function(source, itemName, itemData)
-            if (Inventory == "QS") then
-                itemData = itemName
-            elseif (Inventory == "TGIANN") then
-                itemData = itemName
-            end
+        ---@param plyId PlayerId
+        ---@param usedItem string | table
+        ---@param itemData? table
+        ESX.RegisterUsableItem(item, function(plyId, usedItem, itemData)
+            if (Inventory == "QS" or Inventory == "TGIANN") then itemData = usedItem end
 
-            func(source, Formatting.formatItem(itemData))
+            func(plyId, itemData and Formatting.formatItem(itemData))
         end)
     elseif (Framework == "QB") then
-        QB.Functions.CreateUseableItem(item, function(source, itemData)
-            func(source, Formatting.formatItem(itemData))
+        ---@param plyId PlayerId
+        ---@param itemData? table
+        QB.Functions.CreateUseableItem(item, function(plyId, itemData)
+            func(plyId, itemData and Formatting.formatItem(itemData))
         end)
     end
 end

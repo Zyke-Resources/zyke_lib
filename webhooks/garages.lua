@@ -7,9 +7,6 @@ return {
     ["SetNewNickname"] = "",
     ["ManagedAccess"] = "",
     ["SetFakePlate"] = "",
-    ["LockpickedVehicle"] = "",
-    ["RobbedNPCKeys"] = "",
-    ["StolenCarKeys"] = "",
     ["PayImpound"] = "",
 
     -- Admin

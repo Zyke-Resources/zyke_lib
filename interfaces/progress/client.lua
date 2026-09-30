@@ -542,6 +542,8 @@ end
 ---@param force? boolean
 ---@return boolean
 local function cancelProgress(force)
+    if (not progressActive()) then return false end
+
     if (activeProgress) then
         if (not force and not activeProgress.canCancel) then return false end
 
@@ -551,7 +553,9 @@ local function cancelProgress(force)
     end
 
     if (useOxProgressBar()) then
-        return exports["ox_lib"]:cancelProgress()
+        exports["ox_lib"]:cancelProgress()
+
+        return true
     end
 
     if (useLationProgressBar()) then

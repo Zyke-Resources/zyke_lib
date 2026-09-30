@@ -21,6 +21,9 @@ function Functions.getVehicleMods(veh)
 
     mods.modelName = GetEntityArchetypeName(veh)
 
+    -- Frameworks fold the native livery into modLivery and QB drops livery 0, so store it separately
+    mods.livery = GetVehicleLivery(veh)
+
     local maxPerformanceMods = {}
 
     SetVehicleModKit(veh, 0)

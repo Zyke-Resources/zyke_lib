@@ -1,0 +1,18 @@
+return {
+    ["TowAttached"] = "",
+    ["TowDetached"] = "",
+    ["TowSnapped"] = "",
+    ["TowCut"] = "",
+    ["BedVehicleLoaded"] = "",
+    ["BedVehicleUnloaded"] = "",
+    ["BedVehicleMoved"] = "",
+    ["BedCableAttached"] = "",
+    ["BedCableDetached"] = "",
+    ["WinchInstalled"] = "",
+    ["WinchRemoved"] = "",
+    ["WinchCableLoaded"] = "",
+    ["WinchCableRemoved"] = "",
+    ["WinchDurabilityLow"] = "",
+    ["WinchWornOut"] = "",
+    ["AdminAction"] = "",
+}
