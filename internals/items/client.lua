@@ -12,8 +12,9 @@ local ensuredMetadata = {}
 ---@type string[]
 local itemsToFetch = {}
 
+-- Asks the server to fill in any ensured metadata the carried items are missing
 ---@param changes? table @Ox only
-RegisterNetEvent("zyke_lib:InventoryUpdated", function(changes)
+local function checkItems(changes)
     if (#itemsToFetch <= 0) then return end
 
     -- Find the modified slots so we can exclusively manage them, to save performance
@@ -73,7 +74,25 @@ RegisterNetEvent("zyke_lib:InventoryUpdated", function(changes)
 
         ::continue::
     end
-end)
+end
+
+---@param changes? table @Ox only
+RegisterNetEvent("zyke_lib:InventoryUpdated", checkItems)
+
+-- Items already carried when a resource ensures its metadata are checked straight away instead of
+-- waiting for the next inventory change; a burst of resources starting is checked once
+local checkQueued = false
+
+local function queueCheck()
+    if (checkQueued) then return end
+
+    checkQueued = true
+
+    SetTimeout(500, function()
+        checkQueued = false
+        checkItems()
+    end)
+end
 
 ---@param _ensuredMetadata table<string, table<string, boolean>>
 RegisterNetEvent("zyke_lib:EnsuredMetadata", function(_ensuredMetadata)
@@ -83,6 +102,8 @@ RegisterNetEvent("zyke_lib:EnsuredMetadata", function(_ensuredMetadata)
     for k in pairs(ensuredMetadata) do
         itemsToFetch[#itemsToFetch+1] = k
     end
+
+    queueCheck()
 end)
 
 -- More restart friendly, syncing one at a time instead of the previous bulk method
@@ -105,4 +126,6 @@ RegisterNetEvent("zyke_lib:EnsureSingleMetadata", function(item, metadata)
     if (not found) then
         itemsToFetch[#itemsToFetch+1] = item
     end
+
+    queueCheck()
 end)

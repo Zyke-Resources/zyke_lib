@@ -31,8 +31,9 @@ RegisterNetEvent("zyke_lib:MissingMetadata", function(slot)
 
     local desiredMetadata = ensuredMetadata[itemName or item.name]
 
+    -- The item's current metadata is passed in, so defaults can follow what the item already holds
     if (isFuncRef(desiredMetadata)) then
-        desiredMetadata = desiredMetadata()
+        desiredMetadata = desiredMetadata(newMetadata)
     end
 
     ---@diagnostic disable-next-line: param-type-mismatch
@@ -65,8 +66,9 @@ end)
 
 -- We provide a lib function to each resource
 -- However, we want to sync all the metadata in our lib, as it does not need to be replicated and synced in every resource
+-- A function receives the item's current metadata when filling it in, and nothing when only its keys are read
 ---@param item string
----@param metadata table<string, any> | fun(): table<string, any>
+---@param metadata table<string, any> | fun(current?: table<string, any>): table<string, any>
 exports("EnsureMetadata", function(item, metadata)
     local _, itemName = Functions.getItem(item)
     item = itemName or item
