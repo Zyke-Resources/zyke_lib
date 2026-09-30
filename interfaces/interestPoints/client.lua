@@ -9,6 +9,7 @@
 ---@field coords? vector3 @ World point when there is no entity
 ---@field key? string @ Key label shown while active, or a "+" prefixed command resolved to its bound key
 ---@field label? string @ Text beside the key while active
+---@field hint? string @ Smaller line under the label while active, such as what the action needs first
 ---@field active? boolean @ Expands the ring into the key prompt; aim sets decide this themselves
 ---@field opacity? number @ 0-1, defaults to 1
 ---@field reach? number @ Metres from the player an aim set's point can be aimed at, any distance when omitted
@@ -34,6 +35,7 @@
 ---@field opacity number
 ---@field key? string
 ---@field label? string
+---@field hint? string
 
 ---@class InterestPointSlot
 ---@field index integer
@@ -45,6 +47,7 @@
 ---@field releaseAt? integer @ Game timer the collapse finishes and the ring sprite takes over again
 ---@field key? string
 ---@field label? string
+---@field hint? string
 
 -- The 1080p design in pixels, scaled with the screen height; the idle ring is the same page cropped
 -- to a square, so it matches the collapsed marker exactly
@@ -256,7 +259,7 @@ local function updateVisuals(now, deltaMs, paused)
                 visual.present = coords ~= nil
                 visual.active = coords ~= nil and active
                 visual.opacity = point.opacity or 1.0
-                visual.key, visual.label = point.key, point.label
+                visual.key, visual.label, visual.hint = point.key, point.label, point.hint
             end
         end
     end
@@ -289,18 +292,18 @@ local function updateVisuals(now, deltaMs, paused)
 
             if (slot) then
                 -- Aimed again mid-collapse, so it grows back from where it is
-                if (not slot.expanded or slot.key ~= visual.key or slot.label ~= visual.label) then
+                if (not slot.expanded or slot.key ~= visual.key or slot.label ~= visual.label or slot.hint ~= visual.hint) then
                     slot.expanded, slot.releaseAt = true, nil
-                    slot.key, slot.label = visual.key, visual.label
-                    sendSlot(slot, {active = true, key = visual.key or "", label = visual.label or ""})
+                    slot.key, slot.label, slot.hint = visual.key, visual.label, visual.hint
+                    sendSlot(slot, {active = true, key = visual.key or "", label = visual.label or "", hint = visual.hint or ""})
                 end
             else
                 slot = claimSlot()
 
                 if (slot) then
                     slot.pointId, slot.expanded, slot.releaseAt = id, true, nil
-                    slot.key, slot.label = visual.key, visual.label
-                    sendSlot(slot, {reset = true, active = true, key = visual.key or "", label = visual.label or ""})
+                    slot.key, slot.label, slot.hint = visual.key, visual.label, visual.hint
+                    sendSlot(slot, {reset = true, active = true, key = visual.key or "", label = visual.label or "", hint = visual.hint or ""})
                 end
             end
         end
@@ -389,6 +392,7 @@ Functions.setInterestPoints = function(id, points, options)
                 coords = coords,
                 key = resolveKey(point.key),
                 label = point.label,
+                hint = type(point.hint) == "string" and point.hint ~= "" and point.hint or nil,
                 active = point.active,
                 opacity = tonumber(point.opacity),
                 reach = tonumber(point.reach),

@@ -133,6 +133,39 @@
 				transform: translate(0, -50%);
 			}
 
+			/* Sits under the label, which stays centred on the marker; the page is only 6.4rem tall, so
+			   the glow is tighter than the label's to stay inside the texture */
+			.hint {
+				position: absolute;
+				top: calc(50% + 1.05rem);
+				left: calc(100% + 0.8rem);
+				margin: 0;
+				color: rgba(255, 255, 255, 0.86);
+				font-size: 1.21rem;
+				font-weight: 700;
+				line-height: 1;
+				letter-spacing: 0.02em;
+				text-transform: uppercase;
+				white-space: nowrap;
+				text-shadow:
+					0 0.1rem 0 rgba(0, 0, 0, 0.8),
+					0 0 0.25rem rgba(0, 0, 0, 1),
+					0 0 0.6rem rgba(0, 0, 0, 0.9);
+				opacity: 0;
+				transform: translateX(-0.6rem);
+				transition: opacity 0.15s ease-out, transform 0.18s ease-out;
+			}
+
+			.hint:empty {
+				display: none;
+			}
+
+			.marker.active .hint {
+				opacity: 1;
+				transform: translateX(0);
+				transition-delay: 0.04s;
+			}
+
 			/* Snaps a reused slot back to the ring before it expands for a new point */
 			.instant,
 			.instant * {
@@ -145,11 +178,13 @@
 			<div class="dot"></div>
 			<span class="key" id="key"></span>
 			<p class="label" id="label"></p>
+			<p class="hint" id="hint"></p>
 		</div>
 		<script>
 			const marker = document.getElementById("marker");
 			const keyEl = document.getElementById("key");
 			const labelEl = document.getElementById("label");
+			const hintEl = document.getElementById("hint");
 			const slot = Number(new URLSearchParams(location.search).get("slot"));
 			const resName = typeof GetParentResourceName === "function" ? GetParentResourceName() : location.hostname.replace(/^cfx-nui-/, "");
 			let wantActive = false;
@@ -169,6 +204,7 @@
 
 				if (data.key !== undefined) keyEl.textContent = data.key || "";
 				if (data.label !== undefined) labelEl.textContent = data.label || "";
+				if (data.hint !== undefined) hintEl.textContent = data.hint || "";
 
 				wantActive = data.active === true;
 				if (!wantActive) {
