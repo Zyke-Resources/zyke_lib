@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@700&display=swap" rel="stylesheet" />
+		<title>zyke_lib interest point</title>
+		<style>
+			/* Rendered into a DUI texture that Lua draws on the world point every frame. The page is
+			   6.4rem tall at every resolution, so the layout matches the 1080p design in rem */
+			:root {
+				--dark: 17, 19, 21;
+				font-size: calc(100vh / 6.4);
+			}
+
+			html,
+			body {
+				width: 100%;
+				height: 100%;
+				margin: 0;
+				overflow: hidden;
+				background: transparent;
+			}
+
+			body {
+				font-family: "Barlow Semi Condensed", "Rubik", system-ui, Helvetica, Arial, sans-serif;
+				-webkit-font-smoothing: antialiased;
+			}
+
+			/* Slot 0 renders this collapsed state in a 6.4rem square for every idle ring, so swapping a ring
+			   for an expanding slot is invisible. The centre sits 3.2rem from the left edge, where Lua
+			   anchors the texture on the point */
+			.marker {
+				position: absolute;
+				top: 50%;
+				left: 3.2rem;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				box-sizing: border-box;
+				min-width: 2rem;
+				height: 2rem;
+				padding: 0;
+				background: rgba(var(--dark), 0.35);
+				background-clip: padding-box;
+				border: 0.2rem solid rgba(255, 255, 255, 0.9);
+				border-radius: 1rem;
+				transform: translate(-50%, -50%);
+				transition:
+					min-width 0.18s ease-out,
+					height 0.18s ease-out,
+					padding 0.18s ease-out,
+					border-radius 0.18s ease-out,
+					border-color 0.18s ease-out,
+					border-width 0.18s ease-out,
+					background-color 0.18s ease-out;
+			}
+
+			/* The ring fills in white and grows into a plain button, so its dot melts into the fill */
+			.marker.active {
+				min-width: 2.2rem;
+				height: 2.2rem;
+				padding: 0 0.5rem;
+				background: rgba(245, 245, 245, 0.96);
+				border-color: rgba(245, 245, 245, 0.96);
+				border-radius: 0.3rem;
+			}
+
+			.dot {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				width: 1.1rem;
+				height: 1.1rem;
+				background: rgba(255, 255, 255, 0.95);
+				border-radius: 50%;
+				transform: translate(-50%, -50%) scale(1);
+				transition: opacity 0.12s ease-out, transform 0.15s ease-out;
+			}
+
+			.marker.active .dot {
+				opacity: 0;
+				transform: translate(-50%, -50%) scale(1.6);
+			}
+
+			.key {
+				max-width: 0;
+				overflow: hidden;
+				color: rgb(var(--dark));
+				font-size: 1.6rem;
+				font-weight: 700;
+				line-height: 1;
+				text-transform: uppercase;
+				white-space: nowrap;
+				opacity: 0;
+				transition: max-width 0.18s ease-out, opacity 0.12s ease-out;
+			}
+
+			.marker.active .key {
+				max-width: 10rem;
+				opacity: 1;
+				transition-delay: 0.05s;
+			}
+
+			/* Hangs off the marker's right edge, so it follows the kbd as it grows */
+			.label {
+				position: absolute;
+				top: 50%;
+				left: calc(100% + 0.8rem);
+				margin: 0;
+				color: rgba(255, 255, 255, 0.96);
+				font-size: 1.6rem;
+				font-weight: 700;
+				line-height: 1;
+				letter-spacing: 0.01em;
+				text-transform: uppercase;
+				white-space: nowrap;
+				/* A hard drop, a tight edge and a wide glow for bright backgrounds. The DUI texture thins out
+				   soft translucent pixels, so these are much stronger than they would look in a browser */
+				text-shadow:
+					0 0.15rem 0 rgba(0, 0, 0, 0.8),
+					0 0 0.3rem rgba(0, 0, 0, 1),
+					0 0 0.8rem rgba(0, 0, 0, 0.9),
+					0 0 1.4rem rgba(0, 0, 0, 0.8);
+				opacity: 0;
+				transform: translate(-0.6rem, -50%);
+				transition: opacity 0.15s ease-out, transform 0.18s ease-out;
+			}
+
+			.marker.active .label {
+				opacity: 1;
+				transform: translate(0, -50%);
+			}
+
+			/* Snaps a reused slot back to the ring before it expands for a new point */
+			.instant,
+			.instant * {
+				transition: none !important;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="marker" id="marker">
+			<div class="dot"></div>
+			<span class="key" id="key"></span>
+			<p class="label" id="label"></p>
+		</div>
+		<script>
+			const marker = document.getElementById("marker");
+			const keyEl = document.getElementById("key");
+			const labelEl = document.getElementById("label");
+			const slot = Number(new URLSearchParams(location.search).get("slot"));
+			const resName = typeof GetParentResourceName === "function" ? GetParentResourceName() : location.hostname.replace(/^cfx-nui-/, "");
+			let wantActive = false;
+
+			window.addEventListener("message", (e) => {
+				const message = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+				if (!message || message.event !== "SetInterestPoint") return;
+
+				const data = message.data || {};
+
+				if (data.reset) {
+					marker.classList.add("instant");
+					marker.classList.remove("active");
+					void marker.offsetWidth;
+					marker.classList.remove("instant");
+				}
+
+				if (data.key !== undefined) keyEl.textContent = data.key || "";
+				if (data.label !== undefined) labelEl.textContent = data.label || "";
+
+				wantActive = data.active === true;
+				if (!wantActive) {
+					marker.classList.remove("active");
+
+					return;
+				}
+
+				// Two frames so a reset ring is painted before the morph starts
+				requestAnimationFrame(() => requestAnimationFrame(() => {
+					if (wantActive) marker.classList.add("active");
+				}));
+			});
+
+			fetch(`https://${resName}/Eventhandler:InterestPoint`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json; charset=UTF-8" },
+				body: JSON.stringify({ event: "Ready", data: { slot } }),
+			}).catch(() => {});
+		</script>
+	</body>
+</html>
