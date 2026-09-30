@@ -427,6 +427,17 @@ Functions.clearInterestPoints = function(id)
     clearSet(GetInvokingResource() or ResName, id)
 end
 
+-- Shakes a point's expanded prompt, such as when the player can't do its action right now; a ring
+-- that is not expanded has nothing to shake
+---@param id string @ Set identifier within the calling resource
+---@param pointId string
+Functions.shakeInterestPoint = function(id, pointId)
+    local slot = getPointSlot(("%s:%s:%s"):format(GetInvokingResource() or ResName, id, pointId))
+    if (not slot or not slot.expanded) then return end
+
+    sendSlot(slot, {shake = true})
+end
+
 -- Aim sets judge the aim every frame; this reads the result of the last one
 ---@param id string @ Set identifier within the calling resource
 ---@return string? pointId

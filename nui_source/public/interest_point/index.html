@@ -166,6 +166,33 @@
 				transition-delay: 0.04s;
 			}
 
+			/* Wraps the marker so the shake moves it without touching its own centring transform */
+			.shaker {
+				position: absolute;
+				inset: 0;
+			}
+
+			.shaker.shake {
+				animation: shake 0.36s ease-out;
+			}
+
+			.shaker.shake .marker.active {
+				animation: refuse 0.36s ease-out;
+			}
+
+			@keyframes shake {
+				0%, 100% { transform: translateX(0); }
+				15% { transform: translateX(-0.4rem); }
+				35% { transform: translateX(0.35rem); }
+				55% { transform: translateX(-0.25rem); }
+				75% { transform: translateX(0.12rem); }
+			}
+
+			@keyframes refuse {
+				0%, 100% { border-color: rgba(245, 245, 245, 0.96); }
+				20%, 60% { border-color: rgba(225, 60, 60, 0.96); }
+			}
+
 			/* Snaps a reused slot back to the ring before it expands for a new point */
 			.instant,
 			.instant * {
@@ -174,13 +201,16 @@
 		</style>
 	</head>
 	<body>
-		<div class="marker" id="marker">
-			<div class="dot"></div>
-			<span class="key" id="key"></span>
-			<p class="label" id="label"></p>
-			<p class="hint" id="hint"></p>
+		<div class="shaker" id="shaker">
+			<div class="marker" id="marker">
+				<div class="dot"></div>
+				<span class="key" id="key"></span>
+				<p class="label" id="label"></p>
+				<p class="hint" id="hint"></p>
+			</div>
 		</div>
 		<script>
+			const shaker = document.getElementById("shaker");
 			const marker = document.getElementById("marker");
 			const keyEl = document.getElementById("key");
 			const labelEl = document.getElementById("label");
@@ -195,7 +225,17 @@
 
 				const data = message.data || {};
 
+				// Restarted on every shake, so a second refusal mid-shake still plays in full
+				if (data.shake) {
+					shaker.classList.remove("shake");
+					void shaker.offsetWidth;
+					shaker.classList.add("shake");
+
+					return;
+				}
+
 				if (data.reset) {
+					shaker.classList.remove("shake");
 					marker.classList.add("instant");
 					marker.classList.remove("active");
 					void marker.offsetWidth;
