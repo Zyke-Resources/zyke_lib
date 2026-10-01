@@ -70,6 +70,8 @@ local aimInterval = 50
 -- The aimed marker counts as this much closer, so it holds a little past the radius and does not
 -- flicker between neighbours
 local aimStickiness = 1.3
+-- How often the screen resolution is checked for a settings change
+local layoutInterval = 3000
 
 ---@type table<string, table<string, InterestPointSet>> @ [resource][setId]
 local sets = {}
@@ -85,6 +87,7 @@ local initialized = false
 local layout = {}
 local frame = 0
 local nextAimAt = 0
+local nextLayoutAt = 0
 
 ---@param key? string
 ---@return string? resolvedKey
@@ -116,13 +119,17 @@ local function sendSlot(slot, data)
     slot.dui:sendMessage({event = "SetInterestPoint", data = data})
 end
 
--- Sprites are sized in screen fractions against the 1080p design scaled to the screen height
-local function initialize()
-    if (initialized) then return end
+-- Sprites are sized in screen fractions against the 1080p design scaled to the screen height, so they
+-- are rebuilt whenever the resolution or aspect ratio changes in the settings
+---@param now integer
+local function refreshLayout(now)
+    if (now < nextLayoutAt) then return end
 
-    initialized = true
+    nextLayoutAt = now + layoutInterval
 
     local screenW, screenH = GetActiveScreenResolution()
+    if (screenW == layout.screenW and screenH == layout.screenH) then return end
+
     local scale = screenH / 1080
     layout = {
         screenW = screenW,
@@ -135,6 +142,17 @@ local function initialize()
         -- Moves the texture so the marker centre, not the texture centre, lands on the point
         duiX = (duiWidth / 2 - duiAnchor) * scale / screenW,
     }
+end
+
+-- The DUI pages scale with their own viewport, so their textures are sized once at the first
+-- resolution and only the drawn sprite follows later changes
+local function initialize()
+    if (initialized) then return end
+
+    initialized = true
+    refreshLayout(GetGameTimer())
+
+    local scale = layout.scale
 
     ---@param index integer
     ---@param width integer @ 1080p pixels
@@ -350,6 +368,7 @@ local function startRendering()
         while (next(sets) or next(visuals)) do
             local now = GetGameTimer()
             local paused = IsPauseMenuActive()
+            refreshLayout(now)
             updateVisuals(now, now - last, paused)
             drawVisuals(paused)
             last = now
