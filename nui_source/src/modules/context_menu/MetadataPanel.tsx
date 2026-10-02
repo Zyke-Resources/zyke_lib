@@ -80,7 +80,7 @@ const MetadataPanel: FC<MetadataPanelProps> = ({
 				<div key={i} style={{ display: "flex", flexDirection: "column", gap: "0.15rem" }}>
 					<p
 						style={{
-							fontSize: "1.1rem",
+							fontSize: "1.2rem",
 							color: "rgba(var(--secText))",
 						}}
 					>

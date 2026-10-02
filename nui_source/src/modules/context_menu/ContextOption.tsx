@@ -259,7 +259,7 @@ const ContextOption: FC<ContextOptionProps> = ({
 							style={{
 								margin: "-0.1rem 0 0 0",
 								color: "rgba(var(--secText))",
-								fontSize: "1.3rem",
+								fontSize: "1.4rem",
 								whiteSpace: "pre-line",
 								overflowWrap: "anywhere",
 								userSelect: "none",

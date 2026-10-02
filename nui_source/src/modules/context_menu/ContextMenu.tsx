@@ -652,7 +652,7 @@ const ContextMenu: FC<ContextMenuProps> = ({
 										<p
 											style={{
 												margin: "0 0 0.5rem 0",
-												fontSize: "1.2rem",
+												fontSize: "1.3rem",
 												color: "rgba(var(--secText))",
 											}}
 										>
