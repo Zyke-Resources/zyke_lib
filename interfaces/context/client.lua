@@ -310,7 +310,8 @@ RegisterNUICallback("Eventhandler:Context", function(passed, cb)
 
             if (shouldClose) then
                 p:resolve(result)
-            else
+            elseif (getPendingPromise(menuId) == p) then
+                -- onSelect can yield, so the menu may have been closed or replaced meanwhile
                 refreshOpenMenu(menuId)
             end
         else
