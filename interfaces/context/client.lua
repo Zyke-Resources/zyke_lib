@@ -24,6 +24,7 @@
 ---@field disabled? boolean @ Greys out the option and prevents interaction
 ---@field disabledTooltip? string @ Tooltip shown only while disabled, without running onHover
 ---@field readOnly? boolean @ Prevents selection/navigation while keeping normal text, icon, hover, and metadata styling
+---@field checked? boolean @ Shows an on/off switch on the right of the option that flips on select; pair with `close = false` to toggle in place
 ---@field menu? string | table @ String id (registered menu) or inline ContextMenuData table
 ---@field close? boolean @ If false, runs this option's action without closing the context menu
 ---@field onSelect? fun(args?: any, amount?: number)
@@ -287,6 +288,11 @@ RegisterNUICallback("Eventhandler:Context", function(passed, cb)
         end
 
         if (option) then
+            -- Menus opened through the export are copies, so a resource cannot flip its own switch in place
+            if (type(option.checked) == "boolean") then
+                option.checked = not option.checked
+            end
+
             if (option.onSelect) then
                 option.onSelect(option.args, data.amount)
             end

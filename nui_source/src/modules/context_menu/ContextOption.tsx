@@ -7,6 +7,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ImageNotSupportedIcon from "@mui/icons-material/ImageNotSupported";
 import MouseIcon from "@mui/icons-material/Mouse";
+import ContextSwitch from "./ContextSwitch";
 import {
 	resolveTemplate,
 	type ContextMetadata,
@@ -338,6 +339,9 @@ const ContextOption: FC<ContextOptionProps> = ({
 								/>
 							)}
 						</div>
+					)}
+					{option.checked !== undefined && (
+						<ContextSwitch checked={option.checked} />
 					)}
 					{showArrow && !isDisabled && !isReadOnly && (
 						<ChevronRightIcon

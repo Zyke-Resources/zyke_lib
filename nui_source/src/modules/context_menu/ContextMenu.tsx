@@ -37,6 +37,7 @@ export interface ContextOptionData {
 	disabled?: boolean;
 	disabledTooltip?: string;
 	readOnly?: boolean;
+	checked?: boolean;
 	menu?: string | any;
 	onSelect?: any;
 	onHover?: any;

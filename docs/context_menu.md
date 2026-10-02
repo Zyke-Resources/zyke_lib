@@ -146,6 +146,7 @@ Each entry in the `options` array is a `ContextOption` table.
 | `disabled` | boolean | no | Greys out the option and prevents interaction. |
 | `disabledTooltip` | string | no | Tooltip shown on hover only when `disabled` is true. Does not enable selection, navigation, metadata, or `onHover` callbacks. |
 | `readOnly` | boolean | no | Prevents selection/navigation while keeping normal text, icon, hover, and metadata styling. |
+| `checked` | boolean | no | Shows an on/off switch on the right of the option that flips when selected. Leave it unset for options that are not toggles. |
 | `menu` | string \| table | no | Registered menu ID or inline `ContextMenuData` for sub-menu navigation. |
 | `onSelect` | function | no | Callback fired when the option is selected. Receives `args` and `amount` (if an amount tracker is set). |
 | `event` | string | no | Client event to trigger on select. |
@@ -201,6 +202,25 @@ Use `Z.getInventoryImagePath(itemName)` to resolve an inventory item image URL. 
 ```
 
 If the image fails to load, the option falls back to a placeholder icon. Invalid images are cached so the popout does not flicker on repeated hovers.
+
+---
+
+### Toggles
+
+Set `checked` to show an on/off switch on the right of the option. Selecting the option flips the switch before `onSelect` runs; use `close = false` so the menu stays open and shows the new state.
+
+```lua
+{
+    title = "Show tracker",
+    checked = GetPlayerSetting("showTracker"),
+    close = false,
+    onSelect = function()
+        SetPlayerSetting("showTracker", not GetPlayerSetting("showTracker"))
+    end,
+}
+```
+
+Menus opened from another resource are copies inside `zyke_lib`, so changing `option.checked` in your own `onSelect` has no effect on the open menu. To set a different state, re-register the open menu with `Z.registerContext`.
 
 ---
 

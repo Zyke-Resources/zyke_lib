@@ -91,6 +91,39 @@
     }
 }
 
+.context-switch {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    width: 4.4rem;
+    height: 2.4rem;
+    box-sizing: border-box;
+    border: 1px solid rgb(var(--grey5));
+    border-radius: 2.4rem;
+    background: rgb(var(--grey5));
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.context-switch.is-checked {
+    border-color: rgb(var(--blue1));
+    background: rgb(var(--blue1));
+}
+
+.context-switch-thumb {
+    position: absolute;
+    left: 0.3rem;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.15s;
+}
+
+.context-switch.is-checked .context-switch-thumb {
+    transform: translateX(2rem);
+}
+
 .corner-positioned {
     position: fixed;
     z-index: 1001;
