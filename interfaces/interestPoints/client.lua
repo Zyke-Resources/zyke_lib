@@ -72,6 +72,14 @@ local aimInterval = 50
 local aimStickiness = 1.3
 -- How often the screen resolution is checked for a settings change
 local layoutInterval = 3000
+-- The guide dot shows once a marker is within this many aim radii of the screen centre
+local guideRadiusScale = 3
+-- Metres past a point's reach the guide dot still shows, so the player is guided before they are in range
+local guideReachMargin = 1.5
+-- 1080p pixels, drawn from a texture generated at this many pixels per side
+local guideSize = 7
+local guideTextureSize = 32
+local guideTxd, guideTxn = "zyke_lib_interest_point_guide", "dot"
 
 ---@type table<string, table<string, InterestPointSet>> @ [resource][setId]
 local sets = {}
@@ -88,6 +96,12 @@ local layout = {}
 local frame = 0
 local nextAimAt = 0
 local nextLayoutAt = 0
+local guideEnabled = LibConfig.interestPointGuide == true
+local guideReady = false
+local guideVisible = false
+-- The guide only helps find a point, so it steps aside once any aim set's prompt is shown
+local guideAimed = false
+local guideAlpha = 0.0
 
 ---@param key? string
 ---@return string? resolvedKey
@@ -141,7 +155,33 @@ local function refreshLayout(now)
         duiH = duiHeight * scale / screenH,
         -- Moves the texture so the marker centre, not the texture centre, lands on the point
         duiX = (duiWidth / 2 - duiAnchor) * scale / screenW,
+        guideW = guideSize * scale / screenW,
+        guideH = guideSize * scale / screenH,
     }
+end
+
+-- Generated rather than shipped as an image: a white dot with a soft dark rim, so it stays visible
+-- on bright backgrounds and on top of an expanded prompt
+local function createGuideTexture()
+    local texture = CreateRuntimeTexture(CreateRuntimeTxd(guideTxd), guideTxn, guideTextureSize, guideTextureSize)
+    local centre = (guideTextureSize - 1) / 2
+    local outerRadius = guideTextureSize / 2 - 0.5
+    local innerRadius = outerRadius * 0.7
+
+    for x = 0, guideTextureSize - 1 do
+        for y = 0, guideTextureSize - 1 do
+            local dist = #(vector2(x - centre, y - centre))
+            local inner = math.min(math.max(innerRadius - dist + 0.5, 0.0), 1.0)
+            local outer = math.min(math.max(outerRadius - dist + 0.5, 0.0), 1.0)
+            local alpha = inner + (1.0 - inner) * outer * 0.5
+            local colour = alpha > 0.0 and math.floor(255 * inner / alpha + 0.5) or 0
+
+            SetRuntimeTexturePixel(texture, x, y, colour, colour, colour, math.floor(alpha * 255 + 0.5))
+        end
+    end
+
+    CommitRuntimeTexture(texture)
+    guideReady = true
 end
 
 -- The DUI pages scale with their own viewport, so their textures are sized once at the first
@@ -173,6 +213,8 @@ local function initialize()
     for i = 1, slotCount do
         slots[#slots + 1] = createSlot(i, duiWidth)
     end
+
+    if (guideEnabled) then createGuideTexture() end
 end
 
 ---@param slot InterestPointSlot
@@ -217,26 +259,32 @@ end
 ---@param set InterestPointSet
 ---@param pedCoords vector3
 ---@return string? aimedId
+---@return boolean guided @ A marker is close enough to the screen centre to show the guide dot
 local function findAimedPoint(set, pedCoords)
     local bestId, bestDist
+    local guided = false
 
     for i = 1, #set.points do
         local point = set.points[i]
         local coords = point.resolved
 
-        if (coords and (not point.reach or #(coords - pedCoords) <= point.reach)) then
+        local pedDist = coords and point.reach and #(coords - pedCoords)
+        local inReach = not pedDist or pedDist <= point.reach
+
+        if (coords and (inReach or pedDist <= point.reach + guideReachMargin)) then
             local onScreen, screenX, screenY = GetScreenCoordFromWorldCoord(coords.x, coords.y, coords.z)
 
             if (onScreen) then
                 local dist = #(vector2((screenX - 0.5) * layout.screenW, (screenY - 0.5) * layout.screenH)) / layout.scale
                 if (point.id == set.aimed) then dist = dist / aimStickiness end
+                if (dist <= set.aimRadius * guideRadiusScale) then guided = true end
 
-                if (dist <= set.aimRadius and (not bestDist or dist < bestDist)) then bestId, bestDist = point.id, dist end
+                if (inReach and dist <= set.aimRadius and (not bestDist or dist < bestDist)) then bestId, bestDist = point.id, dist end
             end
         end
     end
 
-    return bestId
+    return bestId, guided
 end
 
 -- Runs every frame, so it allocates nothing for points that are already on screen
@@ -248,7 +296,10 @@ local function updateVisuals(now, deltaMs, paused)
 
     local judgeAim = now >= nextAimAt
     local pedCoords = judgeAim and GetEntityCoords(PlayerPedId())
-    if (judgeAim) then nextAimAt = now + aimInterval end
+    if (judgeAim) then
+        nextAimAt = now + aimInterval
+        guideVisible, guideAimed = false, false
+    end
 
     for _, resourceSets in pairs(sets) do
         for _, set in pairs(resourceSets) do
@@ -258,7 +309,14 @@ local function updateVisuals(now, deltaMs, paused)
                 points[i].resolved = resolveCoords(points[i]) or false
             end
 
-            if (set.aim and judgeAim) then set.aimed = not paused and findAimedPoint(set, pedCoords) or nil end
+            if (set.aim and judgeAim) then
+                local aimed, guided = nil, false
+                if (not paused) then aimed, guided = findAimedPoint(set, pedCoords) end
+
+                set.aimed = aimed
+                guideVisible = guideVisible or guided
+                guideAimed = guideAimed or aimed ~= nil
+            end
 
             for i = 1, #points do
                 local point = points[i]
@@ -283,6 +341,7 @@ local function updateVisuals(now, deltaMs, paused)
     end
 
     local step = deltaMs / fadeMs
+    guideAlpha = guideVisible and not guideAimed and math.min(guideAlpha + step, 1.0) or math.max(guideAlpha - step, 0.0)
 
     for id, visual in pairs(visuals) do
         if (visual.seenFrame ~= frame) then visual.present, visual.active = false, false end
@@ -354,6 +413,10 @@ local function drawVisuals(paused)
     end
 
     ClearDrawOrigin()
+
+    if (guideReady and guideAlpha > 0.0) then
+        DrawSprite(guideTxd, guideTxn, 0.5, 0.5, layout.guideW, layout.guideH, 0.0, 255, 255, 255, math.floor(guideAlpha * 255))
+    end
 end
 
 local function startRendering()

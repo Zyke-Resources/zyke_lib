@@ -27,4 +27,8 @@ return {
     -- Injects automatically to your locales during runtime
     -- Examples: "$%s", "%s kr", "€%s", "%s EUR"
     currencyFormat = "$%s",
+
+    -- Shows a dot in the middle of the screen while you are close to looking at an interest point
+    -- you aim at to interact with, so it is easier to line up
+    interestPointGuide = true,
 }
