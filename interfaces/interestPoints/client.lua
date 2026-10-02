@@ -1,6 +1,14 @@
 -- World-anchored markers: a ring on every point that expands into a key prompt while active
 -- Everything is drawn natively on the point every frame like ox_target, so markers never trail the
 -- camera; idle rings are a sprite and an active marker is a DUI texture that runs the morph
+-- A point with options expands into a timeline instead: the mouse wheel moves the selection along it
+-- and the key acts on the selected option. A single option shows as a plain prompt, so a point can
+-- keep the same option ids while its choices come and go
+
+---@class InterestPointOption
+---@field id string @ Stable within its point, so the selection holds across updates
+---@field label string
+---@field hint? string @ Smaller line under the label while this option is selected
 
 ---@class InterestPoint
 ---@field id string @ Unique within its set and stable, so the marker keeps animating across updates
@@ -10,6 +18,8 @@
 ---@field key? string @ Key label shown while active, or a "+" prefixed command resolved to its bound key
 ---@field label? string @ Text beside the key while active
 ---@field hint? string @ Smaller line under the label while active, such as what the action needs first
+---@field options? InterestPointOption[] @ Replaces the label and hint with a scrollable timeline, read through getInterestPointOption
+---@field optionsKey? string @ Built once when the set is replaced
 ---@field active? boolean @ Expands the ring into the key prompt; aim sets decide this themselves
 ---@field opacity? number @ 0-1, defaults to 1
 ---@field reach? number @ Metres from the player an aim set's point can be aimed at, any distance when omitted
@@ -36,6 +46,10 @@
 ---@field key? string
 ---@field label? string
 ---@field hint? string
+---@field options? InterestPointOption[]
+---@field optionsKey? string
+---@field selected? string @ Id of the selected option
+---@field selectedIndex? integer
 
 ---@class InterestPointSlot
 ---@field index integer
@@ -48,11 +62,16 @@
 ---@field key? string
 ---@field label? string
 ---@field hint? string
+---@field optionsKey? string
+---@field selectedIndex? integer
 
 -- The 1080p design in pixels, scaled with the screen height; the idle ring is the same page cropped
 -- to a square, so it matches the collapsed marker exactly
 local duiWidth, duiHeight = 512, 64
 local duiAnchor = 32
+-- Expanded slots are taller than the ring so an option timeline fits above and below the marker,
+-- fading out three rows away
+local expandedHeight = 256
 -- The DUI renders at twice its drawn size; a 1:1 texture blurs whenever the point lands between pixels
 local duiQuality = 2
 local fadeMs = 150
@@ -80,6 +99,10 @@ local guideReachMargin = 1.5
 local guideSize = 7
 local guideTextureSize = 32
 local guideTxd, guideTxn = "zyke_lib_interest_point_guide", "dot"
+-- The mouse wheel's weapon wheel next and previous; the weapon select controls are held off too, so
+-- scrolling an option never swaps weapons
+local scrollNextControl, scrollPrevControl = 14, 15
+local scrollControls = {14, 15, 16, 17, 261, 262}
 
 ---@type table<string, table<string, InterestPointSet>> @ [resource][setId]
 local sets = {}
@@ -152,7 +175,7 @@ local function refreshLayout(now)
         ringW = duiHeight * scale / screenW,
         ringH = duiHeight * scale / screenH,
         duiW = duiWidth * scale / screenW,
-        duiH = duiHeight * scale / screenH,
+        duiH = expandedHeight * scale / screenH,
         -- Moves the texture so the marker centre, not the texture centre, lands on the point
         duiX = (duiWidth / 2 - duiAnchor) * scale / screenW,
         guideW = guideSize * scale / screenW,
@@ -196,22 +219,23 @@ local function initialize()
 
     ---@param index integer
     ---@param width integer @ 1080p pixels
+    ---@param height integer @ 1080p pixels
     ---@return InterestPointSlot? slot
-    local function createSlot(index, width)
+    local function createSlot(index, width, height)
         local dui = Functions.dui:new({
-            url = ("https://cfx-nui-%s/nui/interest_point/index.html?slot=%s"):format(ResName, index),
+            url = ("https://cfx-nui-%s/nui/interest_point/index.html?slot=%s&height=%s"):format(ResName, index, height),
             width = math.floor(width * scale * duiQuality + 0.5),
-            height = math.floor(duiHeight * scale * duiQuality + 0.5),
+            height = math.floor(height * scale * duiQuality + 0.5),
         })
         if (not dui) then return nil end
 
         return {index = index, dui = dui, ready = false, createdAt = GetGameTimer(), expanded = false}
     end
 
-    ringSlot = createSlot(0, duiHeight)
+    ringSlot = createSlot(0, duiHeight, duiHeight)
 
     for i = 1, slotCount do
-        slots[#slots + 1] = createSlot(i, duiWidth)
+        slots[#slots + 1] = createSlot(i, duiWidth, expandedHeight)
     end
 
     if (guideEnabled) then createGuideTexture() end
@@ -287,6 +311,75 @@ local function findAimedPoint(set, pedCoords)
     return bestId, guided
 end
 
+-- Keeps the selection on the same option across updates, or on the same row when that option is gone
+---@param visual InterestPointVisual
+local function syncSelection(visual)
+    local options = visual.options
+
+    if (not options) then
+        visual.selected, visual.selectedIndex = nil, nil
+
+        return
+    end
+
+    for i = 1, #options do
+        if (options[i].id == visual.selected) then
+            visual.selectedIndex = i
+
+            return
+        end
+    end
+
+    local index = math.min(visual.selectedIndex or 1, #options)
+    visual.selected, visual.selectedIndex = options[index].id, index
+end
+
+-- Moves the selection of every expanded marker with options; the timeline ends rather than wraps
+---@param paused boolean
+local function scrollOptions(paused)
+    if (paused) then return end
+
+    local step
+    local moved = false
+
+    for _, visual in pairs(visuals) do
+        local options = visual.active and visual.options
+
+        if (options and #options > 1) then
+            if (not step) then
+                for i = 1, #scrollControls do
+                    DisableControlAction(0, scrollControls[i], true)
+                end
+
+                step = (IsDisabledControlJustPressed(0, scrollNextControl) and 1 or 0) - (IsDisabledControlJustPressed(0, scrollPrevControl) and 1 or 0)
+            end
+
+            local index = math.max(1, math.min(visual.selectedIndex + step, #options))
+
+            if (index ~= visual.selectedIndex) then
+                visual.selected, visual.selectedIndex = options[index].id, index
+                moved = true
+            end
+        end
+    end
+
+    if (moved) then PlaySoundFrontend(-1, "NAV_UP_DOWN", "HUD_FRONTEND_DEFAULT_SOUNDSET", true) end
+end
+
+-- Copies the visual's prompt onto its slot and expands it; the options only go over when they changed
+---@param slot InterestPointSlot
+---@param visual InterestPointVisual
+---@param reset boolean @ The slot was showing another point
+local function sendPrompt(slot, visual, reset)
+    local data = {reset = reset, active = true, key = visual.key or "", label = visual.label or "", hint = visual.hint or "", selected = visual.selectedIndex}
+    if (reset or slot.optionsKey ~= visual.optionsKey) then data.options = visual.options and #visual.options > 1 and visual.options or false end
+
+    slot.expanded, slot.releaseAt = true, nil
+    slot.key, slot.label, slot.hint = visual.key, visual.label, visual.hint
+    slot.optionsKey, slot.selectedIndex = visual.optionsKey, visual.selectedIndex
+    sendSlot(slot, data)
+end
+
 -- Runs every frame, so it allocates nothing for points that are already on screen
 ---@param now integer
 ---@param deltaMs number
@@ -336,6 +429,10 @@ local function updateVisuals(now, deltaMs, paused)
                 visual.active = coords ~= nil and active
                 visual.opacity = point.opacity or 1.0
                 visual.key, visual.label, visual.hint = point.key, point.label, point.hint
+                visual.options, visual.optionsKey = point.options, point.optionsKey
+                -- Looking away starts the timeline over at the first option
+                if (not visual.active) then visual.selected, visual.selectedIndex = nil, nil end
+                syncSelection(visual)
             end
         end
     end
@@ -349,6 +446,8 @@ local function updateVisuals(now, deltaMs, paused)
         visual.alpha = visual.present and math.min(visual.alpha + step, 1.0) or math.max(visual.alpha - step, 0.0)
         if (visual.alpha <= 0.0 and not visual.present and not getPointSlot(id)) then visuals[id] = nil end
     end
+
+    scrollOptions(paused)
 
     for i = 1, #slots do
         local slot = slots[i]
@@ -369,18 +468,15 @@ local function updateVisuals(now, deltaMs, paused)
 
             if (slot) then
                 -- Aimed again mid-collapse, so it grows back from where it is
-                if (not slot.expanded or slot.key ~= visual.key or slot.label ~= visual.label or slot.hint ~= visual.hint) then
-                    slot.expanded, slot.releaseAt = true, nil
-                    slot.key, slot.label, slot.hint = visual.key, visual.label, visual.hint
-                    sendSlot(slot, {active = true, key = visual.key or "", label = visual.label or "", hint = visual.hint or ""})
+                if (not slot.expanded or slot.key ~= visual.key or slot.label ~= visual.label or slot.hint ~= visual.hint or slot.optionsKey ~= visual.optionsKey or slot.selectedIndex ~= visual.selectedIndex) then
+                    sendPrompt(slot, visual, false)
                 end
             else
                 slot = claimSlot()
 
                 if (slot) then
-                    slot.pointId, slot.expanded, slot.releaseAt = id, true, nil
-                    slot.key, slot.label, slot.hint = visual.key, visual.label, visual.hint
-                    sendSlot(slot, {reset = true, active = true, key = visual.key or "", label = visual.label or "", hint = visual.hint or ""})
+                    slot.pointId = id
+                    sendPrompt(slot, visual, true)
                 end
             end
         end
@@ -443,6 +539,42 @@ local function startRendering()
     end)
 end
 
+---@param options any
+---@return InterestPointOption[]? options
+---@return string? optionsKey @ Changes whenever an option does, so the DUI only gets them again then
+local function normalizeOptions(options)
+    if (type(options) ~= "table") then return nil, nil end
+
+    local normalized = {}
+    local parts = {}
+
+    for i = 1, #options do
+        local option = options[i]
+
+        if (type(option) == "table" and type(option.id) == "string") then
+            local label = tostring(option.label or "")
+            local hint = type(option.hint) == "string" and option.hint ~= "" and option.hint or nil
+
+            normalized[#normalized + 1] = {id = option.id, label = label, hint = hint}
+            parts[#parts + 1] = ("%s\0%s\0%s"):format(option.id, label, hint or "")
+        end
+    end
+
+    if (#normalized == 0) then return nil, nil end
+
+    return normalized, table.concat(parts, "\1")
+end
+
+---@param resourceName string
+---@param id string
+---@param pointId string
+---@return string? optionId
+local function getSelectedOption(resourceName, id, pointId)
+    local visual = visuals[("%s:%s:%s"):format(resourceName, id, pointId)]
+
+    return visual and visual.selected or nil
+end
+
 ---@param resourceName string
 ---@param id string
 local function clearSet(resourceName, id)
@@ -467,14 +599,20 @@ Functions.setInterestPoints = function(id, points, options)
         local coords = type(point.coords) == "vector3" and point.coords or nil
 
         if (type(point.id) == "string" and (entity or coords)) then
+            local pointOptions, optionsKey = normalizeOptions(point.options)
+            local single = pointOptions and #pointOptions == 1 and pointOptions[1]
+            local hint = single and single.hint or point.hint
+
             normalized[#normalized + 1] = {
                 id = point.id,
                 entity = entity,
                 offset = type(point.offset) == "vector3" and point.offset or nil,
                 coords = coords,
                 key = resolveKey(point.key),
-                label = point.label,
-                hint = type(point.hint) == "string" and point.hint ~= "" and point.hint or nil,
+                label = single and single.label or point.label,
+                hint = type(hint) == "string" and hint ~= "" and hint or nil,
+                options = pointOptions,
+                optionsKey = optionsKey,
                 active = point.active,
                 opacity = tonumber(point.opacity),
                 reach = tonumber(point.reach),
@@ -523,11 +661,22 @@ end
 -- Aim sets judge the aim every frame; this reads the result of the last one
 ---@param id string @ Set identifier within the calling resource
 ---@return string? pointId
+---@return string? optionId @ Selected option of the aimed point when it has options
 Functions.getAimedInterestPoint = function(id)
-    local resourceSets = sets[GetInvokingResource() or ResName]
+    local resourceName = GetInvokingResource() or ResName
+    local resourceSets = sets[resourceName]
     local set = resourceSets and resourceSets[id]
+    if (not set or not set.aimed) then return nil, nil end
 
-    return set and set.aimed or nil
+    return set.aimed, getSelectedOption(resourceName, id, set.aimed)
+end
+
+-- The selection holds while the marker is expanded and starts over at the first option once it collapses
+---@param id string @ Set identifier within the calling resource
+---@param pointId string
+---@return string? optionId
+Functions.getInterestPointOption = function(id, pointId)
+    return getSelectedOption(GetInvokingResource() or ResName, id, pointId)
 end
 
 -- The DUI page reports once it can take messages

@@ -7,11 +7,12 @@
 		<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@700&display=swap" rel="stylesheet" />
 		<title>zyke_lib interest point</title>
 		<style>
-			/* Rendered into a DUI texture that Lua draws on the world point every frame. The page is
-			   6.4rem tall at every resolution, so the layout matches the 1080p design in rem */
+			/* Rendered into a DUI texture that Lua draws on the world point every frame. The page height
+			   in 1080p pixels comes in the URL and 1rem is 10 of them, so the layout matches the design in rem */
 			:root {
 				--dark: 17, 19, 21;
-				font-size: calc(100vh / 6.4);
+				--page-height: 6.4;
+				font-size: calc(100vh / var(--page-height));
 			}
 
 			html,
@@ -166,6 +167,136 @@
 				transition-delay: 0.04s;
 			}
 
+			/* A point with options swaps the label and hint for this timeline. It spans the page height
+			   centred on the marker and every option is placed from the selected one, which stays beside
+			   the key; the mask fades the rows and the track out together towards the texture edges */
+			.marker.multi .label,
+			.marker.multi .hint {
+				display: none;
+			}
+
+			.timeline {
+				position: absolute;
+				top: 50%;
+				left: calc(100% + 0.8rem);
+				display: none;
+				width: 48rem;
+				height: 100vh;
+				opacity: 0;
+				transform: translate(-0.6rem, -50%);
+				transition: opacity 0.15s ease-out, transform 0.18s ease-out;
+				-webkit-mask-image: linear-gradient(
+					to bottom,
+					transparent calc(50% - 11rem),
+					rgba(0, 0, 0, 0.4) calc(50% - 8rem),
+					black calc(50% - 3.4rem),
+					black calc(50% + 3.4rem),
+					rgba(0, 0, 0, 0.4) calc(50% + 8rem),
+					transparent calc(50% + 11rem)
+				);
+				mask-image: linear-gradient(
+					to bottom,
+					transparent calc(50% - 11rem),
+					rgba(0, 0, 0, 0.4) calc(50% - 8rem),
+					black calc(50% - 3.4rem),
+					black calc(50% + 3.4rem),
+					rgba(0, 0, 0, 0.4) calc(50% + 8rem),
+					transparent calc(50% + 11rem)
+				);
+			}
+
+			.marker.multi .timeline {
+				display: block;
+			}
+
+			.marker.active .timeline {
+				opacity: 1;
+				transform: translate(0, -50%);
+			}
+
+			.track {
+				position: absolute;
+				left: 0.27rem;
+				width: 0.16rem;
+				background: rgba(255, 255, 255, 0.55);
+				border-radius: 0.08rem;
+				box-shadow: 0 0 0.3rem rgba(0, 0, 0, 0.9);
+				transition: top 0.18s ease-out, height 0.18s ease-out;
+			}
+
+			.option {
+				position: absolute;
+				top: 50%;
+				left: 0;
+				height: 1.6rem;
+				/* Scaled around the tick, so the unselected ones stay on the track */
+				transform-origin: 0.35rem center;
+				transition: transform 0.18s ease-out, opacity 0.18s ease-out;
+			}
+
+			.tick {
+				position: absolute;
+				top: 50%;
+				left: 0.35rem;
+				width: 0.5rem;
+				height: 0.5rem;
+				background: rgba(255, 255, 255, 0.85);
+				border-radius: 50%;
+				box-shadow: 0 0 0.3rem rgba(0, 0, 0, 0.9);
+				transform: translate(-50%, -50%);
+				transition: width 0.18s ease-out, height 0.18s ease-out, background-color 0.18s ease-out;
+			}
+
+			.option.selected .tick {
+				width: 0.8rem;
+				height: 0.8rem;
+				background: rgba(255, 255, 255, 1);
+			}
+
+			.option-label {
+				position: absolute;
+				top: 50%;
+				left: 1.1rem;
+				margin: 0;
+				color: rgba(255, 255, 255, 0.96);
+				font-size: 1.6rem;
+				font-weight: 700;
+				line-height: 1;
+				letter-spacing: 0.01em;
+				text-transform: uppercase;
+				white-space: nowrap;
+				text-shadow:
+					0 0.15rem 0 rgba(0, 0, 0, 0.8),
+					0 0 0.3rem rgba(0, 0, 0, 1),
+					0 0 0.8rem rgba(0, 0, 0, 0.9),
+					0 0 1.4rem rgba(0, 0, 0, 0.8);
+				transform: translateY(-50%);
+			}
+
+			.option-hint {
+				position: absolute;
+				top: calc(50% + 1.05rem);
+				left: 1.1rem;
+				margin: 0;
+				color: rgba(255, 255, 255, 0.86);
+				font-size: 1.21rem;
+				font-weight: 700;
+				line-height: 1;
+				letter-spacing: 0.02em;
+				text-transform: uppercase;
+				white-space: nowrap;
+				text-shadow:
+					0 0.1rem 0 rgba(0, 0, 0, 0.8),
+					0 0 0.25rem rgba(0, 0, 0, 1),
+					0 0 0.6rem rgba(0, 0, 0, 0.9);
+				opacity: 0;
+				transition: opacity 0.15s ease-out;
+			}
+
+			.option.selected .option-hint {
+				opacity: 1;
+			}
+
 			/* Wraps the marker so the shake moves it without touching its own centring transform */
 			.shaker {
 				position: absolute;
@@ -207,6 +338,9 @@
 				<span class="key" id="key"></span>
 				<p class="label" id="label"></p>
 				<p class="hint" id="hint"></p>
+				<div class="timeline" id="timeline">
+					<div class="track" id="track"></div>
+				</div>
 			</div>
 		</div>
 		<script>
@@ -215,9 +349,59 @@
 			const keyEl = document.getElementById("key");
 			const labelEl = document.getElementById("label");
 			const hintEl = document.getElementById("hint");
-			const slot = Number(new URLSearchParams(location.search).get("slot"));
+			const timelineEl = document.getElementById("timeline");
+			const trackEl = document.getElementById("track");
+			const params = new URLSearchParams(location.search);
+			const slot = Number(params.get("slot"));
 			const resName = typeof GetParentResourceName === "function" ? GetParentResourceName() : location.hostname.replace(/^cfx-nui-/, "");
 			let wantActive = false;
+			let optionEls = [];
+			let options = [];
+			let selected = 0;
+
+			const pageHeight = Number(params.get("height"));
+			if (pageHeight > 0) document.documentElement.style.setProperty("--page-height", String(pageHeight / 10));
+
+			// Rows in rem from the selected option's centre; its hint pushes the options below it down
+			const optionPitch = 2.6;
+			const hintSpace = 1.3;
+			// Unselected options are dimmed; the timeline's mask fades them further with distance
+			const unselectedOpacity = 0.75;
+
+			function buildOptions() {
+				for (const el of optionEls) el.remove();
+
+				optionEls = options.map((option) => {
+					const el = document.createElement("div");
+					el.className = "option";
+					el.innerHTML = '<span class="tick"></span><p class="option-label"></p><p class="option-hint"></p>';
+					el.querySelector(".option-label").textContent = option.label || "";
+					el.querySelector(".option-hint").textContent = option.hint || "";
+					timelineEl.appendChild(el);
+
+					return el;
+				});
+
+				marker.classList.toggle("multi", options.length > 0);
+			}
+
+			function placeOptions() {
+				if (optionEls.length === 0) return;
+
+				const hintGap = options[selected] && options[selected].hint ? hintSpace : 0;
+				const offsets = optionEls.map((_, i) => (i - selected) * optionPitch + (i > selected ? hintGap : 0));
+
+				optionEls.forEach((el, i) => {
+					const distance = Math.abs(i - selected);
+
+					el.classList.toggle("selected", distance === 0);
+					el.style.opacity = String(distance === 0 ? 1 : unselectedOpacity);
+					el.style.transform = `translateY(${offsets[i] - 0.8}rem) scale(${distance === 0 ? 1 : 0.8})`;
+				});
+
+				trackEl.style.top = `calc(50% + ${offsets[0]}rem)`;
+				trackEl.style.height = `${offsets[offsets.length - 1] - offsets[0]}rem`;
+			}
 
 			window.addEventListener("message", (e) => {
 				const message = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
@@ -245,6 +429,23 @@
 				if (data.key !== undefined) keyEl.textContent = data.key || "";
 				if (data.label !== undefined) labelEl.textContent = data.label || "";
 				if (data.hint !== undefined) hintEl.textContent = data.hint || "";
+
+				// Lua sends the 1-based index of the selected option
+				if (typeof data.selected === "number") selected = Math.max(0, data.selected - 1);
+
+				// New rows snap into place rather than sliding in from the anchor
+				if (data.options !== undefined) {
+					options = Array.isArray(data.options) ? data.options : [];
+					selected = Math.min(selected, Math.max(options.length - 1, 0));
+					buildOptions();
+					timelineEl.classList.add("instant");
+					placeOptions();
+					void timelineEl.offsetWidth;
+					timelineEl.classList.remove("instant");
+				} else {
+					selected = Math.min(selected, Math.max(options.length - 1, 0));
+					placeOptions();
+				}
 
 				wantActive = data.active === true;
 				if (!wantActive) {
