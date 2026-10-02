@@ -1,3 +1,14 @@
+-- FiveM can keep a stopped resource's change handler for a key, and the next local set of that key throws
+-- "bad function call" from inside :set, which would end the loop that made the call
+---@param bag table @ State bag, such as LocalPlayer.state
+---@param key string
+---@param value any
+---@param replicated boolean
+---@return boolean success
+local function trySetState(bag, key, value, replicated)
+    return (pcall(bag.set, bag, key, value, replicated))
+end
+
 -- Set the vehicle you are currently in
 CreateThread(function()
     local prevVeh = nil
@@ -22,17 +33,17 @@ CreateThread(function()
             changed = state.currentVehicle ~= currentVehicle or state.currentVehicleNetId ~= netId
         end
 
+        -- A failed set keeps the previous values, so the next tick tries again
         if (changed) then
-            LocalPlayer.state:set("currentVehicle", currentVehicle, false)
-            LocalPlayer.state:set("currentVehicleNetId", netId, true)
-
-            prevVeh = veh
-            prevNetId = netId
+            local state = LocalPlayer.state
+            if (trySetState(state, "currentVehicle", currentVehicle, false) and trySetState(state, "currentVehicleNetId", netId, true)) then
+                prevVeh = veh
+                prevNetId = netId
+            end
         end
 
         -- Maybe doesn't really fit in here, but we'll run it for now
-        if (prevEntering ~= entering) then
-            LocalPlayer.state:set("enteringVehicle", entering ~= 0 and entering or nil, false)
+        if (prevEntering ~= entering and trySetState(LocalPlayer.state, "enteringVehicle", entering ~= 0 and entering or nil, false)) then
             prevEntering = entering
         end
 
@@ -59,16 +70,12 @@ end)
 
 -- Verify your client has properly loaded into the game
 CreateThread(function()
-    LocalPlayer.state:set("z:hasLoaded", false, true) -- Needs resetting if script is restarted
+    trySetState(LocalPlayer.state, "z:hasLoaded", false, true) -- Needs resetting if script is restarted
 
     while (1) do
         local hasLoaded = NetworkIsPlayerActive(PlayerId())
 
-        if (hasLoaded) then
-            LocalPlayer.state:set("z:hasLoaded", true, true)
-
-            break
-        end
+        if (hasLoaded and trySetState(LocalPlayer.state, "z:hasLoaded", true, true)) then break end
 
         Wait(500)
     end
@@ -82,10 +89,8 @@ CreateThread(function()
 
     while (1) do
         local newEntityId = PlayerPedId()
-        if (prevEntityId ~= newEntityId) then
+        if (prevEntityId ~= newEntityId and trySetState(Entity(newEntityId).state, "z:serverId", GetPlayerServerId(PlayerId()), true)) then
             prevEntityId = newEntityId
-
-            Entity(newEntityId).state:set("z:serverId", GetPlayerServerId(PlayerId()), true)
         end
 
         Wait(1000)
@@ -100,10 +105,7 @@ CreateThread(function()
     while (true) do
         local _, weapon = GetCurrentPedWeapon(PlayerPedId(), true)
 
-        if (prevWeapon ~= weapon) then
-            local hasWeapon = weapon ~= unarmedHash
-            LocalPlayer.state:set("currentWeapon", hasWeapon and weapon or nil, false)
-
+        if (prevWeapon ~= weapon and trySetState(LocalPlayer.state, "currentWeapon", weapon ~= unarmedHash and weapon or nil, false)) then
             prevWeapon = weapon
         end
 
