@@ -26,7 +26,7 @@ return {
     framework = "auto",
 
     -- Your inventory system
-    -- Options: "auto", "qs-inventory", "ox_inventory", "tgiann-inventory", "codem-inventory", "core_inventory"
+    -- Options: "auto", "qs-inventory", "ox_inventory", "one_inventory", "tgiann-inventory", "codem-inventory", "core_inventory"
     inventory = "auto",
 
     -- Your targeting system
@@ -61,15 +61,15 @@ return {
     hud = "auto",
 
     -- Banking system (set to "none" if you don't use society banking)
-    -- Options: "auto", "none", "tgg-banking", "Renewed-Banking", "RxBanking", "okokBanking", "bablo-banking", "sky_banking"
+    -- Options: "auto", "none", "kartik-banking", "tgg-banking", "Renewed-Banking", "RxBanking", "okokBanking", "bablo-banking", "sky_banking"
     banking = "auto",
 
     -- Notification system (set to "none" to use your framework's built-in notifications)
-    -- Options: "auto", "none", "ox_lib"
+    -- Options: "auto", "none", "lation_ui", "ox_lib"
     notification = "auto",
 
     -- Progressbar system
-    -- Options: "auto", "zyke_lib", "ox_lib"
-    -- Defaults to zyke_lib. You must explicitly set "ox_lib" here if you want to use ox progressbars.
+    -- Options: "auto", "zyke_lib", "lation_ui", "ox_lib"
+    -- Defaults to zyke_lib. Set "lation_ui" or "ox_lib" here to use an external progressbar.
     progressbar = "auto",
 }

@@ -3,6 +3,7 @@ local awaitSystemStarting, override = ...
 local systems = {
     {fileName = "qs-inventory", variable = "QS"},
     {fileName = "ox_inventory", variable = "OX"},
+    {fileName = "one_inventory", variable = "ONE"},  -- One Inventory toegevoegd
     {fileName = "tgiann-inventory", variable = "TGIANN"},
     {fileName = "codem-inventory", variable = "CODEM"},
     {fileName = "core_inventory", variable = "C8RE"}, -- QB Only
@@ -55,6 +56,8 @@ repeat
     success, items = pcall(function()
         if (Inventory == "OX") then
             items = exports["ox_inventory"]:Items()
+        elseif (Inventory == "ONE") then
+            items = exports["one_inventory"]:GetAllItemDefinitions()
         elseif (Inventory == "TGIANN") then
             items = exports["tgiann-inventory"]:Items()
 
@@ -98,3 +101,9 @@ if (not Inventory) then
 end
 
 Items = items
+
+if (Inventory == "ONE") then
+    AddEventHandler("one_inventory:onDefinitionsUpdated", function()
+        Items = exports["one_inventory"]:GetAllItemDefinitions()
+    end)
+end

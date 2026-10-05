@@ -19,6 +19,20 @@ function Functions.notify(key, formatting, length, raw, _notifyType, position)
 
     notifyType = notifyType or "primary"
 
+    if (NotificationSystem == "LATION") then
+        local lationNotifyType = notifyType
+        if (lationNotifyType == "primary") then lationNotifyType = "info" end
+
+        exports.lation_ui:notify({
+            message = notifyStr,
+            type = lationNotifyType,
+            duration = length,
+            position = position,
+        })
+
+        return
+    end
+
     if (NotificationSystem == "OX") then
         local oxNotifyType = notifyType
         if (oxNotifyType == "primary") then oxNotifyType = "info" end

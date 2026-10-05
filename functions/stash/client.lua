@@ -30,6 +30,12 @@ function Functions.stash.open(invId, other)
 
     if (Inventory == "OX") then
         return exports["ox_inventory"]:openInventory("stash", invId)
+    elseif (Inventory == "ONE") then
+        return exports["one_inventory"]:OpenInventory("stash", {
+            id = invId,
+            slots = slots,
+            maxWeight = weight,
+        })
     elseif (Inventory == "QS") then
         -- QS RegisterStash only creates the stash
         -- Opening uses the QB-style event pattern

@@ -1,5 +1,6 @@
 local inventoryResources = {
     ["OX"] = "ox_inventory",
+    ["ONE"] = "one_inventory",
     ["QS"] = "qs-inventory",
     ["TGIANN"] = "tgiann-inventory",
     ["CODEM"] = "codem-inventory",
@@ -30,6 +31,11 @@ function Functions.getInventoryImagePath(itemName)
     if (not resourceName) then
         Functions.debug.internal("^1getInventoryImagePath: Could not determine inventory resource^7")
         return ""
+    end
+
+    -- One Inventory uses web/images/ like ox_inventory
+    if (resourceName == "one_inventory") then
+        return ("nui://%s/web/images/%s.png"):format(resourceName, itemName)
     end
 
     return ("nui://%s/web/images/%s.png"):format(resourceName, itemName)

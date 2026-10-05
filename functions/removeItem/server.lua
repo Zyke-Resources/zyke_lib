@@ -9,7 +9,14 @@ function Functions.removeItem(player, item, amount, metadata)
 
     local toRemove = Formatting.formatItemInput(item, amount)
 
-    if (Framework == "ESX") then
+    if (Inventory == "ONE") then
+        for i = 1, #toRemove do
+            local success = exports["one_inventory"]:RemoveItem(Functions.getPlayerId(player), toRemove[i].name, toRemove[i].amount, metadata)
+            if (not success) then return false end
+        end
+
+        return true
+    elseif (Framework == "ESX") then
         for i = 1, #toRemove do
             player.removeInventoryItem(toRemove[i].name, toRemove[i].amount, metadata)
         end
