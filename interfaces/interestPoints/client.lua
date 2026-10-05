@@ -103,6 +103,7 @@ local guideTxd, guideTxn = "zyke_lib_interest_point_guide", "dot"
 -- scrolling an option never swaps weapons
 local scrollNextControl, scrollPrevControl = 14, 15
 local scrollControls = {14, 15, 16, 17, 261, 262}
+local targetingCommand = "zyke_lib_interest_point_targeting"
 
 ---@type table<string, table<string, InterestPointSet>> @ [resource][setId]
 local sets = {}
@@ -125,6 +126,9 @@ local guideVisible = false
 -- The guide only helps find a point, so it steps aside once any aim set's prompt is shown
 local guideAimed = false
 local guideAlpha = 0.0
+-- Like a target system: nothing shows and nothing can be aimed at until the targeting key is held
+local targetingEnabled = LibConfig.interestPointTargeting == true
+local wasTargeting = not targetingEnabled
 
 ---@param key? string
 ---@return string? resolvedKey
@@ -387,7 +391,11 @@ end
 local function updateVisuals(now, deltaMs, paused)
     frame = frame + 1
 
-    local judgeAim = now >= nextAimAt
+    local targeting = not targetingEnabled or HoldingKeys[targetingCommand] == true
+    -- Judged right away when the targeting key changes, so a press or release never lags behind the interval
+    local judgeAim = now >= nextAimAt or targeting ~= wasTargeting
+    wasTargeting = targeting
+
     local pedCoords = judgeAim and GetEntityCoords(PlayerPedId())
     if (judgeAim) then
         nextAimAt = now + aimInterval
@@ -404,7 +412,7 @@ local function updateVisuals(now, deltaMs, paused)
 
             if (set.aim and judgeAim) then
                 local aimed, guided = nil, false
-                if (not paused) then aimed, guided = findAimedPoint(set, pedCoords) end
+                if (not paused and targeting) then aimed, guided = findAimedPoint(set, pedCoords) end
 
                 set.aimed = aimed
                 guideVisible = guideVisible or guided
@@ -425,8 +433,8 @@ local function updateVisuals(now, deltaMs, paused)
 
                 visual.seenFrame = frame
                 visual.coords = coords or visual.coords
-                visual.present = coords ~= nil
-                visual.active = coords ~= nil and active
+                visual.present = coords ~= nil and targeting
+                visual.active = visual.present and active
                 visual.opacity = point.opacity or 1.0
                 visual.key, visual.label, visual.hint = point.key, point.label, point.hint
                 visual.options, visual.optionsKey = point.options, point.optionsKey
@@ -677,6 +685,10 @@ end
 ---@return string? optionId
 Functions.getInterestPointOption = function(id, pointId)
     return getSelectedOption(GetInvokingResource() or ResName, id, pointId)
+end
+
+if (targetingEnabled) then
+    Functions.registerKey(targetingCommand, LibConfig.interestPointTargetingKey or "LMENU", "Show interaction points (hold)")
 end
 
 -- The DUI page reports once it can take messages

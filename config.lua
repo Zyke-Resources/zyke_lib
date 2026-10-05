@@ -31,4 +31,13 @@ return {
     -- Shows a dot in the middle of the screen while you are close to looking at an interest point
     -- you aim at to interact with, so it is easier to line up
     interestPointGuide = true,
+
+    -- Works like a target system: interest points stay hidden and can't be used until the key below is held
+    -- When disabled, they always show while you are near them
+    interestPointTargeting = false,
+
+    -- Default key to hold, only used when interestPointTargeting is enabled
+    -- Players can change it for themselves in the GTA key binding settings
+    -- Key names: https://docs.fivem.net/docs/game-references/input-mapper-parameter-ids/keyboard/
+    interestPointTargetingKey = "LMENU", -- Left alt
 }
