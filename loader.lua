@@ -69,6 +69,16 @@ end
 --- This would cause the dependency loader to get stuck indefinitely without any warnings
 local warnDependencyLoadingTime = 3 * 1000
 
+local pendingStates = {starting = true, stopping = true, stopped = true}
+
+---@param subject string @ Sentence start naming what we are waiting for
+local function warnDependencyLoading(subject)
+    print("^1========== [WARNING] ==========^7")
+    print("^1> " .. subject .. "^7")
+    print("^1> If this warning persists & our resources are not behaving as expected, please visit:^7")
+    print("^1> https://docs.zykeresources.com/common-issues/zyke_lib-error#awaiting-dependencies-indefinitely^7")
+end
+
 ---@param fileName string
 ---@return "started" | "starting" | "stopping" | "stopped" | "missing" | "uninitialized" | "unknown"
 local function awaitSystemStarting(fileName)
@@ -76,7 +86,7 @@ local function awaitSystemStarting(fileName)
 
     -- If the resource does exist but is not started yet, we need to wait for it
     -- This is a more foolproof approach to avoid having exact resource starting sequences
-    if (resState == "starting" or resState == "stopping" or resState == "stopped") then
+    if (pendingStates[resState]) then
         local started = GetGameTimer()
         local silenceWarnings = LibConfig.silenceWarnings
 
@@ -85,10 +95,7 @@ local function awaitSystemStarting(fileName)
             if (resState == "started") then Wait(50) return resState end
 
             if (silenceWarnings ~= true and GetGameTimer() - started > warnDependencyLoadingTime) then
-                print("^1========== [WARNING] ==========^7")
-                print("^1> \"" .. fileName .. "\" is taking a long time to start...^7")
-                print("^1> If this warning persists & our resources are not behaving as expected, please visit:^7")
-                print("^1> https://docs.zykeresources.com/common-issues/zyke_lib-error#awaiting-dependencies-indefinitely^7")
+                warnDependencyLoading("\"" .. fileName .. "\" is taking a long time to start...")
 
                 Wait(5000)
             end
@@ -99,6 +106,43 @@ local function awaitSystemStarting(fileName)
     end
 
     return resState
+end
+
+-- Auto-detection can not await the candidates one by one, since servers often keep an unused alternative installed
+-- Awaiting a higher listed resource that never starts would block the one they actually run
+---@generic T: {fileName: string}
+---@param systems T[] @ Candidates in priority order
+---@return T? system @ nil if no candidate is installed
+local function awaitAnySystemStarting(systems)
+    local started = GetGameTimer()
+    local silenceWarnings = LibConfig.silenceWarnings
+
+    while (1) do
+        local pending = {}
+        local isAwaitingPriority = false
+
+        for i = 1, #systems do
+            local fileName = systems[i].fileName
+            local resState = GetResourceState(fileName)
+
+            if (resState == "started" and not isAwaitingPriority) then Wait(50) return systems[i] end
+
+            -- A higher listed candidate that is mid-start will finish shortly, so it keeps its priority
+            if (resState == "starting") then isAwaitingPriority = true end
+            if (pendingStates[resState]) then pending[#pending+1] = fileName end
+        end
+
+        if (#pending == 0) then return nil end
+
+        if (silenceWarnings ~= true and GetGameTimer() - started > warnDependencyLoadingTime) then
+            warnDependencyLoading("None of \"" .. table.concat(pending, "\", \"") .. "\" have started yet...")
+
+            Wait(5000)
+        end
+
+        Functions.debug.internal("^1Waiting for any of " .. table.concat(pending, ", ") .. " to start...^7")
+        Wait(10)
+    end
 end
 
 ---@param fileName string
@@ -114,7 +158,7 @@ local function loadSystem(fileName, overrideKey)
 
     local override = dependencyOverrides[overrideKey] or "auto"
 
-    return func(awaitSystemStarting, override)
+    return func(awaitSystemStarting, override, awaitAnySystemStarting)
 end
 
 loadSystem("framework", "framework")

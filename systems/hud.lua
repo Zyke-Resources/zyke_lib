@@ -50,15 +50,52 @@ if (override ~= "auto") then
     for i = 1, #systems do valid[#valid+1] = systems[i] end
     print(("^1[zyke_lib] Invalid HUD override '%s'. Valid options: %s^7"):format(override, table.concat(valid, ", ")))
 else
-    for i = 1, #systems do
-        local resState = awaitSystemStarting(systems[i])
+    local priorities = {}
+    for i = 1, #systems do priorities[systems[i]] = i end
 
-        -- If it's started, we use it
-        if (resState == "started") then
-            HudSystem = systems[i]
-            Functions.debug.internal("^2Using " .. systems[i] .. " as HUD system^7")
+    ---@param resourceName string
+    local function setSystem(resourceName)
+        HudSystem = resourceName
+        Functions.debug.internal("^2Using " .. resourceName .. " as HUD system^7")
+    end
 
-            break
+    ---@param excluded? string @ Resource to skip, since a stopping resource can still report as started
+    local function selectStartedSystem(excluded)
+        for i = 1, #systems do
+            if (systems[i] ~= excluded and GetResourceState(systems[i]) == "started") then
+                setSystem(systems[i])
+
+                return
+            end
         end
+    end
+
+    -- HUDs are never awaited, since servers often keep unused ones installed and that would block the loader
+    -- Instead we follow resource starts & stops, which also keeps the list priority regardless of start order
+    selectStartedSystem()
+
+    ---@param resourceName string
+    local function onSystemStart(resourceName)
+        local priority = priorities[resourceName]
+        if (not priority) then return end
+        if (HudSystem and priorities[HudSystem] <= priority) then return end
+
+        setSystem(resourceName)
+    end
+
+    ---@param resourceName string
+    local function onSystemStop(resourceName)
+        if (HudSystem ~= resourceName) then return end
+
+        HudSystem = nil
+        selectStartedSystem(resourceName)
+    end
+
+    if (IsDuplicityVersion()) then
+        AddEventHandler("onResourceStart", onSystemStart)
+        AddEventHandler("onResourceStop", onSystemStop)
+    else
+        AddEventHandler("onClientResourceStart", onSystemStart)
+        AddEventHandler("onClientResourceStop", onSystemStop)
     end
 end

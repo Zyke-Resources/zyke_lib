@@ -1,4 +1,4 @@
-local awaitSystemStarting, override = ...
+local awaitSystemStarting, override, awaitAnySystemStarting = ...
 
 local systems = {
     {fileName = "qs-inventory", variable = "QS"},
@@ -34,16 +34,10 @@ if (override ~= "auto") then
         print(("^1[zyke_lib] Invalid inventory override '%s'. Valid options: %s^7"):format(override, table.concat(valid, ", ")))
     end
 else
-    for i = 1, #systems do
-        local resState = awaitSystemStarting(systems[i].fileName)
-
-        -- If it's started, we use it
-        if (resState == "started") then
-            Inventory = systems[i].variable
-            Functions.debug.internal("^2Using " .. systems[i].fileName .. " as inventory system^7")
-
-            break
-        end
+    local system = awaitAnySystemStarting(systems)
+    if (system) then
+        Inventory = system.variable
+        Functions.debug.internal("^2Using " .. system.fileName .. " as inventory system^7")
     end
 end
 

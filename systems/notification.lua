@@ -1,4 +1,4 @@
-local awaitSystemStarting, override = ...
+local awaitSystemStarting, override, awaitAnySystemStarting = ...
 
 if (override == "none") then
     Functions.debug.internal("^2Notification system override set to 'none', using framework notifications^7")
@@ -32,14 +32,9 @@ if (override ~= "auto") then
     for i = 1, #systems do valid[#valid+1] = systems[i].fileName end
     print(("^1[zyke_lib] Invalid notification override '%s'. Valid options: %s^7"):format(override, table.concat(valid, ", ")))
 else
-    for i = 1, #systems do
-        local resState = awaitSystemStarting(systems[i].fileName)
-
-        if (resState == "started") then
-            NotificationSystem = systems[i].variable
-            Functions.debug.internal("^2Using " .. systems[i].fileName .. " as notification system^7")
-
-            break
-        end
+    local system = awaitAnySystemStarting(systems)
+    if (system) then
+        NotificationSystem = system.variable
+        Functions.debug.internal("^2Using " .. system.fileName .. " as notification system^7")
     end
 end

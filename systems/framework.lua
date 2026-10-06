@@ -1,4 +1,4 @@
-local awaitSystemStarting, override = ...
+local awaitSystemStarting, override, awaitAnySystemStarting = ...
 
 local systems = {
     {fileName = "es_extended", variable = "ESX", fetching = function(fileName)
@@ -45,16 +45,10 @@ if (override ~= "auto") then
     for i = 1, #systems do valid[#valid+1] = systems[i].fileName end
     print(("^1[zyke_lib] Invalid framework override '%s'. Valid options: %s^7"):format(override, table.concat(valid, ", ")))
 else
-    for i = 1, #systems do
-        local resState = awaitSystemStarting(systems[i].fileName)
-
-        -- If it's started, we use it
-        if (resState == "started") then
-            systems[i].fetching(systems[i].fileName)
-            Framework = systems[i].variable
-            Functions.debug.internal("^2Using " .. systems[i].fileName .. " as framework^7")
-
-            break
-        end
+    local system = awaitAnySystemStarting(systems)
+    if (system) then
+        system.fetching(system.fileName)
+        Framework = system.variable
+        Functions.debug.internal("^2Using " .. system.fileName .. " as framework^7")
     end
 end
