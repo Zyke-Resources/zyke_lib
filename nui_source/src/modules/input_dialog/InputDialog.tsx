@@ -68,6 +68,7 @@ interface FormInput {
 	disabled?: boolean;
 	defaultValue?: any;
 	forceUppercase?: boolean;
+	showWhen?: FormShowCondition;
 
 	// Select-specific
 	content?: any[];
@@ -87,6 +88,29 @@ interface FormInput {
 	maxRows?: number;
 	maxLength?: number;
 }
+
+interface FormShowCondition {
+	name: string;
+	value: any;
+}
+
+// Rows without a condition always show; a list in value matches any of its entries
+const isInputVisible = (input: FormInput, values: Record<string, any>) => {
+	const condition = input.showWhen;
+	if (!condition || typeof condition.name !== "string") return true;
+
+	const expected = Array.isArray(condition.value)
+		? condition.value
+		: [condition.value];
+	const current = values[condition.name];
+
+	// Multiselects hold a list, so any picked entry can satisfy the condition
+	if (Array.isArray(current)) {
+		return current.some((entry) => expected.includes(entry));
+	}
+
+	return expected.includes(current);
+};
 
 type FormInfoValue = string | number | boolean | null | undefined;
 type FormSeparatorSize = "small" | "big";
@@ -802,11 +826,13 @@ const InputDialog: FC = () => {
 						gap: "0.25rem",
 					}}
 				>
-					{formData.inputs.map((input, idx) => (
-						<div key={input.name || `input-${idx}`}>
-							{renderInput(input)}
-						</div>
-					))}
+					{formData.inputs.map((input, idx) =>
+						isInputVisible(input, values) ? (
+							<div key={input.name || `input-${idx}`}>
+								{renderInput(input)}
+							</div>
+						) : null
+					)}
 
 					{/* Footer */}
 					<div

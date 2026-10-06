@@ -8,6 +8,10 @@
 ---@field label? string @ Left-side row title, alias of title
 ---@field value? string | number | boolean @ Right-side row value
 
+---@class FormShowCondition
+---@field name string @ Name of the input whose current value decides visibility
+---@field value any @ Value that shows the row, or a list of values where any match shows it
+
 ---@class FormInput
 ---@field type FormInputType
 ---@field name? string @ Key used in the returned values table. Not required for static paragraph/hint/info inputs
@@ -28,6 +32,7 @@
 ---@field disabled? boolean
 ---@field defaultValue? any
 ---@field forceUppercase? boolean @ text: convert entered characters to uppercase
+---@field showWhen? FormShowCondition @ Only show this row while another input holds a matching value. A hidden input still returns its value
 ---@field content? { label: string, value: any }[] @ select/multiselect options
 ---@field searchable? boolean @ select: enable search filtering (default true)
 ---@field multiselect? boolean @ select: allow multiple selections
