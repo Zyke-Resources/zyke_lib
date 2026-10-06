@@ -77,6 +77,8 @@ Some inventories offer a lot of backwards-compatible functionality and you may n
 -   [internals/events/client.lua](internals/events/client.lua)
 -   [internals/items/client.lua](internals/items/client.lua)
 -   [internals/items/server.lua](internals/items/server.lua)
+-   [interfaces/weaponBlock/client.lua](interfaces/weaponBlock/client.lua)
+-   [internals/weaponBlock/server.lua](internals/weaponBlock/server.lua)
 
 ### Fuel
 

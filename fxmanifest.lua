@@ -34,6 +34,7 @@ loader {
     "internals/items/server.lua",
     "internals/playerIdentifiers/server.lua",
     "internals/states/server.lua",
+    "internals/weaponBlock/server.lua",
 
     "functions/debug/shared.lua",
 
