@@ -11,7 +11,7 @@
 --   "<resource_name>"  - Use a specific resource (will wait for it to start)
 --   "none"             - Skip detection entirely, use your framework's built-in system
 --
--- NOTE: "none" is only valid for optional systems (gang, fuel, vehicleKeys, death, banking, notification).
+-- NOTE: "none" is only valid for optional systems (gang, fuel, vehicleKeys, death, banking, notification, phone).
 -- Setting "none" means the library will fall back to your framework's default behavior.
 -- For example, gang = "none" will use QB's built-in gang system.
 
@@ -67,6 +67,12 @@ return {
     -- Notification system (set to "none" to use your framework's built-in notifications)
     -- Options: "auto", "none", "ox_lib"
     notification = "auto",
+
+    -- Phone system, used for phone numbers and texts (set to "none" to only use your framework's phone numbers)
+    -- Phones are never waited for, the library follows them as they start & stop
+    -- Options: "auto", "none", "sd-phone", "lb-phone", "yseries", "okokPhone", "roadphone", "gksphone",
+    -- "qs-smartphone-pro", "qs-smartphone", "high-phone", "17mov_Phone", "npwd"
+    phone = "auto",
 
     -- Progressbar system
     -- Options: "auto", "zyke_lib", "ox_lib"

@@ -191,6 +191,9 @@ Functions.debug.internal("Loaded banking", BankingSystem)
 loadSystem("notification", "notification")
 Functions.debug.internal("Loaded notification", NotificationSystem)
 
+loadSystem("phone", "phone")
+Functions.debug.internal("Loaded phone", PhoneSystem)
+
 loadSystem("progressbar", "progressbar")
 Functions.debug.internal("Loaded progressbar", ProgressBarSystem)
 

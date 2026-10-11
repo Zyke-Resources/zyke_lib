@@ -190,6 +190,7 @@ local forceLoad = {
     "getJobData/server.lua",
     "getGangData/server.lua",
     "getCharacter/server.lua",
+    "getPhoneNumber/server.lua",
     "getVehicles/server.lua",
     "getAccountIdentifier/server.lua",
     "getJobs/server.lua",
