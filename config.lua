@@ -32,6 +32,10 @@ return {
     -- you aim at to interact with, so it is easier to line up
     interestPointGuide = true,
 
+    -- Interest points inside a building only show, and can only be used, while you are in the same room
+    -- When disabled, they also show through walls from other rooms and from outside
+    interestPointRoomCheck = true,
+
     -- Works like a target system: interest points stay hidden and can't be used until the key below is held
     -- When disabled, they always show while you are near them
     interestPointTargeting = false,

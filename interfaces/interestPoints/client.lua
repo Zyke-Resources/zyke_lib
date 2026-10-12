@@ -24,17 +24,34 @@
 ---@field opacity? number @ 0-1, defaults to 1
 ---@field reach? number @ Metres from the player an aim set's point can be aimed at, any distance when omitted
 ---@field visualId? string @ resource:set:id, built once when the set is replaced
----@field resolved? vector3 | false @ This frame's world position
+---@field resolved? vector3 | false @ This frame's world position, false while it is in another room
+---@field inRoom? boolean @ Result of the last room check
 
 ---@class InterestPointOptions
 ---@field aim? boolean @ The marker nearest the screen centre is aimed at and shown active, read through getAimedInterestPoint
 ---@field aimRadius? number @ 1080p pixels from the screen centre a marker can be and still count as aimed at
+---@field ignoreRooms? boolean @ Points show and can be aimed at from another room, and from outside their interior
 
 ---@class InterestPointSet
 ---@field points InterestPoint[]
 ---@field aim boolean
+---@field rooms boolean @ Points only show to a player in their room
 ---@field aimRadius number
 ---@field aimed? string @ Id of the point aimed at on the last frame
+
+---@class InterestPointRoom
+---@field index integer
+---@field min vector3 @ In interior space
+---@field max vector3
+---@field volume number
+
+---@class InterestPointInterior
+---@field origin vector3
+---@field axisX vector3 @ World direction of the interior's own axes
+---@field axisY vector3
+---@field axisZ vector3
+---@field bounds InterestPointRoom @ The limbo room, which spans the interior
+---@field rooms InterestPointRoom[] @ Smallest first
 
 ---@class InterestPointVisual
 ---@field coords? vector3 @ Last known world position, kept while fading out
@@ -129,6 +146,13 @@ local guideAlpha = 0.0
 -- Like a target system: nothing shows and nothing can be aimed at until the targeting key is held
 local targetingEnabled = LibConfig.interestPointTargeting == true
 local wasTargeting = not targetingEnabled
+local roomCheckEnabled = LibConfig.interestPointRoomCheck ~= false
+---@type table<integer, InterestPointInterior> @ [interiorId], an interior's rooms never change
+local interiors = {}
+-- The player's interior and room index at the last aim judgement, no room while it is unknown
+local plyInterior = 0
+---@type integer?
+local plyRoom
 
 ---@param key? string
 ---@return string? resolvedKey
@@ -152,6 +176,107 @@ local function resolveCoords(point)
     end
 
     return point.coords
+end
+
+---@param interiorId integer
+---@param roomIndex integer
+---@return InterestPointRoom room
+local function readRoom(interiorId, roomIndex)
+    local minX, minY, minZ, maxX, maxY, maxZ = GetInteriorRoomExtents(interiorId, roomIndex)
+
+    return {
+        index = roomIndex,
+        min = vector3(minX, minY, minZ),
+        max = vector3(maxX, maxY, maxZ),
+        volume = (maxX - minX) * (maxY - minY) * (maxZ - minZ),
+    }
+end
+
+---@param interiorId integer
+---@return InterestPointInterior? interior @ Nil until the interior has loaded
+local function getInterior(interiorId)
+    local interior = interiors[interiorId]
+    if (interior) then return interior end
+    if (not IsInteriorReady(interiorId)) then return nil end
+
+    local origin = GetOffsetFromInteriorInWorldCoords(interiorId, 0.0, 0.0, 0.0)
+    local rooms = {}
+
+    -- Room 0 is limbo
+    for i = 1, GetInteriorRoomCount(interiorId) - 1 do
+        rooms[#rooms + 1] = readRoom(interiorId, i)
+    end
+
+    table.sort(rooms, function(a, b)
+        return a.volume < b.volume
+    end)
+
+    interior = {
+        origin = origin,
+        axisX = GetOffsetFromInteriorInWorldCoords(interiorId, 1.0, 0.0, 0.0) - origin,
+        axisY = GetOffsetFromInteriorInWorldCoords(interiorId, 0.0, 1.0, 0.0) - origin,
+        axisZ = GetOffsetFromInteriorInWorldCoords(interiorId, 0.0, 0.0, 1.0) - origin,
+        bounds = readRoom(interiorId, 0),
+        rooms = rooms,
+    }
+    interiors[interiorId] = interior
+
+    return interior
+end
+
+---@param room InterestPointRoom
+---@param x number @ In interior space
+---@param y number
+---@param z number
+---@return boolean inside
+local function isInRoom(room, x, y, z)
+    local min, max = room.min, room.max
+
+    return x >= min.x and x <= max.x and y >= min.y and y <= max.y and z >= min.z and z <= max.z
+end
+
+-- There is no native for the room at a position, so it is read from the rooms' boxes. A box is as wide as its
+-- room's furthest corners, so the box of an L-shaped room also covers the rooms in its corner: the smallest box
+-- the point is in is taken as its room
+---@param coords vector3
+---@return integer interiorId @ 0 when outside
+---@return integer? roomIndex @ Nil when the room is unknown
+local function getRoomAtCoords(coords)
+    local interiorId = GetInteriorAtCoords(coords.x, coords.y, coords.z)
+    if (interiorId == 0) then return 0, nil end
+
+    local interior = getInterior(interiorId)
+    if (not interior) then return interiorId, nil end
+
+    local offset = coords - interior.origin
+    local x, y, z = dot(offset, interior.axisX), dot(offset, interior.axisY), dot(offset, interior.axisZ)
+
+    for i = 1, #interior.rooms do
+        if (isInRoom(interior.rooms[i], x, y, z)) then return interiorId, interior.rooms[i].index end
+    end
+
+    -- GetInteriorAtCoords also answers for a point just outside the walls
+    if (not isInRoom(interior.bounds, x, y, z)) then return 0, nil end
+
+    return interiorId, nil
+end
+
+-- Cheaper than a ray per point every frame, at the cost of still showing a point behind a wall inside the same room
+---@param coords vector3
+---@return boolean visible
+local function isInPlayerRoom(coords)
+    local interiorId, roomIndex = getRoomAtCoords(coords)
+    if (interiorId ~= plyInterior) then return false end
+
+    return not roomIndex or not plyRoom or roomIndex == plyRoom
+end
+
+---@param ped integer
+local function refreshPlayerRoom(ped)
+    plyInterior = GetInteriorFromEntity(ped)
+
+    local roomIndex = plyInterior ~= 0 and GetInteriorRoomIndexByHash(plyInterior, GetRoomKeyFromEntity(ped)) or 0
+    plyRoom = roomIndex > 0 and roomIndex or nil
 end
 
 ---@param slot InterestPointSlot
@@ -396,10 +521,13 @@ local function updateVisuals(now, deltaMs, paused)
     local judgeAim = now >= nextAimAt or targeting ~= wasTargeting
     wasTargeting = targeting
 
-    local pedCoords = judgeAim and GetEntityCoords(PlayerPedId())
+    local ped = judgeAim and PlayerPedId()
+    local pedCoords = judgeAim and GetEntityCoords(ped)
     if (judgeAim) then
         nextAimAt = now + aimInterval
         guideVisible, guideAimed = false, false
+
+        refreshPlayerRoom(ped)
     end
 
     for _, resourceSets in pairs(sets) do
@@ -407,7 +535,16 @@ local function updateVisuals(now, deltaMs, paused)
             local points = set.points
 
             for i = 1, #points do
-                points[i].resolved = resolveCoords(points[i]) or false
+                local point = points[i]
+                local coords = resolveCoords(point)
+
+                -- Judged with the aim, and at once for a point that is new this frame
+                if (coords and set.rooms) then
+                    if (judgeAim or point.inRoom == nil) then point.inRoom = isInPlayerRoom(coords) end
+                    if (not point.inRoom) then coords = nil end
+                end
+
+                point.resolved = coords or false
             end
 
             if (set.aim and judgeAim) then
@@ -643,6 +780,7 @@ Functions.setInterestPoints = function(id, points, options)
         points = normalized,
         aim = options.aim == true,
         aimRadius = tonumber(options.aimRadius) or defaultAimRadius,
+        rooms = roomCheckEnabled and options.ignoreRooms ~= true,
         -- Kept so the stickiness carries over the refresh
         aimed = previous and previous.aimed,
     }
