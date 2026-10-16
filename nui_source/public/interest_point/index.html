@@ -324,6 +324,18 @@
 				20%, 60% { border-color: rgba(225, 60, 60, 0.96); }
 			}
 
+			/* A DUI texture stays blank until the page paints again after it is bound, and the idle ring is
+			   never sent anything, so a still page leaves every idle ring blank. Its marker flickers by an
+			   amount nobody can see, which keeps the ring painted */
+			.marker.keepalive {
+				animation: keepalive 1s steps(2) infinite;
+			}
+
+			@keyframes keepalive {
+				from { opacity: 1; }
+				to { opacity: 0.98; }
+			}
+
 			/* Snaps a reused slot back to the ring before it expands for a new point */
 			.instant,
 			.instant * {
@@ -358,6 +370,8 @@
 			let optionEls = [];
 			let options = [];
 			let selected = 0;
+
+			if (slot === 0) marker.classList.add("keepalive");
 
 			const pageHeight = Number(params.get("height"));
 			if (pageHeight > 0) document.documentElement.style.setProperty("--page-height", String(pageHeight / 10));
