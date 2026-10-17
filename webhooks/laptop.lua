@@ -1,0 +1,17 @@
+return {
+    ["LaptopPlaced"] = "",
+    ["LaptopPickedUp"] = "",
+    ["LaptopExpired"] = "",
+    ["ShopPurchase"] = "",
+    ["CasinoDeposit"] = "",
+    ["CasinoWithdraw"] = "",
+    ["CasinoAdjusted"] = "",
+    ["OwnerChanged"] = "",
+    ["ReportedStolen"] = "",
+    ["DriveUnlocked"] = "",
+    ["PasswordReset"] = "",
+    ["OsInstalled"] = "",
+    ["PartInstalled"] = "",
+    ["PartRemoved"] = "",
+    ["AdminAction"] = "",
+}
