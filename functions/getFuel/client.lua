@@ -11,6 +11,8 @@ function Functions.getFuel(veh)
         fuel = exports["cdn-fuel"]:GetFuel(veh)
     elseif (FuelSystem == "LCFuel") then
         fuel = exports["lc_fuel"]:GetFuel(veh)
+    elseif (FuelSystem == "RcoreFuel") then
+        fuel = exports["rcore_fuel"]:GetVehicleFuelPercentage(veh)
     else
         fuel = GetVehicleFuelLevel(veh)
     end

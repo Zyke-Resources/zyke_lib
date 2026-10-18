@@ -10,6 +10,7 @@ local systems = {
     {fileName = "LegacyFuel", variable = "LegacyFuel"},
     {fileName = "cdn-fuel", variable = "CDNFuel"},
     {fileName = "lc_fuel", variable = "LCFuel"},
+    {fileName = "rcore_fuel", variable = "RcoreFuel"},
 }
 
 if (override ~= "auto") then

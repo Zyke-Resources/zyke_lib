@@ -5,6 +5,7 @@ function Functions.setFuel(veh, amount)
     if (FuelSystem == "OX") then Entity(veh).state.fuel = amount return end
     if (FuelSystem == "CDNFuel") then return exports["cdn-fuel"]:SetFuel(veh, amount) end
     if (FuelSystem == "LCFuel") then return exports["lc_fuel"]:SetFuel(veh, amount) end
+    if (FuelSystem == "RcoreFuel") then return exports["rcore_fuel"]:SetVehicleFuel(veh, amount) end
 
     SetVehicleFuelLevel(veh, amount)
 end
