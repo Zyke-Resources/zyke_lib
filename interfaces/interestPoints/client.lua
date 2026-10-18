@@ -271,6 +271,21 @@ local function isInPlayerRoom(coords)
     return not roomIndex or not plyRoom or roomIndex == plyRoom
 end
 
+-- A point on an entity is in the room the game keeps the entity in. The boxes put a prop on a counter or by a doorway
+-- in the neighbouring room whenever that room's box is the smaller one. An entity in no interior is read from the boxes
+---@param point InterestPoint
+---@param coords vector3
+---@return boolean visible
+local function isPointInPlayerRoom(point, coords)
+    local interiorId = point.entity and GetInteriorFromEntity(point.entity) or 0
+    if (interiorId == 0) then return isInPlayerRoom(coords) end
+    if (interiorId ~= plyInterior) then return false end
+
+    local roomIndex = GetInteriorRoomIndexByHash(interiorId, GetRoomKeyFromEntity(point.entity))
+
+    return roomIndex <= 0 or not plyRoom or roomIndex == plyRoom
+end
+
 ---@param ped integer
 local function refreshPlayerRoom(ped)
     plyInterior = GetInteriorFromEntity(ped)
@@ -540,7 +555,7 @@ local function updateVisuals(now, deltaMs, paused)
 
                 -- Judged with the aim, and at once for a point that is new this frame
                 if (coords and set.rooms) then
-                    if (judgeAim or point.inRoom == nil) then point.inRoom = isInPlayerRoom(coords) end
+                    if (judgeAim or point.inRoom == nil) then point.inRoom = isPointInPlayerRoom(point, coords) end
                     if (not point.inRoom) then coords = nil end
                 end
 
