@@ -4,6 +4,8 @@
 -- A point with options expands into a timeline instead: the mouse wheel moves the selection along it
 -- and the key acts on the selected option. A single option shows as a plain prompt, so a point can
 -- keep the same option ids while its choices come and go
+-- Only following and drawing the markers runs every frame. Rooms, aim, the camera's view and the prompts
+-- are judged on the aim interval, and the loop sleeps between judgements while nothing is on screen
 
 ---@class InterestPointOption
 ---@field id string @ Stable within its point, so the selection holds across updates
@@ -24,8 +26,8 @@
 ---@field opacity? number @ 0-1, defaults to 1
 ---@field reach? number @ Metres from the player an aim set's point can be aimed at, any distance when omitted
 ---@field visualId? string @ resource:set:id, built once when the set is replaced
----@field resolved? vector3 | false @ This frame's world position, false while it is in another room
----@field inRoom? boolean @ Result of the last room check
+---@field resolved? vector3 | false @ World position at the last judgement, false while it is in another room
+---@field culled? boolean @ Outside the camera's view at the last judgement, so it can't be aimed at
 
 ---@class InterestPointOptions
 ---@field aim? boolean @ The marker nearest the screen centre is aimed at and shown active, read through getAimedInterestPoint
@@ -54,11 +56,18 @@
 ---@field rooms InterestPointRoom[] @ Smallest first
 
 ---@class InterestPointVisual
+---@field point? InterestPoint @ Nil once the point left its set
 ---@field coords? vector3 @ Last known world position, kept while fading out
----@field seenFrame integer
+---@field resolvedFrame? integer @ Frame the coords were last read on
+---@field seenTick integer
 ---@field alpha number @ 0-1 fade in and out
 ---@field present boolean
 ---@field active boolean
+---@field culled? boolean @ Outside the view at the last judgement, so it is neither followed nor drawn
+---@field roomAt? vector3 @ Where the point's own room was last read
+---@field roomCheckAt? integer @ Game timer the room is read again even if the point stood still
+---@field roomInterior? integer
+---@field roomIndex? integer
 ---@field opacity number
 ---@field key? string
 ---@field label? string
@@ -106,6 +115,16 @@ local aimInterval = 50
 -- The aimed marker counts as this much closer, so it holds a little past the radius and does not
 -- flicker between neighbours
 local aimStickiness = 1.3
+-- A point's own room is read again once it moved this many metres, or after one to two of these intervals
+-- in case its interior finished loading. GetInteriorAtCoords costs more than everything else a point takes
+local roomMoveTolerance = 0.5
+local roomRecheckMs = 1000
+-- Degrees past the corners of the screen a point still counts as in view. A point outside is skipped
+-- until the next judgement, so it only shows late when the camera turns faster than this per aim interval
+local viewMargin = 25
+-- Metres from the camera within which a point always counts as in view
+local viewMinDistance = 2.0
+local zeroOffset = vector3(0.0, 0.0, 0.0)
 -- How often the screen resolution is checked for a settings change
 local layoutInterval = 3000
 -- The guide dot shows once a marker is within this many aim radii of the screen centre
@@ -135,7 +154,15 @@ local running = false
 local initialized = false
 local layout = {}
 local frame = 0
+-- Counts judgements; a visual not seen on the latest one has left its set
+local tick = 0
 local nextAimAt = 0
+-- A set was cleared, so its markers go on the next frame rather than at the interval
+local setsChanged = false
+-- An expanded marker has options, so the mouse wheel is read every frame
+local scrollable = false
+-- The camera at the last judgement
+local viewCoords, viewForward, viewCos = zeroOffset, zeroOffset, -1.0
 local nextLayoutAt = 0
 local guideEnabled = LibConfig.interestPointGuide == true
 local guideReady = false
@@ -170,7 +197,7 @@ local function resolveCoords(point)
     if (point.entity) then
         if (not DoesEntityExist(point.entity)) then return nil end
 
-        local offset = point.offset or vector3(0.0, 0.0, 0.0)
+        local offset = point.offset or zeroOffset
 
         return GetOffsetFromEntityInWorldCoords(point.entity, offset.x, offset.y, offset.z)
     end
@@ -261,29 +288,38 @@ local function getRoomAtCoords(coords)
     return interiorId, nil
 end
 
--- Cheaper than a ray per point every frame, at the cost of still showing a point behind a wall inside the same room
----@param coords vector3
----@return boolean visible
-local function isInPlayerRoom(coords)
-    local interiorId, roomIndex = getRoomAtCoords(coords)
-    if (interiorId ~= plyInterior) then return false end
-
-    return not roomIndex or not plyRoom or roomIndex == plyRoom
-end
-
 -- A point on an entity is in the room the game keeps the entity in. The boxes put a prop on a counter or by a doorway
 -- in the neighbouring room whenever that room's box is the smaller one. An entity in no interior is read from the boxes
 ---@param point InterestPoint
 ---@param coords vector3
----@return boolean visible
-local function isPointInPlayerRoom(point, coords)
+---@return integer interiorId @ 0 when outside
+---@return integer? roomIndex @ Nil when the room is unknown
+local function getPointRoom(point, coords)
     local interiorId = point.entity and GetInteriorFromEntity(point.entity) or 0
-    if (interiorId == 0) then return isInPlayerRoom(coords) end
-    if (interiorId ~= plyInterior) then return false end
+    if (interiorId == 0) then return getRoomAtCoords(coords) end
 
     local roomIndex = GetInteriorRoomIndexByHash(interiorId, GetRoomKeyFromEntity(point.entity))
 
-    return roomIndex <= 0 or not plyRoom or roomIndex == plyRoom
+    return interiorId, roomIndex > 0 and roomIndex or nil
+end
+
+-- Cheaper than a ray per point every frame, at the cost of still showing a point behind a wall inside the same room.
+-- The point's own room is kept on its visual until the point moves, as it does not depend on where the player is
+---@param visual InterestPointVisual
+---@param point InterestPoint
+---@param coords vector3
+---@param now integer
+---@return boolean visible
+local function isInPlayerRoom(visual, point, coords, now)
+    if (not visual.roomAt or now >= visual.roomCheckAt or #(coords - visual.roomAt) > roomMoveTolerance) then
+        visual.roomInterior, visual.roomIndex = getPointRoom(point, coords)
+        -- Spread out, so points added together do not all read their rooms on the same frame
+        visual.roomAt, visual.roomCheckAt = coords, now + math.random(roomRecheckMs, roomRecheckMs * 2)
+    end
+
+    if (visual.roomInterior ~= plyInterior) then return false end
+
+    return not visual.roomIndex or not plyRoom or visual.roomIndex == plyRoom
 end
 
 ---@param ped integer
@@ -325,6 +361,29 @@ local function refreshLayout(now)
         guideW = guideSize * scale / screenW,
         guideH = guideSize * scale / screenH,
     }
+end
+
+-- The view is a cone from the camera out to the screen's corners plus the margin
+local function refreshView()
+    local rotation = GetFinalRenderedCamRot(2)
+    local pitch, yaw = math.rad(rotation.x), math.rad(rotation.z)
+    local flat = math.abs(math.cos(pitch))
+    local aspect = layout.screenW / layout.screenH
+    local corner = math.deg(math.atan(math.tan(math.rad(GetFinalRenderedCamFov() / 2)) * math.sqrt(1 + aspect * aspect)))
+
+    viewCoords = GetFinalRenderedCamCoord()
+    viewForward = vector3(-math.sin(yaw) * flat, math.cos(yaw) * flat, math.sin(pitch))
+    viewCos = math.cos(math.rad(math.min(corner + viewMargin, 180)))
+end
+
+---@param coords vector3
+---@return boolean outside
+local function isOutsideView(coords)
+    local offset = coords - viewCoords
+    local distance = #offset
+    if (distance <= viewMinDistance) then return false end
+
+    return dot(offset, viewForward) < distance * viewCos
 end
 
 -- Generated rather than shipped as an image: a white dot with a soft dark rim, so it stays visible
@@ -439,7 +498,7 @@ local function findAimedPoint(set, pedCoords)
         local pedDist = coords and point.reach and #(coords - pedCoords)
         local inReach = not pedDist or pedDist <= point.reach
 
-        if (coords and (inReach or pedDist <= point.reach + guideReachMargin)) then
+        if (coords and not point.culled and (inReach or pedDist <= point.reach + guideReachMargin)) then
             local onScreen, screenX, screenY = GetScreenCoordFromWorldCoord(coords.x, coords.y, coords.z)
 
             if (onScreen) then
@@ -480,8 +539,9 @@ end
 
 -- Moves the selection of every expanded marker with options; the timeline ends rather than wraps
 ---@param paused boolean
+---@return boolean moved
 local function scrollOptions(paused)
-    if (paused) then return end
+    if (paused) then return false end
 
     local step
     local moved = false
@@ -508,6 +568,8 @@ local function scrollOptions(paused)
     end
 
     if (moved) then PlaySoundFrontend(-1, "NAV_UP_DOWN", "HUD_FRONTEND_DEFAULT_SOUNDSET", true) end
+
+    return moved
 end
 
 -- Copies the visual's prompt onto its slot and expands it; the options only go over when they changed
@@ -524,91 +586,9 @@ local function sendPrompt(slot, visual, reset)
     sendSlot(slot, data)
 end
 
--- Runs every frame, so it allocates nothing for points that are already on screen
+-- Collapses the slots whose point stopped being active and keeps every active point's prompt on a slot
 ---@param now integer
----@param deltaMs number
----@param paused boolean
-local function updateVisuals(now, deltaMs, paused)
-    frame = frame + 1
-
-    local targeting = not targetingEnabled or HoldingKeys[targetingCommand] == true
-    -- Judged right away when the targeting key changes, so a press or release never lags behind the interval
-    local judgeAim = now >= nextAimAt or targeting ~= wasTargeting
-    wasTargeting = targeting
-
-    local ped = judgeAim and PlayerPedId()
-    local pedCoords = judgeAim and GetEntityCoords(ped)
-    if (judgeAim) then
-        nextAimAt = now + aimInterval
-        guideVisible, guideAimed = false, false
-
-        refreshPlayerRoom(ped)
-    end
-
-    for _, resourceSets in pairs(sets) do
-        for _, set in pairs(resourceSets) do
-            local points = set.points
-
-            for i = 1, #points do
-                local point = points[i]
-                local coords = resolveCoords(point)
-
-                -- Judged with the aim, and at once for a point that is new this frame
-                if (coords and set.rooms) then
-                    if (judgeAim or point.inRoom == nil) then point.inRoom = isPointInPlayerRoom(point, coords) end
-                    if (not point.inRoom) then coords = nil end
-                end
-
-                point.resolved = coords or false
-            end
-
-            if (set.aim and judgeAim) then
-                local aimed, guided = nil, false
-                if (not paused and targeting) then aimed, guided = findAimedPoint(set, pedCoords) end
-
-                set.aimed = aimed
-                guideVisible = guideVisible or guided
-                guideAimed = guideAimed or aimed ~= nil
-            end
-
-            for i = 1, #points do
-                local point = points[i]
-                local id = point.visualId
-                local visual = visuals[id]
-                local coords = point.resolved or nil
-                local active = set.aim and point.id == set.aimed or (not set.aim and point.active == true)
-
-                if (not visual) then
-                    visual = {alpha = 0.0}
-                    visuals[id] = visual
-                end
-
-                visual.seenFrame = frame
-                visual.coords = coords or visual.coords
-                visual.present = coords ~= nil and targeting
-                visual.active = visual.present and active
-                visual.opacity = point.opacity or 1.0
-                visual.key, visual.label, visual.hint = point.key, point.label, point.hint
-                visual.options, visual.optionsKey = point.options, point.optionsKey
-                -- Looking away starts the timeline over at the first option
-                if (not visual.active) then visual.selected, visual.selectedIndex = nil, nil end
-                syncSelection(visual)
-            end
-        end
-    end
-
-    local step = deltaMs / fadeMs
-    guideAlpha = guideVisible and not guideAimed and math.min(guideAlpha + step, 1.0) or math.max(guideAlpha - step, 0.0)
-
-    for id, visual in pairs(visuals) do
-        if (visual.seenFrame ~= frame) then visual.present, visual.active = false, false end
-
-        visual.alpha = visual.present and math.min(visual.alpha + step, 1.0) or math.max(visual.alpha - step, 0.0)
-        if (visual.alpha <= 0.0 and not visual.present and not getPointSlot(id)) then visuals[id] = nil end
-    end
-
-    scrollOptions(paused)
-
+local function syncSlots(now)
     for i = 1, #slots do
         local slot = slots[i]
         local visual = slot.pointId and visuals[slot.pointId]
@@ -616,9 +596,8 @@ local function updateVisuals(now, deltaMs, paused)
         if (slot.expanded and not (visual and visual.active)) then
             slot.expanded = false
             slot.releaseAt = now + collapseMs
+
             sendSlot(slot, {active = false})
-        elseif (slot.releaseAt and now >= slot.releaseAt) then
-            slot.pointId, slot.releaseAt = nil, nil
         end
     end
 
@@ -636,6 +615,7 @@ local function updateVisuals(now, deltaMs, paused)
 
                 if (slot) then
                     slot.pointId = id
+
                     sendPrompt(slot, visual, true)
                 end
             end
@@ -643,36 +623,158 @@ local function updateVisuals(now, deltaMs, paused)
     end
 end
 
+-- A collapsed slot hands its point back to the ring sprite
+---@param now integer
+local function releaseSlots(now)
+    for i = 1, #slots do
+        local slot = slots[i]
+        if (slot.releaseAt and now >= slot.releaseAt) then slot.pointId, slot.releaseAt = nil, nil end
+    end
+end
+
+-- Everything but following and drawing the markers: rooms, the camera's view, aim, the prompts and the slots
+---@param now integer
 ---@param paused boolean
-local function drawVisuals(paused)
-    if (paused) then return end
+---@param targeting boolean
+local function judge(now, paused, targeting)
+    tick = tick + 1
+    nextAimAt = now + aimInterval
+    setsChanged, scrollable = false, false
+    guideVisible, guideAimed = false, false
 
-    local drawn = 0
-    local ringReady = ringSlot ~= nil and isSlotReady(ringSlot)
+    local ped = PlayerPedId()
+    local pedCoords = GetEntityCoords(ped)
 
-    for id, visual in pairs(visuals) do
-        if (drawn >= maxDrawn) then break end
+    refreshPlayerRoom(ped)
+    refreshView()
 
-        local coords = visual.coords
-        if (coords and visual.alpha > 0.0) then
-            local slot = getPointSlot(id)
-            drawn = drawn + 1
+    for _, resourceSets in pairs(sets) do
+        for _, set in pairs(resourceSets) do
+            local points = set.points
 
-            SetDrawOrigin(coords.x, coords.y, coords.z, 0)
+            for i = 1, #points do
+                local point = points[i]
+                local visual = visuals[point.visualId]
 
-            if (slot) then
-                DrawSprite(slot.dui.dictName, slot.dui.txtName, layout.duiX, 0.0, layout.duiW, layout.duiH, 0.0, 255, 255, 255, math.floor(visual.alpha * 255))
-            elseif (ringReady) then
-                DrawSprite(ringSlot.dui.dictName, ringSlot.dui.txtName, 0.0, 0.0, layout.ringW, layout.ringH, 0.0, 255, 255, 255, math.floor(visual.alpha * visual.opacity * 255))
+                if (not visual) then
+                    visual = {alpha = 0.0}
+                    visuals[point.visualId] = visual
+                end
+
+                -- Nothing shows while the targeting key is up, so there is nothing to read
+                local coords = targeting and resolveCoords(point) or nil
+                if (coords and set.rooms and not isInPlayerRoom(visual, point, coords, now)) then coords = nil end
+
+                point.resolved = coords or false
+                point.culled = coords ~= nil and isOutsideView(coords)
+            end
+
+            if (set.aim) then
+                local aimed, guided = nil, false
+                if (not paused and targeting) then aimed, guided = findAimedPoint(set, pedCoords) end
+
+                set.aimed = aimed
+                guideVisible = guideVisible or guided
+                guideAimed = guideAimed or aimed ~= nil
+            end
+
+            for i = 1, #points do
+                local point = points[i]
+                local visual = visuals[point.visualId]
+                local coords = point.resolved or nil
+                local active = set.aim and point.id == set.aimed or (not set.aim and point.active == true)
+
+                visual.point, visual.seenTick = point, tick
+                visual.present, visual.culled = coords ~= nil, point.culled
+                visual.active = visual.present and active
+                visual.opacity = point.opacity or 1.0
+                visual.key, visual.label, visual.hint = point.key, point.label, point.hint
+                visual.options, visual.optionsKey = point.options, point.optionsKey
+
+                if (coords) then visual.coords, visual.resolvedFrame = coords, frame end
+
+                -- Looking away starts the timeline over at the first option
+                if (not visual.active) then visual.selected, visual.selectedIndex = nil, nil end
+
+                syncSelection(visual)
+
+                if (visual.active and visual.options and #visual.options > 1) then scrollable = true end
             end
         end
     end
 
-    ClearDrawOrigin()
+    for id, visual in pairs(visuals) do
+        if (visual.seenTick ~= tick) then visual.point, visual.present, visual.active = nil, false, false end
+
+        if (not visual.point and visual.alpha <= 0.0 and not getPointSlot(id)) then
+            visuals[id] = nil
+        elseif (not visual.present) then
+            -- Fading out where it was last seen
+            visual.culled = visual.alpha > 0.0 and visual.coords ~= nil and isOutsideView(visual.coords)
+        end
+    end
+
+    syncSlots(now)
+end
+
+-- Follows, fades and draws the markers. Runs every frame, so it allocates nothing
+---@param deltaMs number
+---@param paused boolean
+---@return boolean busy @ Something is on screen or the mouse wheel is read, so the next frame is needed
+local function renderVisuals(deltaMs, paused)
+    local step = deltaMs / fadeMs
+    local ringReady = ringSlot ~= nil and isSlotReady(ringSlot)
+    local drawn = 0
+    local busy = scrollable
+
+    for id, visual in pairs(visuals) do
+        if (visual.culled) then
+            -- Not drawn before the next judgement, so there is no fade to show
+            visual.alpha = visual.present and 1.0 or 0.0
+        elseif (visual.present or visual.alpha > 0.0) then
+            local point = visual.point
+            busy = true
+
+            if (point and visual.resolvedFrame ~= frame) then
+                local coords = resolveCoords(point)
+
+                if (coords) then
+                    visual.coords = coords
+                else
+                    visual.present, visual.active = false, false
+                end
+            end
+
+            local alpha = visual.present and math.min(visual.alpha + step, 1.0) or math.max(visual.alpha - step, 0.0)
+            local coords = visual.coords
+            visual.alpha = alpha
+
+            if (not paused and coords and alpha > 0.0 and drawn < maxDrawn) then
+                local slot = getPointSlot(id)
+                drawn = drawn + 1
+
+                SetDrawOrigin(coords.x, coords.y, coords.z, 0)
+
+                if (slot) then
+                    DrawSprite(slot.dui.dictName, slot.dui.txtName, layout.duiX, 0.0, layout.duiW, layout.duiH, 0.0, 255, 255, 255, math.floor(alpha * 255))
+                elseif (ringReady) then
+                    DrawSprite(ringSlot.dui.dictName, ringSlot.dui.txtName, 0.0, 0.0, layout.ringW, layout.ringH, 0.0, 255, 255, 255, math.floor(alpha * visual.opacity * 255))
+                end
+            end
+        end
+    end
+
+    if (drawn > 0) then ClearDrawOrigin() end
+
+    guideAlpha = guideVisible and not guideAimed and math.min(guideAlpha + step, 1.0) or math.max(guideAlpha - step, 0.0)
 
     if (guideReady and guideAlpha > 0.0) then
-        DrawSprite(guideTxd, guideTxn, 0.5, 0.5, layout.guideW, layout.guideH, 0.0, 255, 255, 255, math.floor(guideAlpha * 255))
+        busy = true
+
+        if (not paused) then DrawSprite(guideTxd, guideTxn, 0.5, 0.5, layout.guideW, layout.guideH, 0.0, 255, 255, 255, math.floor(guideAlpha * 255)) end
     end
+
+    return busy and not paused
 end
 
 local function startRendering()
@@ -687,12 +789,34 @@ local function startRendering()
         while (next(sets) or next(visuals)) do
             local now = GetGameTimer()
             local paused = IsPauseMenuActive()
+            local targeting = not targetingEnabled or HoldingKeys[targetingCommand] == true
+            frame = frame + 1
+
             refreshLayout(now)
-            updateVisuals(now, now - last, paused)
-            drawVisuals(paused)
+            releaseSlots(now)
+
+            -- Judged right away when a set is cleared or the targeting key changes, so neither lags behind the
+            -- interval. A replaced set waits for it, as the consumers send theirs again several times a second
+            if (setsChanged or now >= nextAimAt or targeting ~= wasTargeting) then judge(now, paused, targeting) end
+
+            wasTargeting = targeting
+
+            if (scrollable and scrollOptions(paused)) then syncSlots(now) end
+
+            local busy = renderVisuals(now - last, paused)
             last = now
 
-            Wait(0)
+            if (busy) then
+                Wait(0)
+            elseif (not targeting) then
+                -- Pressing the targeting key starts rendering again
+                break
+            else
+                Wait(math.max(nextAimAt - now, 0))
+
+                -- Nothing faded while asleep, so the first frame back starts from where it was
+                last = GetGameTimer()
+            end
         end
 
         running = false
@@ -743,6 +867,8 @@ local function clearSet(resourceName, id)
 
     resourceSets[id] = nil
     if (not next(resourceSets)) then sets[resourceName] = nil end
+
+    setsChanged = true
 end
 
 -- Replaces the calling resource's set; call again whenever a point is added, removed or changes state
@@ -800,7 +926,11 @@ Functions.setInterestPoints = function(id, points, options)
         aimed = previous and previous.aimed,
     }
 
-    startRendering()
+    -- The DUIs load now, so the markers are ready by the time the targeting key is pressed
+    initialize()
+
+    -- With targeting, rendering only runs while the key is held, and the press starts it
+    if (not targetingEnabled or HoldingKeys[targetingCommand] == true) then startRendering() end
 end
 
 ---@param id string @ Set identifier within the calling resource
@@ -819,7 +949,7 @@ Functions.shakeInterestPoint = function(id, pointId)
     sendSlot(slot, {shake = true})
 end
 
--- Aim sets judge the aim every frame; this reads the result of the last one
+-- Aim sets judge the aim on the aim interval; this reads the result of the last judgement
 ---@param id string @ Set identifier within the calling resource
 ---@return string? pointId
 ---@return string? optionId @ Selected option of the aimed point when it has options
@@ -841,7 +971,10 @@ Functions.getInterestPointOption = function(id, pointId)
 end
 
 if (targetingEnabled) then
-    Functions.registerKey(targetingCommand, LibConfig.interestPointTargetingKey or "LMENU", "Show interaction points (hold)")
+    -- Rendering stops while the key is up, so the press starts it again
+    Functions.registerKey(targetingCommand, LibConfig.interestPointTargetingKey or "LMENU", "Show interaction points (hold)", function()
+        if (next(sets)) then startRendering() end
+    end)
 end
 
 -- The DUI page reports once it can take messages
@@ -862,4 +995,5 @@ end)
 ---@param resourceName string @ Stopping resource name
 AddEventHandler("onClientResourceStop", function(resourceName)
     sets[resourceName] = nil
+    setsChanged = true
 end)
