@@ -17,7 +17,7 @@
 ---@field entity? integer @ Entity the point follows
 ---@field offset? vector3 @ Entity-local point, defaults to the entity origin
 ---@field coords? vector3 @ World point when there is no entity
----@field key? string @ Key label shown while active, or a "+" prefixed command resolved to its bound key
+---@field key? string @ Key label shown while active, or a "+" prefixed command resolved to its bound key when the prompt shows
 ---@field label? string @ Text beside the key while active
 ---@field hint? string @ Smaller line under the label while active, such as what the action needs first
 ---@field options? InterestPointOption[] @ Replaces the label and hint with a scrollable timeline, read through getInterestPointOption
@@ -181,6 +181,7 @@ local plyInterior = 0
 ---@type integer?
 local plyRoom
 
+-- Only called when a prompt is sent: reading a command's binding costs more than the rest of a set's refresh
 ---@param key? string
 ---@return string? resolvedKey
 local function resolveKey(key)
@@ -577,7 +578,7 @@ end
 ---@param visual InterestPointVisual
 ---@param reset boolean @ The slot was showing another point
 local function sendPrompt(slot, visual, reset)
-    local data = {reset = reset, active = true, key = visual.key or "", label = visual.label or "", hint = visual.hint or "", selected = visual.selectedIndex}
+    local data = {reset = reset, active = true, key = resolveKey(visual.key) or "", label = visual.label or "", hint = visual.hint or "", selected = visual.selectedIndex}
     if (reset or slot.optionsKey ~= visual.optionsKey) then data.options = visual.options and #visual.options > 1 and visual.options or false end
 
     slot.expanded, slot.releaseAt = true, nil
@@ -894,7 +895,7 @@ Functions.setInterestPoints = function(id, points, options)
                 entity = entity,
                 offset = type(point.offset) == "vector3" and point.offset or nil,
                 coords = coords,
-                key = resolveKey(point.key),
+                key = point.key,
                 label = single and single.label or point.label,
                 hint = type(hint) == "string" and hint ~= "" and hint or nil,
                 options = pointOptions,
