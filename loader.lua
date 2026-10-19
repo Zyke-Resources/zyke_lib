@@ -179,6 +179,9 @@ Functions.debug.internal("Loaded fuel", FuelSystem)
 loadSystem("vehicleKeys", "vehicleKeys")
 Functions.debug.internal("Loaded vehicle keys", VehicleKeysSystem)
 
+loadSystem("doorlock", "doorlock")
+Functions.debug.internal("Loaded door lock", DoorlockSystem)
+
 loadSystem("death", "death")
 Functions.debug.internal("Loaded death", DeathSystem)
 

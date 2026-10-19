@@ -86,6 +86,11 @@ Some inventories offer a lot of backwards-compatible functionality and you may n
 -   `functions/getFuel/client.lua`
 -   `functions/setFuel/client.lua`
 
+### Door Lock
+
+-   `systems/doorlock.lua`
+-   `functions/doorlock/server.lua`
+
 ### Target
 
 -   `systems/target.lua`
@@ -121,7 +126,7 @@ Each system supports the following values:
 | `"<resource_name>"` | Use a specific resource (will wait for it to start) |
 | `"none"` | Skip detection entirely, fall back to your framework's built-in system |
 
-> **Note:** `"none"` is only valid for **optional** systems (gang, fuel, vehicle keys, death, banking, notification). Setting it means the library will use your framework's default behavior instead.
+> **Note:** `"none"` is only valid for **optional** systems (gang, fuel, vehicle keys, door lock, death, banking, notification). Setting it means the library will use your framework's default behavior instead.
 
 ### Available Systems
 
@@ -140,6 +145,7 @@ Each system supports the following values:
 | `gang` | `"auto"`, `"none"`, `"pug-gangs"` |
 | `fuel` | `"auto"`, `"none"`, `"ox_fuel"`, `"LegacyFuel"`, `"cdn-fuel"`, `"lc_fuel"`, `"rcore_fuel"` |
 | `vehicleKeys` | `"auto"`, `"none"`, `"zyke_vehiclekeys"`, `"qb-vehiclekeys"`, `"qbx_vehiclekeys"`, `"qs-vehiclekeys"`, `"wasabi_carlock"` |
+| `doorlock` | `"auto"`, `"none"`, `"ox_doorlock"`, `"rcore_doorlock"`, `"qb-doorlock"` |
 | `death` | `"auto"`, `"none"`, `"sky_ambulancejob"`, `"wasabi_ambulance"`, `"wasabi_ambulance_v2"`, `"osp_ambulance"` |
 | `hud` | `"auto"`, `"none"`, or any HUD listed under [HUD Visibility](#hud-visibility) |
 | `banking` | `"auto"`, `"none"`, `"tgg-banking"`, `"Renewed-Banking"`, `"RxBanking"`, `"okokBanking"`, `"bablo-banking"`, `"sky_banking"` |
@@ -158,6 +164,7 @@ return {
     gang = "none",    -- Use framework's built-in gang system
     fuel = "ox_fuel",
     vehicleKeys = "auto",
+    doorlock = "auto",
     death = "auto",
     hud = "auto",
     banking = "none",
@@ -167,6 +174,26 @@ return {
 ```
 
 > **Tip:** If your server gets stuck on the dependency loading step, set the appropriate system to the exact resource name you use instead of `"auto"`.
+
+## Door Lock
+
+`Z.doorlock.*` lets a resource lock its own doors to a job. It runs on the server.
+
+| `Z.doorlock` method | Purpose |
+|---|---|
+| `getProvider()` | Selected resource name |
+| `isAvailable()` | Whether the selected resource is started |
+| `ensure(entry)` | Adds the door unless the door lock already has it, returns `ensured, reason?` |
+
+`entry` takes a unique `name`, `doors` (one door, or both halves of a double door, each `{model, coords, heading}`), and optionally `label`, `group`, `jobs` (names or `{name, minGrade}`, as for `Z.isJob`), `locked` (default `true`), `distance` and `pin`. A door already there is left as it is, so changes the server owner made in the door lock stay. Renaming an entry adds the door again.
+
+| Provider | How the door is added |
+|---|---|
+| `ox_doorlock` | `createDoor` export with the jobs as groups, found again by `name` in the `ox_doorlock` table. The calling resource must load `@oxmysql/lib/MySQL.lua` |
+| `rcore_doorlock` | `addDoor` export, one door per half, found again by position. rcore takes no job from another resource, so the door opens with `pin` until the server owner sets its access in `/doors` |
+| `qb-doorlock` | Not possible: it reads its doors from `qb-doorlock/configs/*.lua`. `ensure` returns `false, "doorlockConfigOnly"` and the resource ships a config file instead |
+
+Other `reason` values: `doorlockUnavailable` (no door lock started), `invalidDoor`, `databaseUnavailable` and `doorNotAdded`.
 
 ## Vehicle Keys
 

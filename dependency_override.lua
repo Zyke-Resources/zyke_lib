@@ -11,7 +11,7 @@
 --   "<resource_name>"  - Use a specific resource (will wait for it to start)
 --   "none"             - Skip detection entirely, use your framework's built-in system
 --
--- NOTE: "none" is only valid for optional systems (gang, fuel, vehicleKeys, death, banking, notification, phone).
+-- NOTE: "none" is only valid for optional systems (gang, fuel, vehicleKeys, doorlock, death, banking, notification, phone).
 -- Setting "none" means the library will fall back to your framework's default behavior.
 -- For example, gang = "none" will use QB's built-in gang system.
 
@@ -49,6 +49,11 @@ return {
     -- Vehicle key system
     -- Options: "auto", "none", "zyke_vehiclekeys", "qb-vehiclekeys", "qbx_vehiclekeys", "qs-vehiclekeys", "wasabi_carlock"
     vehicleKeys = "auto",
+
+    -- Door lock system, used by resources that lock their doors to a job (set to "none" to add doors yourself)
+    -- qb-doorlock can't take doors from another resource, resources ship a config file for it instead
+    -- Options: "auto", "none", "ox_doorlock", "rcore_doorlock", "qb-doorlock"
+    doorlock = "auto",
 
     -- Death check system (set to "none" to use your framework's built-in death checks)
     -- Options: "auto", "none", "sky_ambulancejob", "wasabi_ambulance", "wasabi_ambulance_v2", "osp_ambulance"
