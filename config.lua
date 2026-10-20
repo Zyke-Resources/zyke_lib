@@ -25,7 +25,7 @@ return {
 
     -- Wraps formatted numbers with your preferred currency display
     -- Injects automatically to your locales during runtime
-    -- Examples: "$%s", "%s kr", "€%s", "%s EUR"
+    -- Examples: "$%s", "%s kr", "%s€", "%s EUR"
     currencyFormat = "$%s",
 
     -- Shows a dot in the middle of the screen while you are close to looking at an interest point
