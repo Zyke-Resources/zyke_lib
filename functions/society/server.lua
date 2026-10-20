@@ -19,6 +19,8 @@ function Functions.society.get(name)
         return exports["bablo-banking"]:GetSocietyBalance(name)
     elseif (BankingSystem == "SKY_BANKING") then
         return exports["sky_base"]:getJobBalance(name)
+    elseif (BankingSystem == "KARTIK_BANKING") then
+        return exports["kartik-banking"]:GetAccountMoney(name)
     end
 
     if (Framework == "QB") then
@@ -61,6 +63,8 @@ function Functions.society.add(name, amount)
         return result and result.success == true
     elseif (BankingSystem == "SKY_BANKING") then
         return exports["sky_base"]:addJobBalance(name, amount) ~= false
+    elseif (BankingSystem == "KARTIK_BANKING") then
+        return exports["kartik-banking"]:AddAccountMoney(name, amount) ~= false
     end
 
     if (Framework == "QB") then
@@ -107,6 +111,8 @@ function Functions.society.remove(name, amount)
         return result and result.success == true
     elseif (BankingSystem == "SKY_BANKING") then
         return exports["sky_base"]:removeJobBalance(name, amount) == true
+    elseif (BankingSystem == "KARTIK_BANKING") then
+        return exports["kartik-banking"]:RemoveAccountMoney(name, amount) ~= false
     end
 
     if (Framework == "QB") then

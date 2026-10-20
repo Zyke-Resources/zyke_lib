@@ -11,7 +11,8 @@ local systems = {
     {fileName = "RxBanking", variable = "RX_BANKING"},
     {fileName = "okokBanking", variable = "OKOK_BANKING"},
     {fileName = "bablo-banking", variable = "BABLO_BANKING"},
-    {fileName = "sky_banking", variable = "SKY_BANKING"}
+    {fileName = "sky_banking", variable = "SKY_BANKING"},
+    {fileName = "kartik-banking", variable = "KARTIK_BANKING"}
 }
 
 if (override ~= "auto") then
