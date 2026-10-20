@@ -43,7 +43,7 @@ return {
     gang = "auto",
 
     -- Fuel system (set to "none" if you don't need fuel management)
-    -- Options: "auto", "none", "ox_fuel", "LegacyFuel", "cdn-fuel", "lc_fuel", "rcore_fuel"
+    -- Options: "auto", "none", "ox_fuel", "LegacyFuel", "cdn-fuel", "lc_fuel", "rcore_fuel", "Renewed-Fuel"
     fuel = "auto",
 
     -- Vehicle key system
