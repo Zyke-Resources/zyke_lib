@@ -180,6 +180,14 @@ local interiors = {}
 local plyInterior = 0
 ---@type integer?
 local plyRoom
+-- Where the rooms' boxes put the player while the game keeps them outside. A rooftop or a yard can lie inside a
+-- building's bounds, and the points around the player there are read from the same boxes
+local plyBoxInterior = 0
+---@type integer?
+local plyBoxRoom
+---@type vector3?
+local plyBoxAt
+local plyBoxCheckAt = 0
 
 -- Only called when a prompt is sent: reading a command's binding costs more than the rest of a set's refresh
 ---@param key? string
@@ -318,17 +326,31 @@ local function isInPlayerRoom(visual, point, coords, now)
         visual.roomAt, visual.roomCheckAt = coords, now + math.random(roomRecheckMs, roomRecheckMs * 2)
     end
 
-    if (visual.roomInterior ~= plyInterior) then return false end
+    if (visual.roomInterior == plyInterior) then return not visual.roomIndex or not plyRoom or visual.roomIndex == plyRoom end
+    if (plyInterior ~= 0 or visual.roomInterior ~= plyBoxInterior) then return false end
 
-    return not visual.roomIndex or not plyRoom or visual.roomIndex == plyRoom
+    return not visual.roomIndex or not plyBoxRoom or visual.roomIndex == plyBoxRoom
 end
 
 ---@param ped integer
-local function refreshPlayerRoom(ped)
+---@param now integer
+local function refreshPlayerRoom(ped, now)
     plyInterior = GetInteriorFromEntity(ped)
 
     local roomIndex = plyInterior ~= 0 and GetInteriorRoomIndexByHash(plyInterior, GetRoomKeyFromEntity(ped)) or 0
     plyRoom = roomIndex > 0 and roomIndex or nil
+
+    if (plyInterior ~= 0) then
+        plyBoxInterior, plyBoxRoom, plyBoxAt = 0, nil, nil
+
+        return
+    end
+
+    local coords = GetEntityCoords(ped)
+    if (plyBoxAt and now < plyBoxCheckAt and #(coords - plyBoxAt) <= roomMoveTolerance) then return end
+
+    plyBoxInterior, plyBoxRoom = getRoomAtCoords(coords)
+    plyBoxAt, plyBoxCheckAt = coords, now + roomRecheckMs
 end
 
 ---@param slot InterestPointSlot
@@ -646,7 +668,7 @@ local function judge(now, paused, targeting)
     local ped = PlayerPedId()
     local pedCoords = GetEntityCoords(ped)
 
-    refreshPlayerRoom(ped)
+    refreshPlayerRoom(ped, now)
     refreshView()
 
     for _, resourceSets in pairs(sets) do
