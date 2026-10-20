@@ -70,7 +70,7 @@ return {
     banking = "auto",
 
     -- Notification system (set to "none" to use your framework's built-in notifications)
-    -- Options: "auto", "none", "ox_lib"
+    -- Options: "auto", "none", "ox_lib", "lation_ui"
     notification = "auto",
 
     -- Phone system, used for phone numbers and texts (set to "none" to only use your framework's phone numbers)
@@ -80,7 +80,7 @@ return {
     phone = "auto",
 
     -- Progressbar system
-    -- Options: "auto", "zyke_lib", "ox_lib"
-    -- Defaults to zyke_lib. You must explicitly set "ox_lib" here if you want to use ox progressbars.
+    -- Options: "auto", "zyke_lib", "ox_lib", "lation_ui"
+    -- Defaults to zyke_lib. You must explicitly set "ox_lib" or "lation_ui" here if you want to use their progressbars.
     progressbar = "auto",
 }
