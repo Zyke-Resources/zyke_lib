@@ -21,6 +21,8 @@ function Functions.society.get(name)
         return exports["sky_base"]:getJobBalance(name)
     elseif (BankingSystem == "KARTIK_BANKING") then
         return exports["kartik-banking"]:GetAccountMoney(name)
+    elseif (BankingSystem == "LATION_BANKING") then
+        return exports["lation_banking"]:GetAccountBalance(name)
     end
 
     if (Framework == "QB") then
@@ -65,6 +67,8 @@ function Functions.society.add(name, amount)
         return exports["sky_base"]:addJobBalance(name, amount) ~= false
     elseif (BankingSystem == "KARTIK_BANKING") then
         return exports["kartik-banking"]:AddAccountMoney(name, amount) ~= false
+    elseif (BankingSystem == "LATION_BANKING") then
+        return exports["lation_banking"]:AddAccountMoney(name, amount, nil) ~= false
     end
 
     if (Framework == "QB") then
@@ -113,6 +117,8 @@ function Functions.society.remove(name, amount)
         return exports["sky_base"]:removeJobBalance(name, amount) == true
     elseif (BankingSystem == "KARTIK_BANKING") then
         return exports["kartik-banking"]:RemoveAccountMoney(name, amount) ~= false
+    elseif (BankingSystem == "LATION_BANKING") then
+        return exports["lation_banking"]:RemoveAccountMoney(name, amount, nil) ~= false
     end
 
     if (Framework == "QB") then
