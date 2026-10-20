@@ -21,6 +21,8 @@ function Functions.getPlayerItems(player, toInclude, options)
         inventory = exports["codem-inventory"]:GetInventory(nil, plyId) or {}
     elseif (_inv == "OX") then
         inventory = exports["ox_inventory"]:GetInventory(plyId)?.items or {}
+    elseif (_inv == "ONE") then
+        inventory = exports["one_inventory"]:GetInventoryItems(plyId) or {}
     else
         local player = Functions.getPlayerData(player)
         if (not player) then return inventory end
@@ -71,6 +73,21 @@ function Functions.getPlayerItems(player, toInclude, options)
                             iterateInventory(container?.items, newInv, containerId)
                         end
                     end
+                elseif (_inv == "ONE") then
+                    local containerId = item?.metadata?.container
+
+                    if (containerId ~= nil) then
+                        containerId = tostring(containerId)
+                        if (containerId:sub(1, 10) ~= "container:") then containerId = "container:" .. containerId end
+
+                        local container = exports["one_inventory"]:GetContainerFromSlot(plyId, item.slot)
+                        local containerItems = container?.metadata?.items
+
+                        if (containerItems and next(containerItems)) then
+                            local found = iterateInventory(containerItems, newInv, containerId)
+                            if (firstOnly and found) then return found end
+                        end
+                    end
                 end
             end
 
@@ -80,7 +97,7 @@ function Functions.getPlayerItems(player, toInclude, options)
                 local hasAllMetadata = true
 
                 for j = 1, #metadata do
-                    local itemVal = item.metadata[metadata[j].name]
+                    local itemVal = item.metadata and item.metadata[metadata[j].name]
                     if (not itemVal) then hasAllMetadata = false break end
 
                     if (metadata[j].match ~= nil) then

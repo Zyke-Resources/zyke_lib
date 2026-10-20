@@ -4,6 +4,8 @@ function Functions.unequipWeapon()
 
     if (_inv == "OX") then
         TriggerEvent("ox_inventory:disarm")
+    elseif (_inv == "ONE") then
+        exports["one_inventory"]:DisarmPlayer()
     elseif (_inv == "TGIANN") then
         TriggerEvent("inventory:client:removeWeapon")
     else

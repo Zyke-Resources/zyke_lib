@@ -7,6 +7,12 @@ if (Inventory == "OX") then
         TriggerEvent("zyke_lib:InventoryUpdated", changes)
         TriggerServerEvent("zyke_lib:InventoryUpdated", changes)
     end)
+elseif (Inventory == "ONE") then
+    -- The payload holds every slot rather than the changed ones, so it is not passed on
+    RegisterNetEvent("one_inventory:onInventoryUpdate", function()
+        TriggerEvent("zyke_lib:InventoryUpdated")
+        TriggerServerEvent("zyke_lib:InventoryUpdated")
+    end)
 elseif (Inventory == "TGIANN") then
     RegisterNetEvent("tgiann-inventory:updateInventory", function()
         Wait(250) -- There is a delay for the items to actually update and exist, so we wait a bit before triggering the event

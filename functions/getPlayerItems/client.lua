@@ -19,6 +19,8 @@ function Functions.getPlayerItems(toInclude, options)
         inventory = exports["codem-inventory"]:GetClientPlayerInventory() or {}
     elseif (_inv == "OX") then
         inventory = exports["ox_inventory"]:GetPlayerItems() or {}
+    elseif (_inv == "ONE") then
+        inventory = exports["one_inventory"]:GetInventoryItems() or {}
     else
         local player = Functions.getPlayerData()
         if (not player) then return inventory end
@@ -57,7 +59,7 @@ function Functions.getPlayerItems(toInclude, options)
             local hasAllMetadata = true
 
             for j = 1, #metadata do
-                local itemVal = item.metadata[metadata[j].name]
+                local itemVal = item.metadata and item.metadata[metadata[j].name]
                 if (not itemVal) then hasAllMetadata = false break end
 
                 if (metadata[j].match ~= nil) then

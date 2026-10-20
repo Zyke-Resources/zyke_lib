@@ -1,7 +1,9 @@
----@param plyId PlayerId
+---@param plyId PlayerId | string @ Player or container inventory identifier
 ---@param item string
 ---@param amount integer
 ---@param slot integer
+---@return boolean? success
+---@return string? reason
 function Functions.removeFromSlot(plyId, item, amount, slot)
     local _, itemName = Functions.getItem(item)
     item = itemName or item
@@ -9,6 +11,8 @@ function Functions.removeFromSlot(plyId, item, amount, slot)
     if (Inventory == "OX") then
         exports["ox_inventory"]:RemoveItem(plyId, item, amount, nil, slot)
         return
+    elseif (Inventory == "ONE") then
+        return exports["one_inventory"]:RemoveItem(plyId, item, amount, nil, slot)
     elseif (Inventory == "TGIANN") then
         exports["tgiann-inventory"]:RemoveItem(plyId, item, amount, slot)
         return

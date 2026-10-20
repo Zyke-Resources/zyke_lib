@@ -135,7 +135,7 @@ Each system supports the following values:
 | System | Options |
 |---|---|
 | `framework` | `"auto"`, `"es_extended"`, `"qb-core"` |
-| `inventory` | `"auto"`, `"qs-inventory"`, `"ox_inventory"`, `"tgiann-inventory"`, `"codem-inventory"`, `"core_inventory"` |
+| `inventory` | `"auto"`, `"qs-inventory"`, `"ox_inventory"`, `"tgiann-inventory"`, `"codem-inventory"`, `"core_inventory"`, `"one_inventory"` |
 | `target` | `"auto"`, `"ox_target"`, `"qb-target"` |
 
 **Optional** (can be set to `"none"`):

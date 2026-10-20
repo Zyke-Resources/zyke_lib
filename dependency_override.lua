@@ -26,7 +26,7 @@ return {
     framework = "auto",
 
     -- Your inventory system
-    -- Options: "auto", "qs-inventory", "ox_inventory", "tgiann-inventory", "codem-inventory", "core_inventory"
+    -- Options: "auto", "qs-inventory", "ox_inventory", "tgiann-inventory", "codem-inventory", "core_inventory", "one_inventory"
     inventory = "auto",
 
     -- Your targeting system

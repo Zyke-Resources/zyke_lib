@@ -1,9 +1,12 @@
----@param plyId PlayerId
+---@param plyId PlayerId | string @ Player or container inventory identifier
 ---@param slot integer
 ---@param metadata table<string, any>
+---@return boolean? success
 function Functions.setItemMetadata(plyId, slot, metadata)
     if (Inventory == "OX") then
         return exports["ox_inventory"]:SetMetadata(plyId, slot, metadata)
+    elseif (Inventory == "ONE") then
+        return exports["one_inventory"]:SetItemMetadata(plyId, slot, metadata)
     elseif (Inventory == "QS") then
         return exports["qs-inventory"]:SetItemMetadata(plyId, slot, metadata)
     elseif (Inventory == "TGIANN") then

@@ -1,6 +1,8 @@
 local awaitSystemStarting, override, awaitAnySystemStarting = ...
 
+-- one_inventory provides ox_inventory, so it has to be listed first or the alias would select ox_inventory
 local systems = {
+    {fileName = "one_inventory", variable = "ONE"},
     {fileName = "qs-inventory", variable = "QS"},
     {fileName = "ox_inventory", variable = "OX"},
     {fileName = "tgiann-inventory", variable = "TGIANN"},
@@ -49,6 +51,8 @@ repeat
     success, items = pcall(function()
         if (Inventory == "OX") then
             items = exports["ox_inventory"]:Items()
+        elseif (Inventory == "ONE") then
+            items = exports["one_inventory"]:GetAllItemDefinitions()
         elseif (Inventory == "TGIANN") then
             items = exports["tgiann-inventory"]:Items()
 
@@ -92,3 +96,9 @@ if (not Inventory) then
 end
 
 Items = items
+
+if (Inventory == "ONE") then
+    AddEventHandler("one_inventory:onDefinitionsUpdated", function()
+        Items = exports["one_inventory"]:GetAllItemDefinitions()
+    end)
+end

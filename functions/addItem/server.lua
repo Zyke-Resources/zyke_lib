@@ -2,6 +2,7 @@
 ---@param item string
 ---@param amount integer
 ---@param metadata table<string, any> | nil
+---@return boolean? success
 function Functions.addItem(player, item, amount, metadata)
     local player = Functions.getPlayerData(player)
     if (not player) then return end
@@ -11,6 +12,9 @@ function Functions.addItem(player, item, amount, metadata)
     for i = 1, #items do
         if (Inventory == "CODEM") then
             exports["codem-inventory"]:AddItem(Functions.getPlayerId(player), items[i].name, items[i].amount, nil, items[i].metadata)
+        elseif (Inventory == "ONE") then
+            local success = exports["one_inventory"]:AddItem(Functions.getPlayerId(player), items[i].name, items[i].amount, items[i].metadata)
+            if (not success) then return false end
         elseif (Inventory == "QS") then
             exports['qs-inventory']:AddItem(Functions.getPlayerId(player), items[i].name, items[i].amount, nil, items[i].metadata)
         elseif (Framework == "ESX") then

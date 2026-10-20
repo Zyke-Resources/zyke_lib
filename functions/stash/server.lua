@@ -1,5 +1,7 @@
 Functions.stash = {}
 
+local oneStashes = {}
+
 ---@type integer | nil
 local qbInvMajor = nil
 
@@ -28,7 +30,23 @@ function Functions.stash.register(id, label, slots, weight)
         if (not stash) then
             exports["ox_inventory"]:RegisterStash(id, label, slots, weight)
         end
+    elseif (Inventory == "ONE") then
+        oneStashes[id] = {
+            id = id,
+            label = label,
+            slots = slots,
+            maxWeight = weight,
+        }
     end
+end
+
+if (Inventory == "ONE") then
+    ---@param _ PlayerId
+    ---@param id string
+    ---@return table? stash
+    Functions.callback.register(ResName .. ":GetOneStash", function(_, id)
+        return oneStashes[id]
+    end)
 end
 
 ---@param id string @ Unique stash identifier
@@ -37,6 +55,8 @@ end
 function Functions.stash.open(id, plyId)
     if (Inventory == "OX") then
         return exports["ox_inventory"]:forceOpenInventory(plyId, "stash", id)
+    elseif (Inventory == "ONE") then
+        return exports["one_inventory"]:OpenInventory(plyId, "stash", oneStashes[id] or {id = id})
     end
 end
 
@@ -45,6 +65,8 @@ end
 function Functions.stash.get(id)
     if (Inventory == "OX") then
         return exports["ox_inventory"]:GetInventory(id)
+    elseif (Inventory == "ONE") then
+        return exports["one_inventory"]:GetInventory("stash:" .. id)
     end
 
     return nil
@@ -62,6 +84,8 @@ function Functions.stash.clear(id)
         ok, result = pcall(function()
             return exports["ox_inventory"]:ClearInventory(id)
         end)
+    elseif (Inventory == "ONE") then
+        return exports["one_inventory"]:ClearInventory("stash:" .. id)
     elseif (Inventory == "QS") then
         ok, result = pcall(function()
             return exports["qs-inventory"]:ClearOtherInventory("stash", id)

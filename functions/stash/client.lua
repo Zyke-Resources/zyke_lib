@@ -3,6 +3,7 @@ Functions.stash = {}
 ---@class StashOpenOptions
 ---@field slots? integer @ Number of slots (default: 20)
 ---@field maxweight? integer @ Maximum weight in grams (default: 4000)
+---@field label? string @ Display label
 
 ---@type integer | nil
 local qbInvMajor = nil
@@ -30,6 +31,15 @@ function Functions.stash.open(invId, other)
 
     if (Inventory == "OX") then
         return exports["ox_inventory"]:openInventory("stash", invId)
+    elseif (Inventory == "ONE") then
+        local stash = Functions.callback.request(ResName .. ":GetOneStash", {timeout = 1000}, invId) or {
+            id = invId,
+            label = other?.label,
+            slots = slots,
+            maxWeight = weight,
+        }
+
+        return exports["one_inventory"]:OpenInventory("stash", stash)
     elseif (Inventory == "QS") then
         -- QS RegisterStash only creates the stash
         -- Opening uses the QB-style event pattern
