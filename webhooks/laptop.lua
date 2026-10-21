@@ -13,5 +13,8 @@ return {
     ["OsInstalled"] = "",
     ["PartInstalled"] = "",
     ["PartRemoved"] = "",
+    ["DomainPurchase"] = "",
+    ["DomainReleased"] = "",
+    ["DomainTransferred"] = "",
     ["AdminAction"] = "",
 }
