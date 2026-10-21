@@ -1,16 +1,18 @@
 ---@param player Character | CharacterIdentifier | PlayerId
 ---@param toInclude string[] | string | nil @List of items to include
 ---@param options? {flattenContainers?: boolean, firstOnly?: boolean, bundle?: boolean, metadata?: MetadataRequirement[]}
----@return Item[]
+---@return Item[] | Item | nil items @ Single item or nil when firstOnly is enabled
 ---@diagnostic disable-next-line: duplicate-set-field
 function Functions.getPlayerItems(player, toInclude, options)
     if (type(toInclude) == "string") then toInclude = {toInclude} end
 
     local _inv = Inventory
+    local firstOnly = options?.firstOnly or false
 
     local inventory = {}
 
     local plyId = Z.getPlayerId(player)
+    if (not plyId and firstOnly) then return nil end
     if (not plyId) then return inventory end
 
     if (_inv == "QS") then
@@ -25,6 +27,7 @@ function Functions.getPlayerItems(player, toInclude, options)
         inventory = exports["one_inventory"]:GetInventoryItems(plyId) or {}
     else
         local player = Functions.getPlayerData(player)
+        if (not player and firstOnly) then return nil end
         if (not player) then return inventory end
 
         if (Framework == "ESX") then
@@ -44,7 +47,6 @@ function Functions.getPlayerItems(player, toInclude, options)
     end
 
     local flattenContainers = options?.flattenContainers or false
-    local firstOnly = options?.firstOnly or false
     local bundle = options?.bundle or false
     local metadata = options?.metadata
 
@@ -131,7 +133,7 @@ function Functions.getPlayerItems(player, toInclude, options)
     local formattedInventory = {}
 
     local result = iterateInventory(inventory, formattedInventory)
-    if (firstOnly and result) then return result end
+    if (firstOnly) then return result end
 
     return formattedInventory
 end
