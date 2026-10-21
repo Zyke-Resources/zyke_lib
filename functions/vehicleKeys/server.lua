@@ -123,6 +123,18 @@ function Functions.vehicleKeys.getCapabilities()
         }
     end
 
+    if (VehicleKeysSystem == "Renewed-Vehiclekeys") then
+        return {
+            provider = VehicleKeysSystem,
+            giveKey = true,
+            removeKey = true,
+            hasKey = true,
+            listKeys = true,
+            identifierAccess = true,
+            serverAuthoritative = true,
+        }
+    end
+
     return {}
 end
 
@@ -167,6 +179,10 @@ function Functions.vehicleKeys.give(plyId, rawPlate, allowFallback, context)
 
     if (VehicleKeysSystem == "wasabi_carlock") then
         return exports["wasabi_carlock"]:GiveKey(plyId, plate) ~= false
+    end
+
+    if (VehicleKeysSystem == "Renewed-Vehiclekeys") then
+        return exports["Renewed-Vehiclekeys"]:addKey(plyId, plate) ~= false
     end
 
     return false, "keyProviderUnavailable"
@@ -214,6 +230,10 @@ function Functions.vehicleKeys.giveTemporary(plyId, rawPlate, skipCanGiveCheck, 
         return exports["wasabi_carlock"]:GiveKey(plyId, plate) ~= false
     end
 
+    if (VehicleKeysSystem == "Renewed-Vehiclekeys") then
+        return exports["Renewed-Vehiclekeys"]:addKey(plyId, plate) ~= false
+    end
+
     return false, "keyProviderUnavailable"
 end
 
@@ -243,6 +263,7 @@ function Functions.vehicleKeys.has(plyId, rawPlate)
         return status and status.ok == true and hasKey == true
     end
     if (VehicleKeysSystem == "wasabi_carlock") then return exports["wasabi_carlock"]:HasKey(plyId, plate) == true end
+    if (VehicleKeysSystem == "Renewed-Vehiclekeys") then return exports["Renewed-Vehiclekeys"]:hasKey(plyId, plate) == true end
 
     return false
 end
@@ -275,6 +296,8 @@ function Functions.vehicleKeys.remove(plyId, rawPlate)
         if (not status or status.ok ~= true) then return 0 end
     elseif (VehicleKeysSystem == "wasabi_carlock") then
         removed = exports["wasabi_carlock"]:RemoveKey(plyId, plate)
+    elseif (VehicleKeysSystem == "Renewed-Vehiclekeys") then
+        removed = exports["Renewed-Vehiclekeys"]:removeKey(plyId, plate)
     else
         return 0
     end
@@ -313,6 +336,8 @@ function Functions.vehicleKeys.removeAll(plyId, rawPlate)
         if (not status or status.ok ~= true) then return 0 end
     elseif (VehicleKeysSystem == "wasabi_carlock") then
         removed = exports["wasabi_carlock"]:RemoveKey(plyId, plate)
+    elseif (VehicleKeysSystem == "Renewed-Vehiclekeys") then
+        removed = exports["Renewed-Vehiclekeys"]:removeKey(plyId, plate)
     else
         return 0
     end
@@ -549,7 +574,7 @@ function Functions.vehicleKeys.getAccessiblePlates(plyId)
         return normalizePlates(plates)
     end
 
-    if (VehicleKeysSystem == "qb-vehiclekeys" or VehicleKeysSystem == "wasabi_carlock") then
+    if (VehicleKeysSystem == "qb-vehiclekeys" or VehicleKeysSystem == "wasabi_carlock" or VehicleKeysSystem == "Renewed-Vehiclekeys") then
         local status, plates = Z.callback.request(plyId, ("%s:VehicleKeysProviderAction"):format(ResName), {
             timeout = 3000,
             status = true,

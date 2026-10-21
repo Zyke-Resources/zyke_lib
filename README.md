@@ -144,7 +144,7 @@ Each system supports the following values:
 |---|---|
 | `gang` | `"auto"`, `"none"`, `"pug-gangs"` |
 | `fuel` | `"auto"`, `"none"`, `"ox_fuel"`, `"LegacyFuel"`, `"cdn-fuel"`, `"lc_fuel"`, `"rcore_fuel"`, `"Renewed-Fuel"` |
-| `vehicleKeys` | `"auto"`, `"none"`, `"zyke_vehiclekeys"`, `"qb-vehiclekeys"`, `"qbx_vehiclekeys"`, `"qs-vehiclekeys"`, `"wasabi_carlock"` |
+| `vehicleKeys` | `"auto"`, `"none"`, `"zyke_vehiclekeys"`, `"qb-vehiclekeys"`, `"qbx_vehiclekeys"`, `"qs-vehiclekeys"`, `"wasabi_carlock"`, `"Renewed-Vehiclekeys"` |
 | `doorlock` | `"auto"`, `"none"`, `"ox_doorlock"`, `"rcore_doorlock"`, `"qb-doorlock"` |
 | `death` | `"auto"`, `"none"`, `"sky_ambulancejob"`, `"wasabi_ambulance"`, `"wasabi_ambulance_v2"`, `"osp_ambulance"` |
 | `hud` | `"auto"`, `"none"`, or any HUD listed under [HUD Visibility](#hud-visibility) |
@@ -268,6 +268,7 @@ Other `reason` values: `doorlockUnavailable` (no door lock started), `invalidDoo
 | `qbx_vehiclekeys` | `HasKeys` export with a live vehicle; give/remove unavailable | `GiveKeys`, `HasKeys`, and `RemoveKeys` exports with a live vehicle; key listing resolves the player's `keysList` state bag |
 | `qs-vehiclekeys` | `GiveKeys`, `GetKey`, and `RemoveKeys` exports with plate/model | Server requests bridge to those client exports; key listing reads `vehiclekeys` item metadata |
 | `wasabi_carlock` | `GiveKey`, `HasKey`, `RemoveKey`, and `GetAllKeys` exports | Give/has/remove use server exports; key listing bridges through the client |
+| `Renewed-Vehiclekeys` | `addKey`, `hasKey`, `removeKey` exports and `vehicleLock` state bag | addKey/hasKey/removeKey use server exports; key listing bridges through the client |
 
 Qbox and Quasar require a live vehicle for the operations marked above. Check `requiresVehicle` and `serverAuthoritative` before calling a provider outside a normal streamed-vehicle flow. Capability-only metadata such as `identifierAccess`, `itemAccess`, `liveMenu`, and `actionMaxDistance` is returned unchanged by `getCapabilities()`.
 
