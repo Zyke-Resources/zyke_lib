@@ -66,7 +66,7 @@ return {
     hud = "auto",
 
     -- Banking system (set to "none" if you don't use society banking)
-    -- Options: "auto", "none", "tgg-banking", "Renewed-Banking", "RxBanking", "okokBanking", "bablo-banking", "sky_banking", "kartik-banking"
+    -- Options: "auto", "none", "tgg-banking", "Renewed-Banking", "RxBanking", "okokBanking", "bablo-banking", "sky_banking", "kartik-banking", "lation_banking"
     banking = "auto",
 
     -- Notification system (set to "none" to use your framework's built-in notifications)
