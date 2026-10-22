@@ -1,10 +1,10 @@
--- Returns an array of all player entities in the area
+-- Returns the player IDs of all players in the area, server IDs when fetched from the server
 -- Ignores self
 
 ---@param useServer? boolean
----@param pos vector3 | Vector3Table
----@param maxDst number @400 default
----@return Entity[]
+---@param pos? vector3 | Vector3Table @ Defaults to your position
+---@param maxDst? number @ 400 default
+---@return integer[] @ Client player indexes, or server IDs with useServer
 ---@diagnostic disable-next-line: duplicate-set-field
 function Functions.getPlayersInArea(useServer, pos, maxDst)
     if (useServer) then return Functions.callback.await(ResName .. ":GetPlayersInArea", pos, maxDst) end
