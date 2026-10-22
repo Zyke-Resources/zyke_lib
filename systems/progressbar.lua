@@ -7,7 +7,7 @@ if (override == "auto" or override == "zyke_lib") then
     return
 end
 
-if (override == "ox_lib" or override == "lation_ui") then
+if (override == "ox_lib" or override == "lation_ui" or override == "wasabi_uikit") then
     local resState = awaitSystemStarting(override)
 
     if (resState ~= "started") then
@@ -16,7 +16,7 @@ if (override == "ox_lib" or override == "lation_ui") then
         print("^1> Please make sure the resource is installed and started in your server.cfg^7")
         print("^1> You can change this in dependency_override.lua^7")
     else
-        ProgressBarSystem = override == "lation_ui" and "LATION" or "OX"
+        ProgressBarSystem = override == "lation_ui" and "LATION" or "OX" or "wasabi_uikit" and "WASABI"
 
         Functions.debug.internal("^2Using " .. override .. " as progressbar system (override)^7")
     end

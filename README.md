@@ -150,7 +150,7 @@ Each system supports the following values:
 | `hud` | `"auto"`, `"none"`, or any HUD listed under [HUD Visibility](#hud-visibility) |
 | `banking` | `"auto"`, `"none"`, `"tgg-banking"`, `"Renewed-Banking"`, `"RxBanking"`, `"okokBanking"`, `"bablo-banking"`, `"sky_banking"`, `"kartik-banking"`, `"lation_banking"` |
 | `notification` | `"auto"`, `"none"`, `"ox_lib"`, `"lation_ui"` |
-| `progressbar` | `"auto"`, `"zyke_lib"`, `"ox_lib"`, `"lation_ui"` |
+| `progressbar` | `"auto"`, `"zyke_lib"`, `"ox_lib"`, `"lation_ui"`, `"wasabi_uikit"` |
 
 ### Example
 
