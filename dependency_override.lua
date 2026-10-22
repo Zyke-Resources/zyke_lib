@@ -47,7 +47,7 @@ return {
     fuel = "auto",
 
     -- Vehicle key system
-    -- Options: "auto", "none", "zyke_vehiclekeys", "qb-vehiclekeys", "qbx_vehiclekeys", "qs-vehiclekeys", "wasabi_carlock"
+    -- Options: "auto", "none", "zyke_vehiclekeys", "qb-vehiclekeys", "qbx_vehiclekeys", "qs-vehiclekeys", "wasabi_carlock", "Renewed-Vehiclekeys"
     vehicleKeys = "auto",
 
     -- Door lock system, used by resources that lock their doors to a job (set to "none" to add doors yourself)
