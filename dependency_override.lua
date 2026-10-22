@@ -70,7 +70,7 @@ return {
     banking = "auto",
 
     -- Notification system (set to "none" to use your framework's built-in notifications)
-    -- Options: "auto", "none", "ox_lib", "lation_ui"
+    -- Options: "auto", "none", "ox_lib", "lation_ui", "wasabi_uikit"
     notification = "auto",
 
     -- Phone system, used for phone numbers and texts (set to "none" to only use your framework's phone numbers)
