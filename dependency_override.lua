@@ -80,7 +80,7 @@ return {
     phone = "auto",
 
     -- Progressbar system
-    -- Options: "auto", "zyke_lib", "ox_lib", "lation_ui"
+    -- Options: "auto", "zyke_lib", "ox_lib", "lation_ui", "wasabi_uikit"
     -- Defaults to zyke_lib. You must explicitly set "ox_lib" or "lation_ui" here if you want to use their progressbars.
     progressbar = "auto",
 }

@@ -350,6 +350,11 @@ local function useLationProgressBar()
     return ProgressBarSystem == "LATION"
 end
 
+---@return boolean
+local function useWasabiUIKitProgressBar()
+    return ProgressBarSystem == "WASABI"
+end
+
 ---@param firstArg any
 ---@param data any
 ---@return any
@@ -417,6 +422,7 @@ local function showProgress(data)
     if (type(data) ~= "table") then return false end
     if (useOxProgressBar() and exports["ox_lib"]:progressActive()) then return false end
     if (useLationProgressBar() and exports["lation_ui"]:progressActive()) then return false end
+    -- Wasabi_UIKit does not support this.
     if (shouldCancelForPedState(data)) then return false end
 
     progressId = progressId + 1
@@ -504,6 +510,10 @@ local function progressBar(data)
         return exports["lation_ui"]:progressBar(data)
     end
 
+    if (useWasabiUIKitProgressBar()) then
+        return exports["wasabi_uikit"]:ProgressBar(data)
+    end
+
     return startProgress("bar", data)
 end
 
@@ -521,6 +531,10 @@ local function progressCircle(data)
         return exports["lation_ui"]:progressBar(data)
     end
 
+    if (useWasabiUIKitProgressBar()) then
+        return exports["wasabi_uikit"]:ProgressBar(data)
+    end
+
     return startProgress("circle", data)
 end
 
@@ -535,6 +549,8 @@ local function progressActive()
     if (useLationProgressBar()) then
         return exports["lation_ui"]:progressActive()
     end
+
+    -- Wasabi_UIKit does not support this.
 
     return false
 end
@@ -563,6 +579,8 @@ local function cancelProgress(force)
 
         return true
     end
+
+    -- Wasabi_UIKit does not support this.
 
     return false
 end
