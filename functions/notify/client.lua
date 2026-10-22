@@ -1,9 +1,9 @@
 ---@param key string
----@param formatting any[]
----@param length number? @ms
----@param raw boolean? @ If true, we will not translate the key & use it as the translated string, it also does not apply any formatting
----@param _notifyType string? @ If provided, we will use it as the notification type instead of the default, primarily meant to substitute for raw
----@param position string? @ ox_lib or lation_ui notification position. Ignored by fallback framework notifications
+---@param formatting? any[] | string | number @ Values for the %s placeholders; a single value fills the only one
+---@param length? number @ ms
+---@param raw? boolean @ If true, we will not translate the key & use it as the translated string, it also does not apply any formatting
+---@param _notifyType? string @ If provided, we will use it as the notification type instead of the default, primarily meant to substitute for raw
+---@param position? string @ ox_lib or lation_ui notification position. Ignored by fallback framework notifications
 ---@diagnostic disable-next-line: duplicate-set-field
 function Functions.notify(key, formatting, length, raw, _notifyType, position)
     local notifyStr, notifyType = nil, _notifyType

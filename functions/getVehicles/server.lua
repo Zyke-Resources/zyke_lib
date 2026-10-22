@@ -13,10 +13,10 @@
 
 ---@class GetVehicleOptions
 ---@field maxDistance number | false | nil @Use number, if false (or -1) it will go as far as you can render, nil will default to 350.0
----@field pos vector3 | vector4 | table @Position to check distance with, if not provided it will use your player position if client
----@field states table? @States to filter by, example: {locked = true, engine = true}, note that you can also set the value to "none" to solely filter based on the state existing, set as "optional" to include if includeStates is true, but not required
----@field detailed GetVehicleOptionsDetails | boolean? @Will give you class DetailedVehicle when set to true, if set to a table it will act as a boolean, but also allows you to add more details
----@field netId integer? @If passed in, it will only return the vehicle with the matching netId (Will perform a break for next iteration)
+---@field pos? vector3 | vector4 | table @Position to check distance with, if not provided it will use your player position if client
+---@field states? table @States to filter by, example: {locked = true, engine = true}, note that you can also set the value to "none" to solely filter based on the state existing, set as "optional" to include if includeStates is true, but not required
+---@field detailed? GetVehicleOptionsDetails | boolean @Will give you class DetailedVehicle when set to true, if set to a table it will act as a boolean, but also allows you to add more details
+---@field netId? integer @If passed in, it will only return the vehicle with the matching netId (Will perform a break for next iteration)
 
 -- TODO: Make sure you're fetching from the correct routing session
 -- Note that you can only use limited options when only using the client, such as states not always being synced the same (but usually is), getting routing buckets, etc

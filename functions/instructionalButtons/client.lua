@@ -9,7 +9,7 @@ Functions.instructionalButtons = {}
 ---@field forceRender? boolean @If pressed, forcefully re-register the buttons
 ---@field func fun(keyCode: integer, key: string, active: string?, disable: string?)
 ---@field inactive? boolean @Set by isInactive
----@field isInactive fun(): boolean @Function to check if the button should be set as inactive
+---@field isInactive? fun(): boolean @Function to check if the button should be set as inactive
 ---@field hold? boolean @If enabled, we check and execute the function if you are holding the button, not just on press
 
 local keys = Functions.keys.getAll()

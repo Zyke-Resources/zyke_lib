@@ -60,6 +60,11 @@ end)
 ---@field status boolean | nil @If true, prepends a status table as the first return value: `{ ok=true }` or `{ ok=false, err="timeout" }`
 ---@field cb function | nil @Callback to be called when the request is resolved, doesn't block flow of code
 
+---@class CallbackStatus
+---@field ok boolean
+---@field err? "timeout"
+---@field timedOut? boolean
+
 ---@param plyId integer @Player ID to trigger callback on
 ---@param event string
 ---@param cbExtras CallbackExtras | nil @Extra information, like a timeout, not passed to the client
@@ -152,6 +157,7 @@ local function triggerClientCallback(plyId, event, cbExtras, ...)
 end
 
 ---@deprecated
+---@callback await zyke
 ---@param plyId integer @Player ID to trigger callback on
 ---@param event string
 ---@param ... any @Arguments to be passed to the client
@@ -163,6 +169,7 @@ end
 -- Support for the new cbExtras parameter
 -- New function to avoid breaking old compatibility
 --- Should eventually move everything to this request function, or refactor all old await functions to the new cbExtras parameter
+---@callback await zyke status=cbExtras.status:CallbackStatus trigger=cbExtras.cb
 ---@param plyId integer @Player ID to trigger callback on
 ---@param event string
 ---@param cbExtras CallbackExtras | nil @Extra information, like a timeout, not passed to the client
@@ -172,6 +179,9 @@ function Functions.callback.request(plyId, event, cbExtras, ...)
     return triggerClientCallback(plyId, event, cbExtras, ...)
 end
 
+---@callback register zyke
+---@param event string
+---@param cb fun(plyId: PlayerId, ...): ... @ Receives the client's arguments; its returns are sent back
 ---@diagnostic disable-next-line: duplicate-set-field
 function Functions.callback.register(event, cb)
     RegisterNetEvent(cbEvent:format(event), function(invoker, reqId, ...)
