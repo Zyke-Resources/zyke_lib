@@ -8,6 +8,7 @@ end
 local systems = {
     {fileName = "ox_lib", variable = "OX"},
     {fileName = "lation_ui", variable = "LATION"},
+    {fileName = "wasabi_uikit", variable = "WASABI"},
 }
 
 if (override ~= "auto") then
