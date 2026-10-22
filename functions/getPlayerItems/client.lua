@@ -2,12 +2,13 @@
 
 ---@param toInclude string[] | string | nil @List of items to include
 ---@param options? {firstOnly?: boolean, bundle?: boolean, metadata?: MetadataRequirement[]}
----@return Item[]
+---@return Item[] | Item | nil items @ Single item or nil when firstOnly is enabled
 ---@diagnostic disable-next-line: duplicate-set-field
 function Functions.getPlayerItems(toInclude, options)
     if (type(toInclude) == "string") then toInclude = {toInclude} end
 
     local _inv = Inventory
+    local firstOnly = options?.firstOnly or false
 
     local inventory = {}
 
@@ -23,6 +24,7 @@ function Functions.getPlayerItems(toInclude, options)
         inventory = exports["one_inventory"]:GetInventoryItems() or {}
     else
         local player = Functions.getPlayerData()
+        if (not player and firstOnly) then return nil end
         if (not player) then return inventory end
 
         if (Framework == "ESX") then
@@ -41,7 +43,6 @@ function Functions.getPlayerItems(toInclude, options)
         end
     end
 
-    local firstOnly = options?.firstOnly or false
     local bundle = options?.bundle or false
     local metadata = options?.metadata
 
@@ -84,6 +85,8 @@ function Functions.getPlayerItems(toInclude, options)
 
         ::continue::
     end
+
+    if (firstOnly) then return nil end
 
     return formattedInventory
 end
