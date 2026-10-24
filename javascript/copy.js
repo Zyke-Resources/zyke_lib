@@ -5,6 +5,7 @@ const copyText = (text) => {
     textarea.style.top = "0";
     textarea.value = text;
     document.body.appendChild(textarea);
+    textarea.focus();
     textarea.select();
     const result = document.execCommand("copy");
     document.body.removeChild(textarea);
