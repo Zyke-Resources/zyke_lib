@@ -6,6 +6,7 @@ return {
     ["CasinoDeposit"] = "",
     ["CasinoWithdraw"] = "",
     ["CasinoAdjusted"] = "",
+    ["ZykelinkPurchase"] = "",
     ["OwnerChanged"] = "",
     ["ReportedStolen"] = "",
     ["DriveUnlocked"] = "",
