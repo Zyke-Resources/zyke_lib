@@ -149,8 +149,8 @@ Each system supports the following values:
 | `death` | `"auto"`, `"none"`, `"sky_ambulancejob"`, `"wasabi_ambulance"`, `"wasabi_ambulance_v2"`, `"osp_ambulance"` |
 | `hud` | `"auto"`, `"none"`, or any HUD listed under [HUD Visibility](#hud-visibility) |
 | `banking` | `"auto"`, `"none"`, `"tgg-banking"`, `"Renewed-Banking"`, `"RxBanking"`, `"okokBanking"`, `"bablo-banking"`, `"sky_banking"`, `"kartik-banking"`, `"lation_banking"` |
-| `progressbar` | `"auto"`, `"zyke_lib"`, `"ox_lib"`, `"lation_ui"` |
 | `notification` | `"auto"`, `"none"`, `"ox_lib"`, `"lation_ui"`, `"wasabi_uikit"` |
+| `progressbar` | `"auto"`, `"zyke_lib"`, `"ox_lib"`, `"lation_ui"` |
 
 ### Example
 
