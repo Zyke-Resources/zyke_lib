@@ -38,10 +38,30 @@ function Formatting.formatItem(item)
         }
     end
 
-    -- TGIANN stores both metadata & info, we need to use info here for the correct data
-    -- Also check if .info exists, because if it is an internal call we may have already translated it
-    if (Inventory == "TGIANN" and item.info) then
-        formatted.metadata = item.info
+    -- Runs only for TGIANN Inventory users.
+    if (Inventory == "TGIANN") then
+        
+        -- Handles durability in Metadata as durabilityPercent, 
+        -- this ensures the values are mirrored & updated accordingly.
+        if (formatted.info.durability) then
+            formatted.info.durabilityPercent = formatted.info.durability
+        end
+        
+        -- Can be improved if moved into config.lua or skipped if the metadata is stored with imageformat extension 
+        -- like "image.png" rather than just "image".
+        local imageFormat = ".png" -- Can be ".png" or ".webp". 
+        
+        -- Handles item images for dynamically updating based on item durability or any other cases.
+        if (formatted.info.image) then
+            formatted.info.imageurl = "nui://inventory_images/images/" .. formatted.info.image .. imageFormat
+        end
+    
+        -- TGIANN Inv stores both metadata & info, we need to use info here for the correct data in Zyke scripts. 
+        -- Metadata is taken into factor for internal calls.
+        if (item.info) then
+            formatted.metadata = item.info
+        end
+    
     end
 
     formatted.description = item.description
