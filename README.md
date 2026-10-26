@@ -363,7 +363,7 @@ dependencies {
 
 -   [Documentation](https://docs.zykeresources.com/free-resources/zyke-lib)
 -   [Discord Community](https://discord.zykeresources.com)
--   [Store](https://store.zykeresources.com/)
+-   [Store](https://zykeresources.com/)
 
 ## Credits
 
