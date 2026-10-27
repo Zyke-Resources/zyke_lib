@@ -18,6 +18,7 @@
 ---@field removed? boolean
 
 local dui = {}
+---@class ZykeDuiInstance
 local duiInstance = {}
 duiInstance.__index = duiInstance
 

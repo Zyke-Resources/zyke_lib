@@ -221,7 +221,7 @@ function Functions.keys.getKeyMapping(key)
 end
 
 ---@param command string
----@return KeyMapping | nil
+---@return FullKeyData | nil
 function Functions.keys.getKeyDataForCommand(command)
     local hash = joaat(command) | 0x80000000
     local button = GetControlInstructionalButton(0, hash, true)
