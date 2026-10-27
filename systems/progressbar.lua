@@ -16,7 +16,7 @@ if (override == "ox_lib" or override == "lation_ui" or override == "wasabi_uikit
         print("^1> Please make sure the resource is installed and started in your server.cfg^7")
         print("^1> You can change this in dependency_override.lua^7")
     else
-        ProgressBarSystem = override == "lation_ui" and "LATION" or "OX" or "wasabi_uikit" and "WASABI"
+        ProgressBarSystem = override == "lation_ui" and "LATION" or override == "wasabi_uikit" and "WASABI" or "OX"
 
         Functions.debug.internal("^2Using " .. override .. " as progressbar system (override)^7")
     end
