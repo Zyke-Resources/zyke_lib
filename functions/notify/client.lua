@@ -37,6 +37,20 @@ function Functions.notify(key, formatting, length, raw, _notifyType, position)
         return
     end
 
+    if (NotificationSystem == "WASABI") then
+        -- WasabiUIKit requires at least one title to maintain consistency.
+        local data = {
+            title = 'Notification',
+            text = notifyStr,
+            type = notifyType == "primary" and "info" or notifyType,
+            time = length,
+        }
+
+        exports["wasabi_uikit"]:Notification(data)
+
+        return
+    end
+
     if (Framework == "QB") then QB.Functions.Notify(notifyStr, notifyType, length) return end
 
     if (Framework == "ESX") then
