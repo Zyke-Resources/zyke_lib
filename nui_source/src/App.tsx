@@ -6,6 +6,7 @@ import InputDialogModule from "./modules/input_dialog";
 import ContextMenuModule from "./modules/context_menu";
 import ProgressModule from "./modules/progress";
 import SkillCheckModule from "./modules/skill_check";
+import KeybindsModule from "./modules/keybinds";
 
 const App = () => (
 	<ModalProvider>
@@ -16,6 +17,7 @@ const App = () => (
 		<ContextMenuModule />
 		<ProgressModule />
 		<SkillCheckModule />
+		<KeybindsModule />
 	</ModalProvider>
 );
 
