@@ -1,4 +1,4 @@
----@param player Character
+---@param player Character | CharacterIdentifier | PlayerId
 ---@param item string
 ---@param amount integer
 ---@param metadata table<string, any> | nil
