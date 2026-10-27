@@ -30,6 +30,9 @@ elseif (Framework == "ESX") then
     AddEventHandler("esx:playerLoaded", function(plyId, player)
         Player(plyId).state:set("zyke_lib:identifier", player.identifier, true)
 
+        -- ESX sends the client its player data after this event, and es_extended errors on a money change that gets there first
+        Wait(0)
+
         TriggerEvent("zyke_lib:OnCharacterSelect", plyId, player)
     end)
 end
