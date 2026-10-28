@@ -11,6 +11,27 @@
 ---@class PlayerContainerItem
 ---@field containerId string
 
+-- TGIANN keeps the 0-100 durability in durabilityPercent and uses durability as the decay timestamp of decayable items
+-- Resources read durability as 0-100, setItemMetadata maps it back before writing
+---@param name? string
+---@param info table<string, any>
+---@return table<string, any> metadata
+local function getTgiannMetadata(name, info)
+    local metadata = {}
+    for k, v in pairs(info) do
+        metadata[k] = v
+    end
+
+    local decayTime = name and info.durability and exports["tgiann-inventory"]:GetItemDecayTime(name)
+    if (decayTime and decayTime > 0) then
+        metadata.durability = exports["tgiann-inventory"]:GetDurabilityPercent(info.durability, decayTime)
+    elseif (info.durabilityPercent ~= nil) then
+        metadata.durability = info.durabilityPercent
+    end
+
+    return metadata
+end
+
 ---@param item? table
 ---@return Item? formatted
 function Formatting.formatItem(item)
@@ -41,7 +62,7 @@ function Formatting.formatItem(item)
     -- TGIANN stores both metadata & info, we need to use info here for the correct data
     -- Also check if .info exists, because if it is an internal call we may have already translated it
     if (Inventory == "TGIANN" and item.info) then
-        formatted.metadata = item.info
+        formatted.metadata = getTgiannMetadata(formatted.name, item.info)
     end
 
     formatted.description = item.description

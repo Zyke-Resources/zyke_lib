@@ -1,7 +1,6 @@
 local inventoryResources = {
     ["OX"] = "ox_inventory",
     ["QS"] = "qs-inventory",
-    ["TGIANN"] = "tgiann-inventory",
     ["CODEM"] = "codem-inventory",
     ["C8RE"] = "core_inventory",
 }
@@ -56,6 +55,20 @@ local function getOneImagePath(itemName, metadata)
     return ("nui://one_inventory/web/images/%s.png"):format(itemName)
 end
 
+-- TGIANN serves every image from inventory_images, an image without an extension defaults to .webp like TGIANN's own
+---@param itemName string
+---@param metadata? table<string, any>
+---@return string
+local function getTgiannImagePath(itemName, metadata)
+    local image = metadata and metadata.image
+    if (type(image) ~= "string") then image = Items[itemName] and Items[itemName].image end
+    if (type(image) ~= "string") then image = itemName end
+    if (image:match("^https?://") or image:match("^nui://")) then return image end
+    if (not image:match("%.[^./]+$")) then image = image .. ".webp" end
+
+    return "nui://inventory_images/images/" .. image
+end
+
 ---@param itemName string
 ---@param metadata? table<string, any>
 ---@return string
@@ -64,6 +77,7 @@ function Functions.getInventoryImagePath(itemName, metadata)
     itemName = normalizedName or itemName
 
     if (Inventory == "ONE") then return getOneImagePath(itemName, metadata) end
+    if (Inventory == "TGIANN") then return getTgiannImagePath(itemName, metadata) end
 
     local resourceName = inventoryResources[Inventory]
 
