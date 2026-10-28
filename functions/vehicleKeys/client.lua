@@ -137,6 +137,18 @@ function Functions.vehicleKeys.getCapabilities()
         }
     end
 
+    if (VehicleKeysSystem == "Renewed-Vehiclekeys") then
+        return {
+            provider = VehicleKeysSystem,
+            giveKey = true,
+            removeKey = true,
+            hasKey = true,
+            lockControl = true,
+            identifierAccess = true,
+            serverAuthoritative = true,
+        }
+    end
+
     return {}
 end
 
@@ -165,6 +177,7 @@ function Functions.vehicleKeys.has(identifier)
     if (VehicleKeysSystem == "qb-vehiclekeys") then return exports["qb-vehiclekeys"]:HasKeys(plate) == true end
     if (VehicleKeysSystem == "qs-vehiclekeys") then return exports["qs-vehiclekeys"]:GetKey(plate) == true end
     if (VehicleKeysSystem == "wasabi_carlock") then return exports["wasabi_carlock"]:HasKey(plate) == true end
+    if (VehicleKeysSystem == "Renewed-Vehiclekeys") then return exports["Renewed-Vehiclekeys"]:hasKey(plate) == true end
 
     return false
 end
@@ -193,6 +206,7 @@ function Functions.vehicleKeys.give(identifier)
         return exports["qs-vehiclekeys"]:GiveKeys(plate, model, true) ~= false
     end
     if (VehicleKeysSystem == "wasabi_carlock") then return exports["wasabi_carlock"]:GiveKey(plate) ~= false end
+    if (VehicleKeysSystem == "Renewed-Vehiclekeys") then return exports["Renewed-Vehiclekeys"]:addKey(plate) ~= false end
 
     return false
 end
@@ -221,6 +235,7 @@ function Functions.vehicleKeys.remove(identifier)
         return exports["qs-vehiclekeys"]:RemoveKeys(plate, model) ~= false
     end
     if (VehicleKeysSystem == "wasabi_carlock") then return exports["wasabi_carlock"]:RemoveKey(plate) ~= false end
+    if (VehicleKeysSystem == "Renewed-Vehiclekeys") then return exports["Renewed-Vehiclekeys"]:removeKey(plate) ~= false end
 
     return false
 end
@@ -261,6 +276,21 @@ function Functions.vehicleKeys.setLockState(vehicle, locked)
         if (not DoesEntityExist(vehicle) or GetEntityType(vehicle) ~= 2) then return false end
 
         return exports["zyke_vehiclekeys"]:SetLockState(vehicle, locked) == true
+    end
+
+    if (VehicleKeysSystem == "Renewed-Vehiclekeys") then
+        if (not DoesEntityExist(vehicle) or GetEntityType(vehicle) ~= 2) then return false end
+
+        -- The server drops replicated state bag writes from clients that do not own the entity
+        if (NetworkGetEntityOwner(vehicle) ~= PlayerId()) then return false end
+
+        -- Renewed reads 1 as unlocked and 2 as locked
+        Entity(vehicle).state:set("vehicleLock", {
+            lock = locked and 2 or 1,
+            sound = true,
+        }, true)
+
+        return true
     end
 
     return false
