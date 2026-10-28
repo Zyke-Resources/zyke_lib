@@ -150,7 +150,7 @@ Each system supports the following values:
 | `hud` | `"auto"`, `"none"`, or any HUD listed under [HUD Visibility](#hud-visibility) |
 | `banking` | `"auto"`, `"none"`, `"tgg-banking"`, `"Renewed-Banking"`, `"RxBanking"`, `"okokBanking"`, `"bablo-banking"`, `"sky_banking"`, `"kartik-banking"`, `"lation_banking"` |
 | `notification` | `"auto"`, `"none"`, `"ox_lib"`, `"lation_ui"`, `"wasabi_uikit"` |
-| `progressbar` | `"auto"`, `"zyke_lib"`, `"ox_lib"`, `"lation_ui"` |
+| `progressbar` | `"auto"`, `"zyke_lib"`, `"ox_lib"`, `"lation_ui"`, `"wasabi_uikit"` |
 
 ### Example
 
@@ -172,6 +172,8 @@ return {
     progressbar = "auto",
 }
 ```
+
+> **Note:** `wasabi_uikit` has no per-call cancel setting, so its cancel key can stop progressbars that set `canCancel = false`.
 
 > **Tip:** If your server gets stuck on the dependency loading step, set the appropriate system to the exact resource name you use instead of `"auto"`.
 

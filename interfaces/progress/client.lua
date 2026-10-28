@@ -94,6 +94,9 @@ local progressId = 0
 local playerState = LocalPlayer.state
 local createdProgressProps = {}
 
+-- wasabi_uikit has no export to check for a running progress
+local wasabiProgressActive = false
+
 local progressAssetTimeout = 5000
 local progressPropsStateKey = "zyke_lib:progressProps"
 local moveControls = {30, 31, 32, 33, 34, 35, 21, 22}
@@ -350,6 +353,24 @@ local function useLationProgressBar()
     return ProgressBarSystem == "LATION"
 end
 
+---@return boolean
+local function useWasabiProgressBar()
+    return ProgressBarSystem == "WASABI"
+end
+
+---@param data ProgressData
+---@param progressType ProgressType
+---@return boolean success
+local function wasabiProgress(data, progressType)
+    if (wasabiProgressActive) then return false end
+
+    wasabiProgressActive = true
+    local success = exports["wasabi_uikit"]:ProgressBar(data, progressType) == true
+    wasabiProgressActive = false
+
+    return success
+end
+
 ---@param firstArg any
 ---@param data any
 ---@return any
@@ -417,6 +438,7 @@ local function showProgress(data)
     if (type(data) ~= "table") then return false end
     if (useOxProgressBar() and exports["ox_lib"]:progressActive()) then return false end
     if (useLationProgressBar() and exports["lation_ui"]:progressActive()) then return false end
+    if (wasabiProgressActive) then return false end
     if (shouldCancelForPedState(data)) then return false end
 
     progressId = progressId + 1
@@ -504,6 +526,10 @@ local function progressBar(data)
         return exports["lation_ui"]:progressBar(data)
     end
 
+    if (useWasabiProgressBar()) then
+        return wasabiProgress(data, "bar")
+    end
+
     return startProgress("bar", data)
 end
 
@@ -521,12 +547,16 @@ local function progressCircle(data)
         return exports["lation_ui"]:progressBar(data)
     end
 
+    if (useWasabiProgressBar()) then
+        return wasabiProgress(data, "circle")
+    end
+
     return startProgress("circle", data)
 end
 
 ---@return boolean
 local function progressActive()
-    if (activeProgress) then return true end
+    if (activeProgress or wasabiProgressActive) then return true end
 
     if (useOxProgressBar()) then
         return exports["ox_lib"]:progressActive()
