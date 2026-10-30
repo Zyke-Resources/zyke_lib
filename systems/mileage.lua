@@ -6,7 +6,8 @@ if (override == "none") then
 end
 
 local systems = {
-    {fileName = "jg-vehiclemileage", variable = "jg-vehiclemileage"}
+    {fileName = "jg-vehiclemileage", variable = "jg-vehiclemileage"},
+    {fileName = "zyke_garages", variable = "zyke_garages"}
 }
 
 if (override ~= "auto") then

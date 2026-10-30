@@ -96,6 +96,6 @@ return {
     jail = "auto",
 
     -- Vehicle mileage system (set to "none" if you don't track mileage)
-    -- Options: "auto", "none", "jg-vehiclemileage"
+    -- Options: "auto", "none", "jg-vehiclemileage", "zyke_garages"
     mileage = "auto",
 }
