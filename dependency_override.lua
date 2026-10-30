@@ -56,7 +56,9 @@ return {
     doorlock = "auto",
 
     -- Death check system (set to "none" to use your framework's built-in death checks)
-    -- Options: "auto", "none", "sky_ambulancejob", "wasabi_ambulance", "wasabi_ambulance_v2", "osp_ambulance"
+    -- Also read for injuries, deaths and revives, which the framework's own ambulance resources answer too
+    -- Options: "auto", "none", "sky_ambulancejob", "wasabi_ambulance_v2", "wasabi_ambulance", "osp_ambulance", "p_ambulancejob",
+    -- "qbx_medical", "qb-ambulancejob", "esx_ambulancejob"
     death = "auto",
 
     -- HUD system (set to "none" if you don't use a HUD resource)

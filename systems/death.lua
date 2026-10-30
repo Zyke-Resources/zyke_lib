@@ -10,7 +10,10 @@ local systems = {
     {fileName = "wasabi_ambulance_v2", variable = "wasabi_ambulance_v2"},
     {fileName = "wasabi_ambulance", variable = "wasabi_ambulance"},
     {fileName = "osp_ambulance", variable = "osp_ambulance"},
-    {fileName = "p_ambulancejob", variable = "p_ambulancejob"}
+    {fileName = "p_ambulancejob", variable = "p_ambulancejob"},
+    {fileName = "qbx_medical", variable = "qbx_medical"},
+    {fileName = "qb-ambulancejob", variable = "qb-ambulancejob"},
+    {fileName = "esx_ambulancejob", variable = "esx_ambulancejob"}
 }
 
 if (override ~= "auto") then
