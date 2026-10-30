@@ -85,11 +85,15 @@ function Functions.money.get(player, account)
     return nil
 end
 
+-- False when nothing was taken: the character isn't found, can't afford it, or the framework refused
 ---@param player Character | CharacterIdentifier | PlayerId
 ---@param account string? @cash default
+---@param amount number
+---@param details? string
+---@return boolean removed
 function Functions.money.remove(player, account, amount, details)
     local player = Functions.getPlayerData(player)
-    if (not player) then return end
+    if (not player) then return false end
 
     if (not account) then account = "cash" end
 
@@ -103,8 +107,17 @@ function Functions.money.remove(player, account, amount, details)
         return Functions.removeItem(player, "black_money", amount)
     end
 
-    if (Framework == "ESX") then return player.removeAccountMoney(account, amount, details) end
-    if (Framework == "QB") then return player.Functions.RemoveMoney(account, amount, details) end
+    -- ESX lets an account go below zero and older versions answer nothing, so the balance is checked here
+    if (Framework == "ESX") then
+        local balance = player.getAccount(account)?.money
+        if (not balance or balance < amount) then return false end
+
+        return player.removeAccountMoney(account, amount, details) ~= false
+    end
+
+    if (Framework == "QB") then return player.Functions.RemoveMoney(account, amount, details) == true end
+
+    return false
 end
 
 return Functions.money
