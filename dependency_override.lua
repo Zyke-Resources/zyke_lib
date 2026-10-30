@@ -94,4 +94,8 @@ return {
     -- Jail system, for sentences handed out by other resources (set to "none" if you don't run one)
     -- Options: "auto", "none", "qb-prison", "rcore_prison", "esx_jail"
     jail = "auto",
+
+    -- Vehicle mileage system (set to "none" if you don't track mileage)
+    -- Options: "auto", "none", "jg-vehiclemileage"
+    mileage = "auto",
 }

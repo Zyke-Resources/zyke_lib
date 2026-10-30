@@ -118,6 +118,89 @@ function Functions.stash.clear(id)
     return result ~= false, result
 end
 
+-- Stash items by exact slot work on the inventories whose stashes register and open above
+---@return boolean supported
+function Functions.stash.supportsItems()
+    return Inventory == "OX" or Inventory == "ONE"
+end
+
+---@param id string @ Unique stash identifier
+---@return Item[] items @ Occupied slots only, empty when the inventory has no stash items
+function Functions.stash.getItems(id)
+    local rawItems
+
+    if (Inventory == "OX") then
+        rawItems = exports["ox_inventory"]:GetInventoryItems(id)
+    elseif (Inventory == "ONE") then
+        rawItems = exports["one_inventory"]:GetInventoryItems("stash:" .. id)
+    end
+
+    local items = {}
+    for _, rawItem in pairs(rawItems or {}) do
+        local item = Formatting.formatItem(rawItem)
+        if (item and item.slot) then items[#items + 1] = item end
+    end
+
+    return items
+end
+
+---@param id string @ Unique stash identifier
+---@param slot integer
+---@return Item? item
+function Functions.stash.getSlot(id, slot)
+    if (Inventory == "OX") then
+        return Formatting.formatItem(exports["ox_inventory"]:GetSlot(id, slot))
+    elseif (Inventory == "ONE") then
+        return Formatting.formatItem(exports["one_inventory"]:GetSlot("stash:" .. id, slot))
+    end
+
+    return nil
+end
+
+-- Fill check included, false when the items don't fit
+---@param id string @ Unique stash identifier
+---@param name string
+---@param count integer
+---@param metadata? table
+---@return boolean added
+function Functions.stash.addItem(id, name, count, metadata)
+    local added = false
+
+    if (Inventory == "OX") then
+        added = exports["ox_inventory"]:AddItem(id, name, count, metadata)
+    elseif (Inventory == "ONE") then
+        added = exports["one_inventory"]:AddItem("stash:" .. id, name, count, metadata)
+    end
+
+    return added == true
+end
+
+-- With a slot, removes only when that slot holds the item and enough of it, since ox_inventory takes the rest from
+-- other slots otherwise
+---@param id string @ Unique stash identifier
+---@param name string
+---@param count integer
+---@param slot? integer
+---@return boolean removed
+function Functions.stash.removeItem(id, name, count, slot)
+    if (not Functions.stash.supportsItems()) then return false end
+
+    if (slot) then
+        local item = Functions.stash.getSlot(id, slot)
+        if (not item or item.name ~= name or item.amount < count) then return false end
+    end
+
+    local removed = false
+
+    if (Inventory == "OX") then
+        removed = exports["ox_inventory"]:RemoveItem(id, name, count, nil, slot)
+    elseif (Inventory == "ONE") then
+        removed = exports["one_inventory"]:RemoveItem("stash:" .. id, name, count, nil, slot)
+    end
+
+    return removed == true
+end
+
 -- Internal handler for qb-inventory v2.x stash opens. The new version dropped the
 -- inventory:server:OpenInventory event in favour of an OpenInventory export, so the
 -- client routes here when v2.x is detected.

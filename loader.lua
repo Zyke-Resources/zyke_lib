@@ -206,6 +206,9 @@ Functions.debug.internal("Loaded billing", BillingSystem)
 loadSystem("jail", "jail")
 Functions.debug.internal("Loaded jail", JailSystem)
 
+loadSystem("mileage", "mileage")
+Functions.debug.internal("Loaded mileage", MileageSystem)
+
 HasLoadedDependencies = true
 
 -- EXPERIMENTAL LOADER
