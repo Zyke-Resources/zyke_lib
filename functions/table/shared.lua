@@ -16,25 +16,33 @@ function Functions.table.copy(tbl)
     return copy
 end
 
----@param tbl table
----@return table
-function Functions.table.deepCopy(tbl)
-    local origType = type(tbl)
-    local copy
+-- A table met again inside its own copy, a cycle or json.decode's metatable on FXServer 35186 to 35245, gets the copy
+-- being built instead of overflowing the stack. A table met again anywhere else is copied apart as before
+---@param value any
+---@param building table<table, table> @ Tables still being copied, to their copy
+---@return any copy
+local function copyValue(value, building)
+    if (type(value) ~= "table") then return value end
+    if (building[value]) then return building[value] end
 
-    if (origType == "table") then
-        copy = {}
+    local copy = {}
+    building[value] = copy
 
-        for origKey, origValue in next, tbl, nil do
-            copy[Functions.table.deepCopy(origKey)] = Functions.table.deepCopy(origValue)
-        end
-
-        setmetatable(copy, Functions.table.deepCopy(getmetatable(tbl)))
-    else -- number, string, boolean, etc
-        copy = tbl
+    for origKey, origValue in next, value, nil do
+        copy[copyValue(origKey, building)] = copyValue(origValue, building)
     end
 
+    setmetatable(copy, copyValue(getmetatable(value), building))
+
+    building[value] = nil
+
     return copy
+end
+
+---@param tbl table
+---@return table copy
+function Functions.table.deepCopy(tbl)
+    return copyValue(tbl, {})
 end
 
 ---@param tbl table
