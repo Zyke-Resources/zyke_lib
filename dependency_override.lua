@@ -86,4 +86,12 @@ return {
     -- Defaults to zyke_lib. You must explicitly set "ox_lib", "lation_ui" or "wasabi_uikit" here if you want to use their progressbars.
     -- wasabi_uikit has no per-call cancel setting, so its cancel key can stop progressbars that should not be cancellable.
     progressbar = "auto",
+
+    -- Billing system, for bills and fines a player pays later (set to "none" to charge the bank at once)
+    -- Options: "auto", "none", "esx_billing"
+    billing = "auto",
+
+    -- Jail system, for sentences handed out by other resources (set to "none" if you don't run one)
+    -- Options: "auto", "none", "qb-prison", "rcore_prison", "esx_jail"
+    jail = "auto",
 }

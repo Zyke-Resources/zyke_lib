@@ -143,4 +143,13 @@ function Functions.society.remove(name, amount)
     return false
 end
 
+-- esx_society keeps a job's shared account as society_<job>, QBCore and Qbox banking use the job name
+---@param job string
+---@return string account
+function Functions.society.getAccountName(job)
+    if (Framework == "ESX" and job:sub(1, 8) ~= "society_") then return "society_" .. job end
+
+    return job
+end
+
 return Functions.society

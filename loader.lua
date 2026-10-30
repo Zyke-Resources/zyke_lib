@@ -200,6 +200,12 @@ Functions.debug.internal("Loaded phone", PhoneSystem)
 loadSystem("progressbar", "progressbar")
 Functions.debug.internal("Loaded progressbar", ProgressBarSystem)
 
+loadSystem("billing", "billing")
+Functions.debug.internal("Loaded billing", BillingSystem)
+
+loadSystem("jail", "jail")
+Functions.debug.internal("Loaded jail", JailSystem)
+
 HasLoadedDependencies = true
 
 -- EXPERIMENTAL LOADER
