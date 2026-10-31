@@ -30,7 +30,7 @@
 ---@field culled? boolean @ Outside the camera's view at the last judgement, so it can't be aimed at
 
 ---@class InterestPointOptions
----@field aim? boolean @ The marker nearest the screen centre is aimed at and shown active, read through getAimedInterestPoint
+---@field aim? boolean @ The marker nearest the screen centre across every aim set is aimed at and shown active, read through getAimedInterestPoint
 ---@field aimRadius? number @ 1080p pixels from the screen centre a marker can be and still count as aimed at
 ---@field ignoreRooms? boolean @ Points show and can be aimed at from another room, and from outside their interior
 
@@ -509,6 +509,7 @@ end
 ---@param set InterestPointSet
 ---@param pedCoords vector3
 ---@return string? aimedId
+---@return number? aimedDist @ 1080p pixels from the screen centre, stickiness applied
 ---@return boolean guided @ A marker is close enough to the screen centre to show the guide dot
 local function findAimedPoint(set, pedCoords)
     local bestId, bestDist
@@ -534,7 +535,7 @@ local function findAimedPoint(set, pedCoords)
         end
     end
 
-    return bestId, guided
+    return bestId, bestDist, guided
 end
 
 -- Keeps the selection on the same option across updates, or on the same row when that option is gone
@@ -663,7 +664,7 @@ local function judge(now, paused, targeting)
     tick = tick + 1
     nextAimAt = now + aimInterval
     setsChanged, scrollable = false, false
-    guideVisible, guideAimed = false, false
+    guideVisible = false
 
     local ped = PlayerPedId()
     local pedCoords = GetEntityCoords(ped)
@@ -691,15 +692,33 @@ local function judge(now, paused, targeting)
                 point.resolved = coords or false
                 point.culled = coords ~= nil and isOutsideView(coords)
             end
+        end
+    end
 
+    -- One point is aimed at across every set, so a single key press never reaches two prompts
+    local aimedSet, aimedId, aimedDist
+
+    for _, resourceSets in pairs(sets) do
+        for _, set in pairs(resourceSets) do
             if (set.aim) then
-                local aimed, guided = nil, false
-                if (not paused and targeting) then aimed, guided = findAimedPoint(set, pedCoords) end
+                local id, dist, guided = nil, nil, false
+                if (not paused and targeting) then id, dist, guided = findAimedPoint(set, pedCoords) end
 
-                set.aimed = aimed
+                set.aimed = nil
                 guideVisible = guideVisible or guided
-                guideAimed = guideAimed or aimed ~= nil
+
+                if (id and (not aimedDist or dist < aimedDist)) then aimedSet, aimedId, aimedDist = set, id, dist end
             end
+        end
+    end
+
+    if (aimedSet) then aimedSet.aimed = aimedId end
+
+    guideAimed = aimedSet ~= nil
+
+    for _, resourceSets in pairs(sets) do
+        for _, set in pairs(resourceSets) do
+            local points = set.points
 
             for i = 1, #points do
                 local point = points[i]
