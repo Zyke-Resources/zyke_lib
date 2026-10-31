@@ -32,6 +32,8 @@ export interface KeybindPanelData {
 	position: KeybindPosition;
 	// A row of items over the panel
 	bar?: KeybindBar;
+	// Percent of the screen's width the panel may take before its keys wrap, 80 when left out
+	maxWidth?: number;
 }
 
 export interface KeybindPanelEntry {

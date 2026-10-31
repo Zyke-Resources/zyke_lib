@@ -33,6 +33,7 @@ Functions.keybinds = {}
 ---@field hint? string @ What to do next, floating above it; a warning takes its place
 ---@field position? "bottom-left" | "bottom-center" | "bottom-right" @ Defaults to "bottom-center"
 ---@field bar? KeybindBar
+---@field maxWidth? number @ Percent of the screen's width the panel may take before its keys wrap, defaults to 80
 
 ---@class KeybindPanelData
 ---@field items {label: string, keys: string[]}[]
@@ -42,6 +43,7 @@ Functions.keybinds = {}
 ---@field hint? string
 ---@field position string
 ---@field bar? {items: KeybindBarItem[], selected: integer} @ selected counts from 0, as the NUI does
+---@field maxWidth? number
 
 local keys = Functions.keys.getAll()
 -- Control IDs, as the S and D of Z.keys are the fly axes W and A move too
@@ -116,7 +118,7 @@ local function send(items)
 
     local detail = type(options.detail) == "string" and {text = options.detail} or options.detail
     local bar = options.bar and {items = options.bar.items, selected = (options.bar.selected or 0) - 1}
-    local data = {items = buttons, title = options.title, detail = detail, warning = options.warning, hint = options.hint, position = options.position or "bottom-center", bar = bar}
+    local data = {items = buttons, title = options.title, detail = detail, warning = options.warning, hint = options.hint, position = options.position or "bottom-center", bar = bar, maxWidth = options.maxWidth}
     local encoded = json.encode(data)
     if (encoded == panel.json) then return end
 

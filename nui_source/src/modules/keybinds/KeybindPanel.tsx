@@ -27,6 +27,7 @@ const KeybindPanel = forwardRef<HTMLDivElement, KeybindPanelProps>(({ data }, re
 		<motion.div
 			ref={ref}
 			className="keybinds-group"
+			style={data.maxWidth ? { maxWidth: `${data.maxWidth}%` } : undefined}
 			initial={{ y: 50, opacity: 0 }}
 			animate={{ y: 0, opacity: 1 }}
 			exit={{ y: 50, opacity: 0 }}
