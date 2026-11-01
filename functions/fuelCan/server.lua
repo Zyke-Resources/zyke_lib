@@ -17,7 +17,7 @@ Functions.fuelCan = {}
 
 -- Add a fuel system by adding the format of its can, read from the item metadata
 
-local untypedFuel = "fuel"
+local untypedFuel = "86"
 
 -- ox_inventory keeps a petrol can's durability and ammo equal at 0-100, whichever script fills it
 ---@type FuelCanFormat
@@ -28,6 +28,8 @@ local formats = {
     OX = petrolCanPercent,
     -- LegacyFuel keeps the can's fuel as weapon ammo on the client, only an ox_inventory can is readable here
     LegacyFuel = petrolCanPercent,
+    -- Litres in ammo, which Renewed-Fuel floors; ox_inventory copies it to durability
+    RenewedFuel = {items = {"WEAPON_PETROLCAN"}, keys = {"ammo"}, mirror = "durability", full = 100.0, litres = 100.0, step = 1.0},
     -- Litres in ammo, which lc_fuel floors; ox_inventory copies it to durability
     LCFuel = {items = {"WEAPON_PETROLCAN", "weapon_petrolcan"}, keys = {"ammo"}, mirror = "durability", full = 100.0, litres = 100.0, step = 1.0},
     -- Litres in cdn_fuel with ox_inventory and in gasamount with qb inventories
@@ -58,7 +60,7 @@ end
 local function formatCan(format, item)
     local _, value = readValue(format, item.metadata or {})
 
-    return {slot = item.slot, name = item.name, litres = value / format.full * format.litres, capacity = format.litres, fuelType = untypedFuel}
+    return {slot = item.slot, name = item.name, litres = value / format.full * format.litres, capacity = format.litres, fuelType = item.metadata.fuelType or untypedFuel}
 end
 
 -- Every jerry can of the fuel system in the player's inventory, empty ones included
