@@ -11,6 +11,8 @@ function Functions.getVehicleMileage(plate)
         km = exports["jg-vehiclemileage"]:getMileageByPlate(plate)
     elseif (MileageSystem == "zyke_garages") then
         km = exports["zyke_garages"]:GetDistanceDriven(plate)
+    elseif (MileageSystem == "jim-mechanic") then
+        km = exports["jim-mechanic"]:GetMilage(plate)
     end
 
     if (not km) then return nil end
