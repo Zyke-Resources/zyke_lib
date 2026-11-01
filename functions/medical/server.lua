@@ -12,6 +12,9 @@
 -- function listeners.onRevive(source, reviver, method)
 --     TriggerEvent("zyke_lib:playerRevived", source, method == "player" and reviver or nil)
 -- end
+--
+-- osp_ambulance reports deaths and respawns itself, but names no reviver. Fire zyke_lib:playerRevived with the
+-- reviver from your revive code for revive reports, a revive without one is seen as a respawn
 
 ---@alias BodyPart "head" | "neck" | "chest" | "abdomen" | "back" | "pelvis" | "leftArm" | "rightArm" | "leftLeg" | "rightLeg"
 
@@ -25,7 +28,7 @@
 ---@field system string @ DeathSystem, or "ped" without one
 ---@field injuries MedicalInjury[]
 ---@field weapons integer[] @ Weapon hashes that caused damage, signed or unsigned as the script gives them
----@field bleeding? number @ The script's bleed level, 0 to 4 for qb-ambulancejob and qbx_medical
+---@field bleeding? number @ The script's bleed level, 0 to 4 for qb-ambulancejob, qbx_medical and osp_ambulance
 
 Functions.medical = {}
 
@@ -38,6 +41,33 @@ local qbBodyParts = {
 
 -- Keys of wasabi_ambulance_v2's getPlayerInjuryTotals
 local wasabiKinds = {cut = "laceration", brokenbone = "fracture", blunt = "blunt", gunshot = "gunshot", fist = "blunt", taser = "other", burn = "burn"}
+
+-- osp_ambulance's body parts in BodyPartDamage
+local ospBodyParts = {
+    Head = "head", Torso = "chest",
+    Larm = "leftArm", Rarm = "rightArm",
+    Lleg = "leftLeg", Rleg = "rightLeg",
+}
+
+-- osp_ambulance wound names (Config.Wounds) onto a kind of wound and a base severity of 1 to 4
+---@type table<string, {kind: string, severity: integer}>
+local ospWounds = {
+    abrasion = {kind = "laceration", severity = 1},
+    contusion = {kind = "blunt", severity = 1},
+    cut = {kind = "laceration", severity = 2},
+    laceration = {kind = "laceration", severity = 2},
+    avulsion = {kind = "laceration", severity = 3},
+    puncturewound = {kind = "laceration", severity = 3},
+    crush = {kind = "blunt", severity = 3},
+    lowvelocitywound = {kind = "gunshot", severity = 2},
+    mediumvelocitywound = {kind = "gunshot", severity = 3},
+    highvelocitywound = {kind = "gunshot", severity = 4},
+    velocitywound = {kind = "gunshot", severity = 3}, -- Shotgun and explosive
+    burn = {kind = "burn", severity = 3},
+}
+
+-- Bleeding of one body part (osp_ambulance's per second value) that adds one severity step
+local ospSevereBleeding = 0.3
 
 -- qbx_medical's DEAD death state
 local qbxDead = 3
@@ -181,6 +211,43 @@ local function readQb(plyId, reading)
     reading.bleeding = entry.bleeding
 end
 
+-- osp_ambulance: GetAmbulanceData gives the injuries per body part. Wounds is a list of wound names per part, Fractures
+-- a flag per part and Bleeding the per second loss per part. It names no weapon, that comes from the death. Untested
+---@param plyId PlayerId
+---@param reading MedicalInjuries
+local function readOsp(plyId, reading)
+    local data = exports["osp_ambulance"]:GetAmbulanceData(plyId) or {}
+    local damage = type(data.BodyPartDamage) == "table" and data.BodyPartDamage or {}
+    local wounds = type(damage.Wounds) == "table" and damage.Wounds or {}
+    local fractures = type(damage.Fractures) == "table" and damage.Fractures or {}
+    local bleedingParts = type(damage.Bleeding) == "table" and damage.Bleeding or {}
+    local totalBleeding = 0
+
+    for ospPart, part in pairs(ospBodyParts) do
+        local partBleeding = tonumber(bleedingParts[ospPart]) or 0
+        local bleedBonus = partBleeding >= ospSevereBleeding and 1 or 0
+
+        totalBleeding = totalBleeding + partBleeding
+
+        local list = type(wounds[ospPart]) == "table" and wounds[ospPart] or {}
+
+        for i = 1, #list do
+            local wound = ospWounds[list[i]]
+
+            if (wound) then
+                addInjury(reading.injuries, {part = part, kind = wound.kind, severity = math.min(4, wound.severity + bleedBonus)})
+            end
+        end
+
+        if (fractures[ospPart] == true) then
+            addInjury(reading.injuries, {part = part, kind = "fracture", severity = math.min(4, 3 + bleedBonus)})
+        end
+    end
+
+    -- The level of 0 to 4 is made from the sum of what each part loses
+    reading.bleeding = totalBleeding >= 1.0 and 4 or totalBleeding >= 0.6 and 3 or totalBleeding >= ospSevereBleeding and 2 or totalBleeding > 0 and 1 or 0
+end
+
 -- The player's injuries now. esx_ambulancejob and scripts without an adapter only give the weapon of their last death
 ---@param plyId PlayerId
 ---@return MedicalInjuries reading
@@ -194,6 +261,8 @@ function Functions.medical.getInjuries(plyId)
         readQbx(plyId, reading)
     elseif (DeathSystem == "qb-ambulancejob") then
         readQb(plyId, reading)
+    elseif (DeathSystem == "osp_ambulance") then
+        readOsp(plyId, reading)
     end
 
     local entry = reported[plyId]
@@ -353,6 +422,74 @@ if (DeathSystem == "qbx_medical") then
     ---@param plyId PlayerId
     AddEventHandler("qbx_medical:server:playerRespawned", function(plyId)
         revived(plyId)
+    end)
+end
+
+-- osp_ambulance: OnPlayerDead and OnPlayerSpawn come from the player's client without parameters, so the player is
+-- source and the cause is read from the ped. Both are client events anyone can fire, so a death only counts once the
+-- server sees the player down (the BodyDamage state bag or a dead ped) and a respawn once it sees them up. The
+-- BodyDamage state bag also reports the death and the respawn when the event doesn't reach the server, `pending` stops
+-- the two from reporting the same death twice. Untested
+if (DeathSystem == "osp_ambulance") then
+    ---@type table<PlayerId, boolean> @ Players whose death is being confirmed
+    local pending = {}
+
+    -- Dead or in last stand, by osp_ambulance's state or the ped's health
+    ---@param plyId PlayerId
+    ---@return boolean down
+    local function isOspDown(plyId)
+        local state = Player(plyId).state
+        local body = state and state.BodyDamage
+
+        if (type(body) == "table" and (body.isDead == true or body.inLastStand == true)) then return true end
+
+        local ped = GetPlayerPed(plyId)
+
+        return ped ~= 0 and GetEntityHealth(ped) <= 0
+    end
+
+    ---@param plyId PlayerId
+    local function markDown(plyId)
+        if (pending[plyId] or (reported[plyId] and reported[plyId].dead)) then return end
+
+        pending[plyId] = true
+
+        -- The ped's cause of death can take a moment to be set after the player goes down
+        CreateThread(function()
+            Wait(500)
+
+            pending[plyId] = nil
+
+            if (not GetPlayerName(plyId)) then return end
+            if (reported[plyId] and reported[plyId].dead) then return end
+            if (not isOspDown(plyId)) then return end
+
+            local ped = GetPlayerPed(plyId)
+            local hash = ped ~= 0 and GetPedCauseOfDeath(ped) or 0
+
+            died(plyId, hash ~= 0 and hash or nil)
+        end)
+    end
+
+    ---@param plyId PlayerId
+    local function markUp(plyId)
+        if (not (reported[plyId] and reported[plyId].dead)) then return end
+        if (isOspDown(plyId)) then return end
+
+        -- osp_ambulance names no reviver, so this is a respawn. A revive script can fire zyke_lib:playerRevived
+        revived(plyId)
+    end
+
+    RegisterNetEvent("osp_ambulance:OnPlayerDead", function()
+        markDown(source)
+    end)
+
+    RegisterNetEvent("osp_ambulance:OnPlayerSpawn", function()
+        markUp(source)
+    end)
+
+    AddEventHandler("playerDropped", function()
+        pending[source] = nil
     end)
 end
 
