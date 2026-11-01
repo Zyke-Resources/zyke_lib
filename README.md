@@ -156,7 +156,7 @@ Each system supports the following values:
 | `banking` | `"auto"`, `"none"`, `"tgg-banking"`, `"Renewed-Banking"`, `"RxBanking"`, `"okokBanking"`, `"bablo-banking"`, `"sky_banking"`, `"kartik-banking"`, `"lation_banking"` |
 | `notification` | `"auto"`, `"none"`, `"ox_lib"`, `"lation_ui"`, `"wasabi_uikit"` |
 | `progressbar` | `"auto"`, `"zyke_lib"`, `"ox_lib"`, `"lation_ui"`, `"wasabi_uikit"` |
-| `appearance` | `"auto"`, `"none"`, `"illenium-appearance"`, `"rcore_clothing"`, `"qb-clothing"`, `"esx_skin"` |
+| `appearance` | `"auto"`, `"none"`, `"illenium-appearance"`, `"rcore_clothing"`, `"onex-creation"`, `"qb-clothing"`, `"esx_skin"` |
 
 ### Example
 
