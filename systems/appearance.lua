@@ -5,8 +5,9 @@ if (override == "none") then return end
 -- Exact overrides can use any resource name; this list only controls auto-detection order
 -- illenium-appearance answers skinchanger's and qb-clothing's events too, so it comes first
 local systems = {
-    "illenium-appearance",
+    "onex-creation",
     "rcore_clothing",
+    "illenium-appearance",
     "qb-clothing",
     "esx_skin",
 }
