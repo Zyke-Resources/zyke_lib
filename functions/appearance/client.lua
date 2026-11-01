@@ -87,6 +87,12 @@ function Functions.appearance.restore()
         return true
     end
 
+    if (AppearanceSystem == "onex-creation") then
+        TriggerServerEvent("onex-creation:client:syncClothes", true)
+
+        return true
+    end
+
     if (AppearanceSystem == "esx_skin" and Framework == "ESX") then
         ESX.TriggerServerCallback("esx_skin:getPlayerSkin", function(skin)
             TriggerEvent("skinchanger:loadSkin", skin)
