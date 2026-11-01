@@ -222,6 +222,43 @@ Each piece is `{id, drawable, texture?, collection?}`: `id` is the component id 
 
 With no appearance resource found, `restore` returns `false` and the outfit stays on.
 
+## Discord Roles
+
+`Z.getDiscordRoles` and `Z.hasDiscordRole` read a player's Discord roles. They run on the server.
+
+Setup:
+
+1. In the [Discord Developer Portal](https://discord.com/developers/applications), create an application, open **Bot** and copy the token with **Reset Token**. Use a bot of its own, since rate limits are shared per token.
+2. Add the bot to your Discord server: open `https://discord.com/oauth2/authorize?client_id=APPLICATION_ID&scope=bot&permissions=0` with your application ID. It needs no permissions.
+3. Turn on **Developer Mode** in Discord (**User Settings > Advanced**), right-click your server and **Copy Server ID**.
+4. Add both to `server.cfg` above `ensure zyke_lib`. Use `set`, never `setr`, so the token is not sent to clients:
+
+```cfg
+set zyke_lib:discordBotToken "your bot token"
+set zyke_lib:discordGuildId "your server id"
+```
+
+Players need Discord running while they connect, otherwise they have no Discord identifier and no roles. Role IDs are copied the same way, by right-clicking a role in **Server Settings > Roles**.
+
+| Function | Purpose |
+|---|---|
+| `getDiscordRoles(target, maxAge?)` | Role IDs of a player server ID or Discord user ID: empty when they are not in the guild, `nil` when unknown |
+| `hasDiscordRole(target, roleIds, maxAge?)` | Whether they hold the role, or any one of an array of roles. Role IDs are strings |
+
+Without `maxAge`, the cached roles are returned straight away. Pass `maxAge` in seconds where an old answer is not good enough, such as a whitelist check: an older entry is fetched from Discord first, and the cached roles are returned when Discord does not answer within 5 seconds.
+
+Every resource shares one cache and one request queue in `zyke_lib`, so a bot token is never used by several scripts at once:
+
+- Roles are fetched while a player connects, unless they were fetched in the last minute. A player seen before is answered from the cache meanwhile.
+- Online players are fetched again in the background every `refreshMinutes` (`config.lua`, 10 by default).
+- With `keepAfterRestart` (on by default), the roles are kept in the resource KVP and loaded when `zyke_lib` starts, so a restart answers right away instead of fetching every player again. Entries not fetched for 14 days are deleted.
+- Requests are sent one at a time. Lookups that wait for an answer go first; background fetches only use what is left of each rate limit bucket, and an empty bucket is waited out instead of running into a 429.
+- A token or guild that Discord refuses switches the lookups off until `zyke_lib` restarts. While Discord is down, the cached roles are kept.
+
+To fetch roles again right away, for example after someone bought a role, use `refreshdiscordroles <server id | Discord ID | identifier | all>`. An identifier such as `license:...` finds an online player, and `all` refreshes every online player in the background. The server console and txAdmin's live console can always use it; players need one of the permissions in `refreshCommand` in `config.lua`. The command only exists on the server and has no net event, so a client cannot reach it. Other server resources refresh with `Z.getDiscordRoles(target, 0)`.
+
+Give `zyke_lib` its own bot when another bot or script already uses one: rate limits belong to the token, so sharing it shares the limits.
+
 ## Vehicle Keys
 
 `Z.vehicleKeys.*` methods belong to `zyke_lib`; they dispatch to exports or events owned by the selected key resource. The tables below list every supported method and integration. When a method has no branch for the selected provider, it returns the documented false, nil, zero, or empty-table default.

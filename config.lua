@@ -44,4 +44,18 @@ return {
     -- Players can change it for themselves in the GTA key binding settings
     -- Key names: https://docs.fivem.net/docs/game-references/input-mapper-parameter-ids/keyboard/
     interestPointTargetingKey = "LMENU", -- Left alt
+
+    -- Discord roles, the bot token and guild ID are server convars, see the README
+    discordRoles = {
+        -- Keeps fetched roles in the resource KVP, so after a restart they answer right away instead of every player being fetched again
+        -- A role changed while the server was down is corrected by the fetch when the player connects
+        keepAfterRestart = true,
+
+        -- Minutes before an online player's roles are fetched again in the background
+        refreshMinutes = 10,
+
+        -- Fetches roles again right away: /refreshdiscordroles <server id | Discord ID | identifier such as license:... | all>
+        -- The server console and txAdmin's live console can always use it, players need one of these permissions
+        refreshCommand = {command = "refreshdiscordroles", permission = {"command", "admin", "superadmin", "owner"}},
+    },
 }
