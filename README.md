@@ -106,6 +106,11 @@ Some inventories offer a lot of backwards-compatible functionality and you may n
 -   `systems/hud.lua`
 -   `functions/hud/client.lua`
 
+### Appearance
+
+-   `systems/appearance.lua`
+-   `functions/appearance/client.lua`
+
 ### Framework
 
 To add in a completely new framework, you would need to modify pretty much all files.
@@ -151,6 +156,7 @@ Each system supports the following values:
 | `banking` | `"auto"`, `"none"`, `"tgg-banking"`, `"Renewed-Banking"`, `"RxBanking"`, `"okokBanking"`, `"bablo-banking"`, `"sky_banking"`, `"kartik-banking"`, `"lation_banking"` |
 | `notification` | `"auto"`, `"none"`, `"ox_lib"`, `"lation_ui"`, `"wasabi_uikit"` |
 | `progressbar` | `"auto"`, `"zyke_lib"`, `"ox_lib"`, `"lation_ui"`, `"wasabi_uikit"` |
+| `appearance` | `"auto"`, `"none"`, `"illenium-appearance"`, `"qb-clothing"`, `"esx_skin"` |
 
 ### Example
 
@@ -196,6 +202,25 @@ return {
 | `qb-doorlock` | Not possible: it reads its doors from `qb-doorlock/configs/*.lua`. `ensure` returns `false, "doorlockConfigOnly"` and the resource ships a config file instead |
 
 Other `reason` values: `doorlockUnavailable` (no door lock started), `invalidDoor`, `databaseUnavailable` and `doorNotAdded`.
+
+## Appearance
+
+`Z.appearance.*` puts work outfits on and the saved look back. It runs on the client.
+
+| `Z.appearance` method | Purpose |
+|---|---|
+| `wearOutfit(outfit)` | Puts `outfit.components` and `outfit.props` on the player without saving them, returns `worn` |
+| `restore()` | Puts the character's saved clothes back on from the appearance resource, returns `restored` |
+
+Each piece is `{id, drawable, texture?, collection?}`: `id` is the component id (0-11) or the prop anchor (0-7), and `drawable` -1 takes a prop off. With `collection` (such as `"mp_m_zyke_dden"`), `drawable` is the index inside that clothing collection, which stays the same whatever other clothing packs a server streams, where a global drawable number does not. `wearOutfit` changes nothing and returns `false` when a collection piece is not streamed for the player's ped.
+
+| Provider | How `restore` gets the saved look |
+|---|---|
+| `illenium-appearance` | `illenium-appearance:client:reloadSkin` event, which refuses while the player is dead, cuffed, falling or in a vehicle |
+| `qb-clothing` | `qb-clothes:loadPlayerSkin` server event |
+| `esx_skin` | `esx_skin:getPlayerSkin` callback, then `skinchanger:loadSkin` |
+
+With no appearance resource found, `restore` returns `false` and the outfit stays on.
 
 ## Vehicle Keys
 
