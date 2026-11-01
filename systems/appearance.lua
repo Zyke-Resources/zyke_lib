@@ -6,6 +6,7 @@ if (override == "none") then return end
 -- illenium-appearance answers skinchanger's and qb-clothing's events too, so it comes first
 local systems = {
     "illenium-appearance",
+    "rcore_clothing",
     "qb-clothing",
     "esx_skin",
 }
