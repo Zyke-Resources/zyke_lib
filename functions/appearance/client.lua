@@ -75,6 +75,12 @@ function Functions.appearance.restore()
         return true
     end
 
+    if (AppearanceSystem == "rcore_clothing") then
+        TriggerServerEvent('rcore_clothing:reloadSkin')
+
+        return true
+    end
+
     if (AppearanceSystem == "qb-clothing") then
         TriggerServerEvent("qb-clothes:loadPlayerSkin")
 
