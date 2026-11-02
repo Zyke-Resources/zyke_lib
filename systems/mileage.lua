@@ -7,7 +7,9 @@ end
 
 local systems = {
     {fileName = "jg-vehiclemileage", variable = "jg-vehiclemileage"},
-    {fileName = "zyke_garages", variable = "zyke_garages"}
+    {fileName = "zyke_garages", variable = "zyke_garages"},
+    -- Last, since jim-mechanic is mostly run for its other features and a dedicated mileage script should win
+    {fileName = "jim-mechanic", variable = "jim-mechanic"},
 }
 
 if (override ~= "auto") then

@@ -96,7 +96,7 @@ return {
     jail = "auto",
 
     -- Vehicle mileage system (set to "none" if you don't track mileage)
-    -- Options: "auto", "none", "jg-vehiclemileage", "zyke_garages"
+    -- Options: "auto", "none", "jg-vehiclemileage", "zyke_garages", "jim-mechanic"
     mileage = "auto",
 
     -- Appearance system, which keeps each character's saved clothes, used to put them back on after a work outfit
