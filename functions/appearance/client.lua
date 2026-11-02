@@ -81,6 +81,12 @@ function Functions.appearance.restore()
         return true
     end
 
+    if (AppearanceSystem == "onex-creation") then
+        TriggerEvent("onex-creation:syncClothes")
+
+        return true
+    end
+
     if (AppearanceSystem == "qb-clothing") then
         TriggerServerEvent("qb-clothes:loadPlayerSkin")
 

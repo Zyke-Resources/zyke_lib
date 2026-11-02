@@ -156,7 +156,7 @@ Each system supports the following values:
 | `banking` | `"auto"`, `"none"`, `"tgg-banking"`, `"Renewed-Banking"`, `"RxBanking"`, `"okokBanking"`, `"bablo-banking"`, `"sky_banking"`, `"kartik-banking"`, `"lation_banking"` |
 | `notification` | `"auto"`, `"none"`, `"ox_lib"`, `"lation_ui"`, `"wasabi_uikit"` |
 | `progressbar` | `"auto"`, `"zyke_lib"`, `"ox_lib"`, `"lation_ui"`, `"wasabi_uikit"` |
-| `appearance` | `"auto"`, `"none"`, `"illenium-appearance"`, `"rcore_clothing"`, `"qb-clothing"`, `"esx_skin"` |
+| `appearance` | `"auto"`, `"none"`, `"onex-creation"`, `"illenium-appearance"`, `"rcore_clothing"`, `"qb-clothing"`, `"esx_skin"` |
 
 ### Example
 
@@ -216,6 +216,7 @@ Each piece is `{id, drawable, texture?, collection?}`: `id` is the component id 
 
 | Provider | How `restore` gets the saved look |
 |---|---|
+| `onex-creation` | `onex-creation:syncClothes` event, which onex-creation also sends itself when the player loads and for its skin refresh command |
 | `illenium-appearance` | `illenium-appearance:client:reloadSkin` event, which refuses while the player is dead, cuffed, falling or in a vehicle |
 | `rcore_clothing` | `rcore_clothing:reloadSkin` server event, which loads the saved skin from the database |
 | `qb-clothing` | `qb-clothes:loadPlayerSkin` server event |
