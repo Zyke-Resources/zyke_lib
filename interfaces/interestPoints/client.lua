@@ -3,7 +3,8 @@
 -- camera; idle rings are a sprite and an active marker is a DUI texture that runs the morph
 -- A point with options expands into a timeline instead: the mouse wheel moves the selection along it
 -- and the key acts on the selected option. A single option shows as a plain prompt, so a point can
--- keep the same option ids while its choices come and go
+-- keep the same option ids while its choices come and go. An option with options of its own opens them as a
+-- submenu when useAimedInterestPoint reads the key press on it, and the back key, shown beside the key, leaves it
 -- Only following and drawing the markers runs every frame. Rooms, aim, the camera's view and the prompts
 -- are judged on the aim interval, and the loop sleeps between judgements while nothing is on screen
 
@@ -11,6 +12,12 @@
 ---@field id string @ Stable within its point, so the selection holds across updates
 ---@field label string
 ---@field hint? string @ Smaller line under the label while this option is selected
+---@field options? InterestPointOption[] @ A submenu the option opens, its ids unique across the point's whole tree
+---@field submenu? boolean @ Built from options, the row shows a chevron
+
+---@class InterestPointMenu
+---@field options InterestPointOption[]
+---@field optionsKey string
 
 ---@class InterestPoint
 ---@field id string @ Unique within its set and stable, so the marker keeps animating across updates
@@ -19,9 +26,11 @@
 ---@field coords? vector3 @ World point when there is no entity
 ---@field key? string @ Key label shown while active, or a "+" prefixed command resolved to its bound key when the prompt shows
 ---@field label? string @ Text beside the key while active
+---@field submenu? boolean @ The label is a single option that opens a submenu, so it shows a chevron
 ---@field hint? string @ Smaller line under the label while active, such as what the action needs first
 ---@field options? InterestPointOption[] @ Replaces the label and hint with a scrollable timeline, read through getInterestPointOption
 ---@field optionsKey? string @ Built once when the set is replaced
+---@field menus? table<string, InterestPointMenu> @ [option id] of every option with a submenu, built once when the set is replaced
 ---@field active? boolean @ Expands the ring into the key prompt; aim sets decide this themselves
 ---@field opacity? number @ 0-1, defaults to 1
 ---@field reach? number @ Metres from the player an aim set's point can be aimed at, any distance when omitted
@@ -74,6 +83,8 @@
 ---@field hint? string
 ---@field options? InterestPointOption[]
 ---@field optionsKey? string
+---@field submenu? boolean
+---@field menu? string[] @ Ids of the options whose submenus are open, the last is shown
 ---@field selected? string @ Id of the selected option
 ---@field selectedIndex? integer
 
@@ -87,6 +98,8 @@
 ---@field releaseAt? integer @ Game timer the collapse finishes and the ring sprite takes over again
 ---@field key? string
 ---@field label? string
+---@field submenu? boolean
+---@field back? boolean @ The back key shows beside the key
 ---@field hint? string
 ---@field optionsKey? string
 ---@field selectedIndex? integer
@@ -94,7 +107,8 @@
 -- The 1080p design in pixels, scaled with the screen height; the idle ring is the same page cropped
 -- to a square, so it matches the collapsed marker exactly
 local duiWidth, duiHeight = 512, 64
-local duiAnchor = 32
+-- Room left of the marker for the back key while a submenu is open; the ring slot keeps its marker centred
+local duiAnchor = 64
 -- Expanded slots are taller than the ring so an option timeline fits above and below the marker,
 -- fading out three rows away
 local expandedHeight = 256
@@ -140,6 +154,9 @@ local guideTxd, guideTxn = "zyke_lib_interest_point_guide", "dot"
 local scrollNextControl, scrollPrevControl = 14, 15
 local scrollControls = {14, 15, 16, 17, 261, 262}
 local targetingCommand = "zyke_lib_interest_point_targeting"
+local backCommand = "zyke_lib_interest_point_back"
+-- Take cover shares the back key's default, Q
+local coverControl = 44
 
 ---@type table<string, table<string, InterestPointSet>> @ [resource][setId]
 local sets = {}
@@ -161,6 +178,8 @@ local nextAimAt = 0
 local setsChanged = false
 -- An expanded marker has options, so the mouse wheel is read every frame
 local scrollable = false
+-- An expanded marker has a submenu open, so taking cover is held off for the back key
+local menuOpen = false
 -- The camera at the last judgement
 local viewCoords, viewForward, viewCos = zeroOffset, zeroOffset, -1.0
 local nextLayoutAt = 0
@@ -449,7 +468,7 @@ local function initialize()
     ---@return InterestPointSlot? slot
     local function createSlot(index, width, height)
         local dui = Functions.dui:new({
-            url = ("https://cfx-nui-%s/nui/interest_point/index.html?slot=%s&height=%s"):format(ResName, index, height),
+            url = ("https://cfx-nui-%s/nui/interest_point/index.html?slot=%s&height=%s&anchor=%s"):format(ResName, index, height, index == 0 and height / 2 or duiAnchor),
             width = math.floor(width * scale * duiQuality + 0.5),
             height = math.floor(height * scale * duiQuality + 0.5),
         })
@@ -538,6 +557,42 @@ local function findAimedPoint(set, pedCoords)
     return bestId, bestDist, guided
 end
 
+-- Shows the open submenu's rows, or the point's own. Submenus the point no longer has are closed, from the first gone
+---@param visual InterestPointVisual
+---@param point InterestPoint
+local function applyMenu(visual, point)
+    local menu = visual.menu
+    local shown = nil
+
+    if (menu) then
+        for i = 1, #menu do
+            local found = point.menus and point.menus[menu[i]]
+
+            if (not found) then
+                for j = #menu, i, -1 do
+                    menu[j] = nil
+                end
+
+                break
+            end
+
+            shown = found
+        end
+
+        if (#menu == 0) then visual.menu = nil end
+    end
+
+    if (shown) then
+        local single = #shown.options == 1 and shown.options[1]
+        visual.options, visual.optionsKey = shown.options, shown.optionsKey
+
+        -- A single option shows as a plain prompt, as on a point's own options
+        if (single) then visual.label, visual.hint, visual.submenu = single.label, single.hint, single.submenu end
+    else
+        visual.options, visual.optionsKey = point.options, point.optionsKey
+    end
+end
+
 -- Keeps the selection on the same option across updates, or on the same row when that option is gone
 ---@param visual InterestPointVisual
 local function syncSelection(visual)
@@ -559,6 +614,25 @@ local function syncSelection(visual)
 
     local index = math.min(visual.selectedIndex or 1, #options)
     visual.selected, visual.selectedIndex = options[index].id, index
+end
+
+-- Opens a submenu, or goes back to the menu before with the selection on the option that opened it. The prompt picks
+-- the new rows up on the next judgement, a few frames away
+---@param visual InterestPointVisual
+---@param point InterestPoint
+---@param optionId? string @ Option whose submenu opens, nil goes back
+local function changeMenu(visual, point, optionId)
+    if (optionId) then
+        visual.menu = visual.menu or {}
+        visual.menu[#visual.menu + 1] = optionId
+        visual.selected, visual.selectedIndex = nil, nil
+    else
+        visual.selected, visual.selectedIndex = table.remove(visual.menu), nil
+    end
+
+    applyMenu(visual, point)
+    syncSelection(visual)
+    PlaySoundFrontend(-1, optionId and "SELECT" or "BACK", "HUD_FRONTEND_DEFAULT_SOUNDSET", true)
 end
 
 -- Moves the selection of every expanded marker with options; the timeline ends rather than wraps
@@ -601,11 +675,12 @@ end
 ---@param visual InterestPointVisual
 ---@param reset boolean @ The slot was showing another point
 local function sendPrompt(slot, visual, reset)
-    local data = {reset = reset, active = true, key = resolveKey(visual.key) or "", label = visual.label or "", hint = visual.hint or "", selected = visual.selectedIndex}
+    local back = visual.menu ~= nil
+    local data = {reset = reset, active = true, key = resolveKey(visual.key) or "", back = back and (resolveKey("+" .. backCommand) or "") or false, label = visual.label or "", submenu = visual.submenu == true, hint = visual.hint or "", selected = visual.selectedIndex}
     if (reset or slot.optionsKey ~= visual.optionsKey) then data.options = visual.options and #visual.options > 1 and visual.options or false end
 
     slot.expanded, slot.releaseAt = true, nil
-    slot.key, slot.label, slot.hint = visual.key, visual.label, visual.hint
+    slot.key, slot.label, slot.hint, slot.submenu, slot.back = visual.key, visual.label, visual.hint, visual.submenu, back
     slot.optionsKey, slot.selectedIndex = visual.optionsKey, visual.selectedIndex
     sendSlot(slot, data)
 end
@@ -631,7 +706,7 @@ local function syncSlots(now)
 
             if (slot) then
                 -- Aimed again mid-collapse, so it grows back from where it is
-                if (not slot.expanded or slot.key ~= visual.key or slot.label ~= visual.label or slot.hint ~= visual.hint or slot.optionsKey ~= visual.optionsKey or slot.selectedIndex ~= visual.selectedIndex) then
+                if (not slot.expanded or slot.key ~= visual.key or slot.label ~= visual.label or slot.submenu ~= visual.submenu or slot.back ~= (visual.menu ~= nil) or slot.hint ~= visual.hint or slot.optionsKey ~= visual.optionsKey or slot.selectedIndex ~= visual.selectedIndex) then
                     sendPrompt(slot, visual, false)
                 end
             else
@@ -663,7 +738,7 @@ end
 local function judge(now, paused, targeting)
     tick = tick + 1
     nextAimAt = now + aimInterval
-    setsChanged, scrollable = false, false
+    setsChanged, scrollable, menuOpen = false, false, false
     guideVisible = false
 
     local ped = PlayerPedId()
@@ -730,17 +805,18 @@ local function judge(now, paused, targeting)
                 visual.present, visual.culled = coords ~= nil, point.culled
                 visual.active = visual.present and active
                 visual.opacity = point.opacity or 1.0
-                visual.key, visual.label, visual.hint = point.key, point.label, point.hint
-                visual.options, visual.optionsKey = point.options, point.optionsKey
+                visual.key, visual.label, visual.hint, visual.submenu = point.key, point.label, point.hint, point.submenu
 
                 if (coords) then visual.coords, visual.resolvedFrame = coords, frame end
 
-                -- Looking away starts the timeline over at the first option
-                if (not visual.active) then visual.selected, visual.selectedIndex = nil, nil end
+                -- Looking away closes the submenus and starts the timeline over at the first option
+                if (not visual.active) then visual.menu, visual.selected, visual.selectedIndex = nil, nil, nil end
 
+                applyMenu(visual, point)
                 syncSelection(visual)
 
                 if (visual.active and visual.options and #visual.options > 1) then scrollable = true end
+                if (visual.active and visual.menu) then menuOpen = true end
             end
         end
     end
@@ -844,6 +920,7 @@ local function startRendering()
             wasTargeting = targeting
 
             if (scrollable and scrollOptions(paused)) then syncSlots(now) end
+            if (menuOpen and not paused) then DisableControlAction(0, coverControl, true) end
 
             local busy = renderVisuals(now - last, paused)
             last = now
@@ -866,9 +943,10 @@ local function startRendering()
 end
 
 ---@param options any
+---@param menus table<string, InterestPointMenu> @ Collects every submenu in the tree by the id of the option that opens it
 ---@return InterestPointOption[]? options
 ---@return string? optionsKey @ Changes whenever an option does, so the DUI only gets them again then
-local function normalizeOptions(options)
+local function normalizeOptions(options, menus)
     if (type(options) ~= "table") then return nil, nil end
 
     local normalized = {}
@@ -880,9 +958,13 @@ local function normalizeOptions(options)
         if (type(option) == "table" and type(option.id) == "string") then
             local label = tostring(option.label or "")
             local hint = type(option.hint) == "string" and option.hint ~= "" and option.hint or nil
+            local subOptions, subKey = normalizeOptions(option.options, menus)
 
-            normalized[#normalized + 1] = {id = option.id, label = label, hint = hint}
-            parts[#parts + 1] = ("%s\0%s\0%s"):format(option.id, label, hint or "")
+            -- The DUI only gets the rows, a submenu's own rows go over once it opens
+            normalized[#normalized + 1] = {id = option.id, label = label, hint = hint, submenu = subOptions ~= nil or nil}
+            parts[#parts + 1] = ("%s\0%s\0%s\0%s"):format(option.id, label, hint or "", subOptions and ">" or "")
+
+            if (subOptions and subKey) then menus[option.id] = {options = subOptions, optionsKey = subKey} end
         end
     end
 
@@ -927,7 +1009,8 @@ Functions.setInterestPoints = function(id, points, options)
         local coords = type(point.coords) == "vector3" and point.coords or nil
 
         if (type(point.id) == "string" and (entity or coords)) then
-            local pointOptions, optionsKey = normalizeOptions(point.options)
+            local menus = {}
+            local pointOptions, optionsKey = normalizeOptions(point.options, menus)
             local single = pointOptions and #pointOptions == 1 and pointOptions[1]
             local hint = single and single.hint or point.hint
 
@@ -938,9 +1021,11 @@ Functions.setInterestPoints = function(id, points, options)
                 coords = coords,
                 key = point.key,
                 label = single and single.label or point.label,
+                submenu = single and single.submenu or nil,
                 hint = type(hint) == "string" and hint ~= "" and hint or nil,
                 options = pointOptions,
                 optionsKey = optionsKey,
+                menus = next(menus) and menus or nil,
                 active = point.active,
                 opacity = tonumber(point.opacity),
                 reach = tonumber(point.reach),
@@ -1004,6 +1089,29 @@ Functions.getAimedInterestPoint = function(id)
     return set.aimed, getSelectedOption(resourceName, id, set.aimed)
 end
 
+-- For the key press on an aim set: an option with a submenu opens it within zyke_lib. Only an option that does
+-- something itself, or a point without options, is handed back to run
+---@param id string @ Set identifier within the calling resource
+---@return string? pointId @ Nil when nothing is aimed at or the press moved between menus
+---@return string? optionId @ Selected option of the aimed point when it has options
+Functions.useAimedInterestPoint = function(id)
+    local resourceName = GetInvokingResource() or ResName
+    local resourceSets = sets[resourceName]
+    local set = resourceSets and resourceSets[id]
+    if (not set or not set.aimed) then return nil, nil end
+
+    local visual = visuals[("%s:%s:%s"):format(resourceName, id, set.aimed)]
+    local point = visual and visual.point
+    local selected = visual and visual.selected
+    if (not point or not selected) then return set.aimed, selected end
+
+    if (not point.menus or not point.menus[selected]) then return set.aimed, selected end
+
+    changeMenu(visual, point, selected)
+
+    return nil, nil
+end
+
 -- The selection holds while the marker is expanded and starts over at the first option once it collapses
 ---@param id string @ Set identifier within the calling resource
 ---@param pointId string
@@ -1011,6 +1119,19 @@ end
 Functions.getInterestPointOption = function(id, pointId)
     return getSelectedOption(GetInvokingResource() or ResName, id, pointId)
 end
+
+-- Leaves the aimed point's submenu, wherever its resource reads its own key
+Functions.registerKey(backCommand, LibConfig.interestPointBackKey or "Q", "Go back in an interaction point's menu", function()
+    if (IsPauseMenuActive()) then return end
+
+    for resourceName, resourceSets in pairs(sets) do
+        for id, set in pairs(resourceSets) do
+            local visual = set.aimed and visuals[("%s:%s:%s"):format(resourceName, id, set.aimed)]
+
+            if (visual and visual.active and visual.menu and visual.point) then return changeMenu(visual, visual.point, nil) end
+        end
+    end
+end)
 
 if (targetingEnabled) then
     -- Rendering stops while the key is up, so the press starts it again

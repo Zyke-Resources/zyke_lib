@@ -45,6 +45,10 @@ return {
     -- Key names: https://docs.fivem.net/docs/game-references/input-mapper-parameter-ids/keyboard/
     interestPointTargetingKey = "LMENU", -- Left alt
 
+    -- Default key that goes back out of an interest point's submenu, as its back row does
+    -- Players can change it for themselves in the GTA key binding settings
+    interestPointBackKey = "Q",
+
     -- Discord roles, the bot token and guild ID are server convars, see the README
     discordRoles = {
         -- Keeps fetched roles in the resource KVP, so after a restart they answer right away instead of every player being fetched again

@@ -12,6 +12,7 @@
 			:root {
 				--dark: 17, 19, 21;
 				--page-height: 6.4;
+				--anchor: 3.2rem;
 				font-size: calc(100vh / var(--page-height));
 			}
 
@@ -30,12 +31,12 @@
 			}
 
 			/* Slot 0 renders this collapsed state in a 6.4rem square for every idle ring, so swapping a ring
-			   for an expanding slot is invisible. The centre sits 3.2rem from the left edge, where Lua
-			   anchors the texture on the point */
+			   for an expanding slot is invisible. The centre sits --anchor from the left edge, where Lua
+			   anchors the texture on the point; expanded slots leave room on the left for the back key */
 			.marker {
 				position: absolute;
 				top: 50%;
-				left: 3.2rem;
+				left: var(--anchor);
 				display: flex;
 				align-items: center;
 				justify-content: center;
@@ -83,6 +84,41 @@
 			.marker.active .dot {
 				opacity: 0;
 				transform: translate(-50%, -50%) scale(1.6);
+			}
+
+			/* The back key, a tag pointing left that slides out from behind the key while a submenu is open */
+			.back {
+				position: absolute;
+				top: 50%;
+				right: calc(100% + 0.3rem);
+				display: flex;
+				align-items: center;
+				box-sizing: border-box;
+				height: 2.2rem;
+				padding: 0 0.55rem 0 1.15rem;
+				background: rgba(190, 190, 190, 0.96);
+				clip-path: polygon(0.75rem 0, 100% 0, 100% 100%, 0.75rem 100%, 0 50%);
+				color: rgb(var(--dark));
+				font-size: 1.6rem;
+				font-weight: 700;
+				line-height: 1;
+				text-transform: uppercase;
+				white-space: nowrap;
+				opacity: 0;
+				transform: translate(1.2rem, -50%);
+				transition: opacity 0.15s ease-out, transform 0.18s ease-out;
+			}
+
+			.back-wrap {
+				position: absolute;
+				inset: 0;
+				filter: drop-shadow(0 0 0.25rem rgba(0, 0, 0, 0.9));
+				pointer-events: none;
+			}
+
+			.marker.active.has-back .back {
+				opacity: 1;
+				transform: translate(0, -50%);
 			}
 
 			.key {
@@ -297,6 +333,26 @@
 				opacity: 1;
 			}
 
+			/* An option that opens a submenu ends in a chevron, drawn with borders so it looks the same whatever
+			   font loads */
+			.option.submenu .option-label::after,
+			.label.submenu::after {
+				content: "";
+				display: inline-block;
+				width: 0.42rem;
+				height: 0.42rem;
+				border-top: 0.2rem solid currentColor;
+				border-right: 0.2rem solid currentColor;
+				vertical-align: 0.22rem;
+				filter: drop-shadow(0 0 0.15rem rgba(0, 0, 0, 1)) drop-shadow(0 0 0.4rem rgba(0, 0, 0, 0.9));
+			}
+
+			.option.submenu .option-label::after,
+			.label.submenu::after {
+				margin-left: 0.5rem;
+				transform: rotate(45deg);
+			}
+
 			/* Wraps the marker so the shake moves it without touching its own centring transform */
 			.shaker {
 				position: absolute;
@@ -347,6 +403,7 @@
 		<div class="shaker" id="shaker">
 			<div class="marker" id="marker">
 				<div class="dot"></div>
+				<div class="back-wrap"><span class="back" id="back"></span></div>
 				<span class="key" id="key"></span>
 				<p class="label" id="label"></p>
 				<p class="hint" id="hint"></p>
@@ -361,6 +418,7 @@
 			const keyEl = document.getElementById("key");
 			const labelEl = document.getElementById("label");
 			const hintEl = document.getElementById("hint");
+			const backEl = document.getElementById("back");
 			const timelineEl = document.getElementById("timeline");
 			const trackEl = document.getElementById("track");
 			const params = new URLSearchParams(location.search);
@@ -376,6 +434,9 @@
 			const pageHeight = Number(params.get("height"));
 			if (pageHeight > 0) document.documentElement.style.setProperty("--page-height", String(pageHeight / 10));
 
+			const anchor = Number(params.get("anchor"));
+			if (anchor > 0) document.documentElement.style.setProperty("--anchor", `${anchor / 10}rem`);
+
 			// Rows in rem from the selected option's centre; its hint pushes the options below it down
 			const optionPitch = 2.6;
 			const hintSpace = 1.3;
@@ -388,6 +449,7 @@
 				optionEls = options.map((option) => {
 					const el = document.createElement("div");
 					el.className = "option";
+					if (option.submenu) el.classList.add("submenu");
 					el.innerHTML = '<span class="tick"></span><p class="option-label"></p><p class="option-hint"></p>';
 					el.querySelector(".option-label").textContent = option.label || "";
 					el.querySelector(".option-hint").textContent = option.hint || "";
@@ -442,6 +504,13 @@
 
 				if (data.key !== undefined) keyEl.textContent = data.key || "";
 				if (data.label !== undefined) labelEl.textContent = data.label || "";
+				if (data.submenu !== undefined) labelEl.classList.toggle("submenu", data.submenu === true);
+
+				// Kept while it slides away, so the tag does not empty mid-transition
+				if (data.back !== undefined) {
+					if (data.back !== false) backEl.textContent = data.back;
+					marker.classList.toggle("has-back", data.back !== false);
+				}
 				if (data.hint !== undefined) hintEl.textContent = data.hint || "";
 
 				// Lua sends the 1-based index of the selected option
