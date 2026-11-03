@@ -44,6 +44,7 @@ return {
     ["MdtCertificate"] = "",
     ["MdtOrder"] = "",
     ["MdtCatalogue"] = "",
+    ["MdtFunds"] = "",
     ["MdtRoadworthy"] = "",
     ["MdtTow"] = "",
     ["MdtCall"] = "",
