@@ -20,7 +20,8 @@ function Functions.addItem(player, item, amount, metadata)
         elseif (Framework == "ESX") then
             player.addInventoryItem(items[i].name, items[i].amount, items[i].metadata)
         elseif (Framework == "QB") then
-            player.Functions.AddItem(items[i].name, items[i].amount, nil, items[i].metadata)
+            -- False when the inventory refuses it, such as when it is full
+            if (not player.Functions.AddItem(items[i].name, items[i].amount, nil, items[i].metadata)) then return false end
         end
     end
 
