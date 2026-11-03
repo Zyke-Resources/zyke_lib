@@ -337,7 +337,7 @@ local function finishProgress(state, success, delay)
     if (state.hasProps) then playerState:set(progressPropsStateKey, nil, true) end
 
     cleanupProgress(state)
-    playerState.invBusy = false
+    SetInventoryBusyHolder("progress", false)
 
     if (activeProgress == state) then activeProgress = nil end
     closeProgressUi(state, success, delay)
@@ -405,7 +405,7 @@ local function startProgress(progressType, data)
     }
 
     activeProgress = state
-    playerState.invBusy = true
+    SetInventoryBusyHolder("progress", true)
     startProgressAnim(data.anim, state)
 
     -- Keep progress props on our own state bag key so ox_lib can run beside us without double-spawning props.
@@ -453,7 +453,7 @@ local function showProgress(data)
     }
 
     activeProgress = state
-    playerState.invBusy = true
+    SetInventoryBusyHolder("progress", true)
     startProgressAnim(data.anim, state)
 
     if (data.prop) then
@@ -651,7 +651,6 @@ AddEventHandler("onClientResourceStop", function(resName)
         activeProgress = nil
     end
 
-    playerState.invBusy = false
     for serverId in pairs(createdProgressProps) do
         deleteProgressProps(serverId)
     end
