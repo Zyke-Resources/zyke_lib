@@ -31,6 +31,8 @@ end
 ---@field action? function @qb-target
 ---@field onSelect? function @ox_target
 ---@field distance? number @ox_target
+---@field openMenu? string @ Opens the menu of this name in place of selecting, ox_target
+---@field menuName? string @ Menu this option is in, on the start page when omitted
 
 ---@class EntityTargetDetails
 ---@field distance? number @2.0 default
@@ -64,6 +66,20 @@ local function ensureTargetDetails(targetDetails)
     for i = 1, #targetDetails.options do
         targetDetails.options[i].distance = targetDetails.distance
         targetDetails.options[i].action = targetDetails.options[i].onSelect
+    end
+
+    -- qb-target has no menus, so every menu's options join the start page in place of the options that open them
+    if (Target == "QB") then
+        local options = {}
+
+        for _, option in ipairs(targetDetails.options) do
+            if (not option.openMenu) then
+                option.menuName = nil
+                options[#options + 1] = option
+            end
+        end
+
+        targetDetails.options = options
     end
 
     return targetDetails
