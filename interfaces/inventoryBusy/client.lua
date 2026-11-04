@@ -4,10 +4,32 @@
 local holders = {}
 -- Only an invBusy placed here is lifted again, another script's stays untouched
 local placedBusy = false
+-- Same for invHotkeys, only hotkeys lowered here are raised again
+local loweredHotkeys = false
+
+-- ox_inventory's hotbar toggle (TAB) and slot keys ignore invBusy and only check invHotkeys
+---@param busy boolean
+local function applyHotkeys(busy)
+    if (busy) then
+        if (LocalPlayer.state.invHotkeys ~= true) then return end
+
+        loweredHotkeys = true
+        LocalPlayer.state:set("invHotkeys", false, false)
+
+        return
+    end
+
+    if (not loweredHotkeys) then return end
+
+    loweredHotkeys = false
+    LocalPlayer.state:set("invHotkeys", true, false)
+end
 
 -- ox_inventory, and one_inventory through it, refuse opening the inventory and using items while invBusy is set
 local function applyInventoryBusy()
     local busy = next(holders) ~= nil
+
+    applyHotkeys(busy)
 
     if (busy) then
         if (LocalPlayer.state.invBusy == true) then return end
@@ -53,6 +75,20 @@ AddStateBagChangeHandler("invBusy", nil, function(bagName, key, value)
         placedBusy = false
 
         applyInventoryBusy()
+    end)
+end)
+
+-- ox_inventory raises invHotkeys when the character loads, which would hand the hotbar back mid-task
+---@param bagName string @ player:<serverId>
+---@param key string
+---@param value any
+---@diagnostic disable-next-line: param-type-mismatch
+AddStateBagChangeHandler("invHotkeys", nil, function(bagName, key, value)
+    if (not value or next(holders) == nil) then return end
+    if (GetPlayerFromStateBagName(bagName) ~= PlayerId()) then return end
+
+    SetTimeout(0, function()
+        applyHotkeys(next(holders) ~= nil)
     end)
 end)
 
