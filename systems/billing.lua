@@ -5,8 +5,10 @@ if (override == "none") then
     return
 end
 
+-- okokBilling first, ESX servers often keep esx_billing started beside it
 local systems = {
-    {fileName = "esx_billing", variable = "esx_billing"}
+    {fileName = "okokBilling", variable = "okokBilling"},
+    {fileName = "esx_billing", variable = "esx_billing"},
 }
 
 if (override ~= "auto") then
