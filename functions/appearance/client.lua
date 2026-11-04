@@ -82,7 +82,7 @@ function Functions.appearance.restore()
     end
 
     if (AppearanceSystem == "onex-creation") then
-        TriggerEvent("onex-creation:syncClothes")
+        TriggerEvent("onex-creation:client:syncClothes")
 
         return true
     end

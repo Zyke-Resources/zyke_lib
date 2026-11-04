@@ -216,7 +216,7 @@ Each piece is `{id, drawable, texture?, collection?}`: `id` is the component id 
 
 | Provider | How `restore` gets the saved look |
 |---|---|
-| `onex-creation` | `onex-creation:syncClothes` event, which onex-creation also sends itself when the player loads and for its skin refresh command |
+| `onex-creation` | `onex-creation:client:syncClothes` event, which reloads the saved appearance from the database |
 | `illenium-appearance` | `illenium-appearance:client:reloadSkin` event, which refuses while the player is dead, cuffed, falling or in a vehicle |
 | `rcore_clothing` | `rcore_clothing:reloadSkin` server event, which loads the saved skin from the database |
 | `qb-clothing` | `qb-clothes:loadPlayerSkin` server event |
