@@ -12,6 +12,7 @@ local systems = {
     {fileName = "lc_fuel", variable = "LCFuel"},
     {fileName = "rcore_fuel", variable = "RcoreFuel"},
     {fileName = "Renewed-Fuel", variable = "Renewed-Fuel"},
+    {fileName = "lyre_fuel", variable = "LyreFuel"},
 }
 
 if (override ~= "auto") then

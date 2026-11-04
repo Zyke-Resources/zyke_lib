@@ -148,7 +148,7 @@ Each system supports the following values:
 | System | Options |
 |---|---|
 | `gang` | `"auto"`, `"none"`, `"pug-gangs"` |
-| `fuel` | `"auto"`, `"none"`, `"ox_fuel"`, `"LegacyFuel"`, `"cdn-fuel"`, `"lc_fuel"`, `"rcore_fuel"`, `"Renewed-Fuel"` |
+| `fuel` | `"auto"`, `"none"`, `"ox_fuel"`, `"LegacyFuel"`, `"cdn-fuel"`, `"lc_fuel"`, `"rcore_fuel"`, `"Renewed-Fuel"`, `"lyre_fuel"` |
 | `vehicleKeys` | `"auto"`, `"none"`, `"zyke_vehiclekeys"`, `"qb-vehiclekeys"`, `"qbx_vehiclekeys"`, `"qs-vehiclekeys"`, `"wasabi_carlock"`, `"Renewed-Vehiclekeys"` |
 | `doorlock` | `"auto"`, `"none"`, `"ox_doorlock"`, `"rcore_doorlock"`, `"qb-doorlock"` |
 | `death` | `"auto"`, `"none"`, `"sky_ambulancejob"`, `"wasabi_ambulance"`, `"wasabi_ambulance_v2"`, `"osp_ambulance"` |

@@ -15,6 +15,8 @@ function Functions.getFuel(veh)
         fuel = exports["rcore_fuel"]:GetVehicleFuelPercentage(veh)
     elseif (FuelSystem == "Renewed-Fuel") then
         fuel = exports["Renewed-Fuel"]:GetFuel(veh)
+    elseif (FuelSystem == "LyreFuel") then
+        fuel = exports["lyre_fuel"]:GetFuel(veh)
     else
         fuel = GetVehicleFuelLevel(veh)
     end
