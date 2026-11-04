@@ -95,6 +95,12 @@ function Functions.getInventoryImagePath(itemName, metadata)
         return ""
     end
 
+    -- Like ox's own getItemUrl: a slot's imageurl, then its image name, before the item's
+    if (Inventory == "OX" and metadata) then
+        if (type(metadata.imageurl) == "string") then return metadata.imageurl end
+        if (type(metadata.image) == "string") then return ("nui://%s/web/images/%s.png"):format(resourceName, metadata.image) end
+    end
+
     return ("nui://%s/web/images/%s.png"):format(resourceName, itemName)
 end
 
