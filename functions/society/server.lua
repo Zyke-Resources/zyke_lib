@@ -143,6 +143,50 @@ function Functions.society.remove(name, amount)
     return false
 end
 
+-- Makes the society account when it is missing, where the banking system can make one. The others only report
+-- whether it exists
+---@param name string @ Society account name
+---@param label string @ Shown in the banking system
+---@return boolean exists
+function Functions.society.ensure(name, label)
+    if (type(name) ~= "string" or name == "") then return false end
+
+    if (BankingSystem == "RENEWED_BANKING") then
+        -- Returns the account as it is when it already exists
+        return exports["Renewed-Banking"]:CreateJobAccount({name = name, label = label}, 0) ~= nil
+    elseif (BankingSystem) then
+        local balance = Functions.society.get(name)
+
+        return type(balance) == "number"
+    end
+
+    if (Framework == "QB") then
+        -- CreateJobAccount doesn't check for an existing account
+        if (MySQL.scalar.await("SELECT 1 FROM `bank_accounts` WHERE `account_name` = ?", {name})) then return true end
+
+        return exports["qb-banking"]:CreateJobAccount(name, 0) ~= nil
+    end
+
+    if (Framework == "ESX") then
+        local p = promise.new()
+
+        TriggerEvent("esx_addonaccount:getSharedAccount", name, function(account)
+            p:resolve(account ~= nil)
+        end)
+
+        if (Citizen.Await(p)) then return true end
+
+        -- AddSharedAccount came with later esx_addonaccount versions
+        local created, account = pcall(function()
+            return exports["esx_addonaccount"]:AddSharedAccount({name = name, label = label}, 0)
+        end)
+
+        return created and account ~= nil
+    end
+
+    return false
+end
+
 -- esx_society keeps a job's shared account as society_<job>, QBCore and Qbox banking use the job name
 ---@param job string
 ---@return string account
