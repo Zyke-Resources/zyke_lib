@@ -9,8 +9,8 @@ local result = Z.openContext({
     title = "Shop",
     icon = "cart",
     options = {
-        { title = "Iron Ore", description = "{amount}x = ${amount * price}", amount = { default = 1, min = 1, max = 10, vars = { price = 50 } }, image = Z.getInventoryImagePath("iron_ore") },
-        { title = "Coal", description = "{amount}x = ${amount * price}", amount = { default = 1, min = 1, max = 10, vars = { price = 30 } }, image = Z.getInventoryImagePath("coal") },
+        { title = "Iron Ore", description = "{amount}x = {money(amount * price)}", amount = { default = 1, min = 1, max = 10, vars = { price = 50 } }, image = Z.getInventoryImagePath("iron_ore") },
+        { title = "Coal", description = "{amount}x = {money(amount * price)}", amount = { default = 1, min = 1, max = 10, vars = { price = 30 } }, image = Z.getInventoryImagePath("coal") },
     },
 })
 ```
@@ -247,15 +247,20 @@ Expressions inside `{}` are evaluated as simple arithmetic. Available tokens:
 - `amount` -- the current amount value
 - Any key from `vars` -- the corresponding number
 
-Supported operators: `+`, `-`, `*`, `/`, parentheses.
+Supported operators: `+`, `-`, `*`, `/`, parentheses. Two wrappers are available:
+
+- `floor(...)` -- rounds the result down
+- `money(...)` -- wraps the result in the server's `currencyFormat` from the zyke_lib config, so `"%s kr"` shows `150 kr`
+
+Never type a currency symbol into a price. Use `money(...)` in templates and `Z.formatMoney(amount)` everywhere else.
 
 ```lua
 -- Static string (no template):
-description = "Price: $50"
+description = ("Price: %s"):format(Z.formatMoney(50))
 
 -- With template:
-description = "{amount}x = ${amount * price}"
--- amount=1, price=50 → "1x = $50"
+description = "{amount}x = {money(amount * price)}"
+-- amount=1, price=50, currencyFormat "$%s" → "1x = $50"
 -- amount=3, price=50 → "3x = $150"
 ```
 
@@ -268,7 +273,7 @@ Z.openContext({
     options = {
         {
             title = "Iron Ore",
-            description = "{amount}x = ${amount * price}",
+            description = "{amount}x = {money(amount * price)}",
             image = Z.getInventoryImagePath("iron_ore"),
             amount = {
                 default = 1,
@@ -277,7 +282,7 @@ Z.openContext({
                 vars = { price = 50 },
             },
             onSelect = function(args, amount)
-                print("Bought " .. amount .. "x Iron Ore for $" .. (amount * 50))
+                print("Bought " .. amount .. "x Iron Ore for " .. Z.formatMoney(amount * 50))
             end,
         },
     },
@@ -294,7 +299,7 @@ Metadata `label` and `value` fields also support templates:
     description = "Scroll to change quantity",
     amount = { default = 1, min = 1, max = 20, vars = { price = 50, weight = 0.5 } },
     metadata = {
-        { label = "Total Cost", value = "${amount * price}" },
+        { label = "Total Cost", value = "{money(amount * price)}" },
         { label = "Total Weight", value = "{amount * weight} kg" },
     },
 }
@@ -312,7 +317,7 @@ When the player selects an option with an amount tracker, the current amount is:
 {
     title = "Buy",
     amount = { default = 1, min = 1, max = 10, vars = { price = 50 } },
-    description = "{amount}x = ${amount * price}",
+    description = "{amount}x = {money(amount * price)}",
     onSelect = function(args, amount)
         local total = amount * 50
         Z.callback.await("my_resource:Purchase", "iron_ore", amount)
@@ -327,7 +332,7 @@ local result = Z.openContext({
             title = "Iron Ore",
             args = { name = "iron_ore" },
             amount = { default = 1, min = 1, max = 10, vars = { price = 50 } },
-            description = "{amount}x = ${amount * price}",
+            description = "{amount}x = {money(amount * price)}",
         },
     },
 })
@@ -473,7 +478,7 @@ local function openVendorMenu(vendorIndex, vendorConfig)
 
         options[#options + 1] = {
             title = item.label or item.name,
-            description = "{amount}x = ${amount * price}",
+            description = "{amount}x = {money(amount * price)}",
             image = Z.getInventoryImagePath(item.name),
             amount = {
                 default = 1,
@@ -487,7 +492,7 @@ local function openVendorMenu(vendorIndex, vendorConfig)
                 local success, err = Z.callback.await("my_resource:Purchase", vendorIndex, item.name, qty)
 
                 if success then
-                    Z.notify("Purchased %sx %s for $%s", { qty, item.label or item.name, totalPrice })
+                    Z.notify("Purchased %sx %s for %s", { qty, item.label or item.name, Z.formatMoney(totalPrice) })
                 elseif err then
                     Z.notify(err)
                 end

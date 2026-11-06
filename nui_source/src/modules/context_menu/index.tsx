@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { listen, send } from "../../utils/Nui";
 import { useModalContext } from "../../context/ModalContext";
-import ContextMenu, { MODAL_ID, type ContextMenuData } from "./ContextMenu";
+import ContextMenu, { MODAL_ID, setCurrencyFormat, type ContextMenuData } from "./ContextMenu";
 
 const ContextMenuModule = () => {
 	const { openModal, closeModal } = useModalContext();
@@ -28,6 +28,7 @@ const ContextMenuModule = () => {
 
 	listen("OpenContextMenu", (menuData: ContextMenuData) => {
 		clearCleanupTimer();
+		setCurrencyFormat(menuData.currencyFormat);
 		setData(menuData);
 		setNavigatedData(null);
 

@@ -175,6 +175,7 @@ local function buildMenuPayload(menuData, parentId)
 
     payload.id = menuId
     payload.menu = menuData.menu or parentId
+    payload.currencyFormat = LibConfig.currencyFormat
     payload.options = {}
 
     for i = 1, #(menuData.options or {}) do

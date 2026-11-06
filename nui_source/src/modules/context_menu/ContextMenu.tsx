@@ -62,6 +62,7 @@ export interface ContextMenuData {
 	mode?: "action" | "select" | "multiselect";
 	canClose?: boolean;
 	hints?: ContextHints;
+	currencyFormat?: string;
 
 	menu?: string;
 	onExit?: any;
@@ -83,6 +84,47 @@ interface ContextMenuProps {
 
 export const MODAL_ID = "zyke_context_menu";
 
+let currencyFormat = "$%s";
+
+// zyke_lib's currencyFormat config arrives with every menu payload
+export const setCurrencyFormat = (format?: string) => {
+	if (format) currencyFormat = format;
+};
+
+const formatMoney = (value: string): string => {
+	if (!currencyFormat.includes("%s")) return currencyFormat + value;
+
+	return currencyFormat.replace("%s", value);
+};
+
+const formatNumber = (value: number): string => {
+	return Number.isInteger(value) ? String(value) : value.toFixed(2);
+};
+
+// Supports plain arithmetic plus floor(...) and money(...), where money wraps the result in the currency format
+const resolveExpression = (expression: string): string | null => {
+	const wrapper = expression.match(/^(floor|money)\((.+)\)$/);
+	if (wrapper) {
+		const inner = resolveExpression(wrapper[2].trim());
+		if (inner === null) return null;
+		if (wrapper[1] === "money") return formatMoney(inner);
+
+		const value = Number(inner);
+
+		return Number.isNaN(value) ? null : String(Math.floor(value));
+	}
+
+	if (!/^[\d\s+\-*/().]+$/.test(expression)) return null;
+
+	try {
+		const result = new Function('"use strict"; return (' + expression + ")")();
+
+		return typeof result === "number" ? formatNumber(result) : String(result);
+	} catch {
+		return null;
+	}
+};
+
 export const resolveTemplate = (
 	template: string | undefined | null,
 	amount: number,
@@ -102,27 +144,7 @@ export const resolveTemplate = (
 			}
 		}
 
-		const floorMatch = resolved.match(/^floor\(([\d\s+\-*/().]+)\)$/);
-		const numericExpression = floorMatch ? floorMatch[1] : resolved;
-
-		if (/^[\d\s+\-*/().]+$/.test(numericExpression)) {
-			try {
-				const result = new Function(
-					'"use strict"; return (' + numericExpression + ")"
-				)();
-				const formattedResult = floorMatch && typeof result === "number"
-					? Math.floor(result)
-					: result;
-				return typeof formattedResult === "number"
-					? Number.isInteger(formattedResult)
-						? String(formattedResult)
-						: formattedResult.toFixed(2)
-					: String(formattedResult);
-			} catch {
-				return resolved;
-			}
-		}
-		return `{${expr}}`;
+		return resolveExpression(resolved) ?? `{${expr}}`;
 	});
 };
 
