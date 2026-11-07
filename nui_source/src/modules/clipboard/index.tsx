@@ -1,28 +1,39 @@
-import { listen } from "../../utils/Nui";
+import { useState } from "react";
+import { listen, send } from "../../utils/Nui";
+import { useModalContext } from "../../context/ModalContext";
+import { copyText } from "./copyText";
+import CopyCard, { COPY_MODAL_ID, type CopyRequest } from "./CopyCard";
 
-/** Copy text to the clipboard using a hidden textarea fallback. */
-const copyText = (text: string) => {
-    const textarea = document.createElement("textarea");
-    textarea.style.position = "absolute";
-    textarea.style.left = "-9999px";
-    textarea.style.top = "0";
-    textarea.value = text;
-    document.body.appendChild(textarea);
-    textarea.focus();
-    textarea.select();
-    document.execCommand("copy");
-    document.body.removeChild(textarea);
-};
-
-/**
- * Clipboard Module (Ported from the legacy javascript/copy.js)
- */
+// Z.copy. A copy made outside a click on this page is refused, then Lua gives the page focus and the card asks for one
 const ClipboardModule = () => {
-    listen("copy", ({ text }: { text: string }) => {
-        if (text) copyText(text);
-    });
+	const { openModal, closeModal } = useModalContext();
+	const [request, setRequest] = useState<CopyRequest | null>(null);
 
-    return null;
+	// The card's onClose, which runs once the modal is gone however it was closed
+	const close = () => {
+		setRequest(null);
+		send("closed", {}, "Copy");
+	};
+
+	listen("copy", (data: CopyRequest) => {
+		if (!data.text || copyText(data.text)) return;
+
+		// A second refused copy replaces the text of the open card
+		if (!request) {
+			openModal(COPY_MODAL_ID);
+			send("needsClick", {}, "Copy");
+		}
+
+		setRequest(data);
+	});
+
+	const copy = () => {
+		if (request) copyText(request.text);
+
+		closeModal(COPY_MODAL_ID);
+	};
+
+	return <CopyCard request={request} onCopy={copy} onClose={close} />;
 };
 
 export default ClipboardModule;
