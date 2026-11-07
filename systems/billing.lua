@@ -5,9 +5,10 @@ if (override == "none") then
     return
 end
 
--- okokBilling first, ESX servers often keep esx_billing started beside it
+-- esx_billing last, ESX servers often keep it started beside the others
 local systems = {
     {fileName = "okokBilling", variable = "okokBilling"},
+    {fileName = "lation_banking", variable = "lation_banking"},
     {fileName = "esx_billing", variable = "esx_billing"},
 }
 

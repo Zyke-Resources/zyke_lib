@@ -88,7 +88,7 @@ return {
     progressbar = "auto",
 
     -- Billing system, for bills and fines a player pays later (set to "none" to charge the bank at once)
-    -- Options: "auto", "none", "okokBilling", "esx_billing"
+    -- Options: "auto", "none", "okokBilling", "lation_banking", "esx_billing"
     billing = "auto",
 
     -- Jail system, for sentences handed out by other resources (set to "none" if you don't run one)
