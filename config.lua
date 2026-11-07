@@ -2,6 +2,12 @@ return {
     debug = false,
     language = "en", -- locales
 
+    -- Languages players can pick for themselves with the command below, by their locale file names
+    -- A player who never picks one sees `language`, and an empty list turns the choice off
+    -- Only resources made for it follow the player's pick, everything stored or shared stays in `language`
+    playerLanguages = {"en", "sv", "de", "fr", "es", "it", "pt", "nl", "pl", "cs", "ro", "tr", "lt", "ar", "ja", "zh", "th"},
+    languageCommand = "language",
+
     -- If enabled, it will silence slow loading warnings
     -- This could potentially silence a useful indicator that something is wrong,
     -- so it's a trade-off between a cleaner console log and info

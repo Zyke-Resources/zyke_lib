@@ -188,7 +188,7 @@ Z = Functions
 -- ##### Basics ##### --
 
 LibConfig = load(LoadResourceFile(LibName, "config.lua"))()
-T, Translations = load(LoadResourceFile(LibName, "translations.lua"))()
+T, Translations, TFor = load(LoadResourceFile(LibName, "translations.lua"))()
 
 -- Verify UI build
 local hasUISrc = LoadResourceFile(GetCurrentResourceName(), "nui_source/index.html")

@@ -270,13 +270,19 @@ end
 
 ---@param options? FormOptions @ Form options from Lua
 ---@param formId string @ Active form id
----@return FormOptions | nil
+---@return FormOptions
 local function prepareFormOptions(options, formId)
-    if (type(options) ~= "table") then return options end
+    -- The page's own default button text is English, so the player's language is sent from here
+    if (type(options) ~= "table") then return {submitText = T("formConfirm")} end
 
     local externalSelect = type(options.__select) == "table" and options.__select or nil
     local buttons = options.buttons
-    if (type(buttons) ~= "table") then return copyFormOptions(options, true) end
+    if (type(buttons) ~= "table") then
+        local nuiOptions = copyFormOptions(options, true)
+        if (nuiOptions.submitText == nil) then nuiOptions.submitText = T("formConfirm") end
+
+        return nuiOptions
+    end
 
     local nuiOptions = copyFormOptions(options, false)
     nuiOptions.buttons = {}

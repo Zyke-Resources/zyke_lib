@@ -203,6 +203,40 @@ zyke_systems {
 - A resource that uses no other system lists `"framework"`, since an empty list reads the same as no list.
 - A listed system is selected once while the resource starts, as before, so it keeps that selection if its resource stops later.
 
+## Player Languages
+
+`language` in `config.lua` is the server language. Players can also pick their own with `/language`, which opens a menu, or `/language sv`. Each player's pick is saved on their PC, so it comes back every time they join, and the server only accepts languages listed in `playerLanguages`. An empty list turns the choice off.
+
+```lua
+language = "en",
+playerLanguages = {"en", "sv", "de", "fr"},
+languageCommand = "language",
+```
+
+The player's pick changes only the text that player sees. Item labels, item metadata, saved names, logs and webhooks, and anything other players see all stay in the server language. A resource follows the pick only when it is made for it, and all other resources stay in the server language.
+
+### Making a Resource Follow the Player's Language
+
+Add the opt-in to the resource's `fxmanifest.lua`:
+
+```lua
+zyke_player_language "yes"
+```
+
+- On the client, `T` and `Translations` switch to the new language the moment the player picks it. Code that keeps a reference to `Translations` sees the new text.
+- Text built only once, such as key mapping descriptions, blips, target options and labels the resource saved earlier, is rebuilt in `Z.onLanguageChange`. It runs after `Translations` has changed.
+
+```lua
+Z.onLanguageChange(function(language)
+    refreshBlips()
+end)
+```
+
+- The NUI is sent the new strings as the message `{event = "zyke_lib:strings", data = strings}`, so the page replaces the strings it asked for at start.
+- On the server, `T` writes in the server language. Text the server builds for one player alone, such as a callback result, is written with `TFor(plyId, key, formatting)`, which uses that player's language. `Z.notify(plyId, key)` is translated on the player's client, so it already follows their language.
+- A language the resource has no locale file for shows the server language, and a key a locale file lacks shows the English text.
+- A translation whose placeholders do not format falls back to the English text and warns once in the console. It no longer breaks the code that asked for it.
+
 ## Door Lock
 
 `Z.doorlock.*` lets a resource lock its own doors to a job. It runs on the server.

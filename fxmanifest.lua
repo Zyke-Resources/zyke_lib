@@ -18,6 +18,7 @@ files {
     "systems/*.lua",
     "internals/**/*.lua",
     "loader.lua",
+    "locales/*.lua",
 
     "nui/**/*",
 }
@@ -30,6 +31,9 @@ zyke_systems {
     "notification",
     "progressbar",
 }
+
+-- The library's own menus & forms follow each player's language
+zyke_player_language "yes"
 
 loader {
     "server:internals/centralCache/server.lua",
@@ -45,6 +49,7 @@ loader {
     "internals/discordRoles/server.lua",
     "internals/states/server.lua",
     "internals/weaponBlock/server.lua",
+    "internals/language/server.lua",
 
     "functions/debug/shared.lua",
 
@@ -54,6 +59,7 @@ loader {
     "internals/events/client.lua",
     "internals/items/client.lua",
     "internals/states/client.lua",
+    "internals/language/client.lua",
 }
 
 client_scripts {
