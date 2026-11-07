@@ -4,6 +4,9 @@ Context = IsDuplicityVersion() and "server" or "client"
 
 local function empty() end
 
+-- Holds what the interfaces/ client scripts set before the loader ran
+local interfaceFunctions = Functions
+
 Functions = setmetatable({
     name = LibName,
     context = Context
@@ -32,5 +35,7 @@ Functions = setmetatable({
 
             return self[key]
         end
+
+        return interfaceFunctions and rawget(interfaceFunctions, key)
     end
 })
