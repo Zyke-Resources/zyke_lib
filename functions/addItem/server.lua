@@ -1,5 +1,5 @@
 ---@param player Character | CharacterIdentifier | PlayerId
----@param item string
+---@param item string | table @ An item name, or a list of items as formatItemInput takes them
 ---@param amount integer
 ---@param metadata table<string, any> | nil
 ---@return boolean? success

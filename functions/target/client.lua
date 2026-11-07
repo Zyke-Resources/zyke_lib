@@ -50,7 +50,7 @@ end
 ---@field minZ number
 ---@field maxZ number
 ---@field heading number
----@field debugPoly boolean
+---@field debugPoly? boolean
 ---@field options TargetOption[]
 ---@field distance? number @2.0 default
 
