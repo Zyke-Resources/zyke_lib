@@ -22,6 +22,15 @@ files {
     "nui/**/*",
 }
 
+-- Systems the library's own code uses, every other system is followed instead of awaited while it starts
+zyke_systems {
+    "framework",
+    "inventory",
+    "gang",
+    "notification",
+    "progressbar",
+}
+
 loader {
     "server:internals/centralCache/server.lua",
 

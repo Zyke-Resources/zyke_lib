@@ -183,6 +183,26 @@ return {
 
 > **Tip:** If your server gets stuck on the dependency loading step, set the appropriate system to the exact resource name you use instead of `"auto"`.
 
+## Listing the Systems a Resource Uses
+
+A resource lists the systems it uses with `zyke_systems` in its `fxmanifest.lua`. Before its files load, the loader waits only for those and for the framework and inventory, which it always waits for. Every other system is followed: it selects the resource that runs at that moment and selects again whenever one of its resources starts or stops. A fuel or garage resource that is stopped or starts later then no longer holds back resources that never use it.
+
+```lua
+zyke_systems {
+    "framework",
+    "inventory",
+    "target",
+    "fuel",
+    "vehicleKeys",
+}
+```
+
+- The names are the keys of `dependency_override.lua`, and both work together: a listed system waits for the resource named there, and a followed one selects it while it runs.
+- A resource without `zyke_systems` waits for every system, as before.
+- List every system the resource uses, also the ones it only reaches through another function, such as the fuel that `Z.setVehicleMods` sets. When the resource uses a function that reads a system it did not list, the console warns once and names the system.
+- A resource that uses no other system lists `"framework"`, since an empty list reads the same as no list.
+- A listed system is selected once while the resource starts, as before, so it keeps that selection if its resource stops later.
+
 ## Door Lock
 
 `Z.doorlock.*` lets a resource lock its own doors to a job. It runs on the server.

@@ -44,8 +44,37 @@ end
 
 local function empty() end
 
+local warnedSystems = {}
+
+-- UnlistedSystems is set by the loader for resources with zyke_systems in their fxmanifest.lua
+---@param chunk string
+---@param path "functions" | "formatting"
+---@param index string
+local function warnUnlistedSystems(chunk, path, index)
+    if (not UnlistedSystems or LibConfig.silenceWarnings == true) then return end
+
+    for globalName, systemName in pairs(UnlistedSystems) do
+        if (not warnedSystems[systemName] and chunk:find("%f[%w_]" .. globalName .. "%f[^%w_]")) then
+            warnedSystems[systemName] = true
+
+            print(("^3[zyke_lib] %s uses %s.%s, which reads the %s system, but \"%s\" is not in zyke_systems in its fxmanifest.lua, so it is not awaited while the resource starts^7"):format(
+                ResName,
+                path == "functions" and "Z" or "Formatting",
+                index,
+                systemName,
+                systemName
+            ))
+        end
+    end
+end
+
 -- Load the chunk & function
-local function loadFunc(path, self, index)
+---@param path "functions" | "formatting"
+---@param self table
+---@param index string
+---@param isForceLoad? boolean @ Loaded for every resource while it starts, so it says nothing about what the resource uses
+---@return function?
+local function loadFunc(path, self, index, isForceLoad)
     self[index] = empty
 
     local contextChunk = LoadResourceFile(LibName, ("%s/%s/%s.lua"):format(path, index, Context))
@@ -55,6 +84,8 @@ local function loadFunc(path, self, index)
     local _context = sharedChunk and "shared" or Context
 
     if (chunk) then
+        if (not isForceLoad) then warnUnlistedSystems(chunk, path, index) end
+
         local func, err = load(chunk, ("@@%s/%s/%s/%s.lua"):format(LibName, path, index, _context))
         if (not func or err) then return error(err) end
 
@@ -207,7 +238,7 @@ for i = 1, #forceLoad do
     local start = forceLoad[i]:find("/")
     local name = forceLoad[i]:sub(1, start - 1)
 
-    loadFunc("functions", Functions, name)
+    loadFunc("functions", Functions, name, true)
 end
 
 -- Automatically version checking with support for legacy system where we individually imported this

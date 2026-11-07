@@ -146,9 +146,8 @@ local function awaitAnySystemStarting(systems)
 end
 
 ---@param fileName string
----@param overrideKey string
 ---@return function
-local function loadSystem(fileName, overrideKey)
+local function compileSystem(fileName)
     local chunk = LoadResourceFile(LibName, ("systems/%s.lua"):format(fileName))
     local func, err = load(chunk, ("@@%s/systems/%s.lua"):format(LibName, fileName))
 
@@ -156,61 +155,240 @@ local function loadSystem(fileName, overrideKey)
         error(err)
     end
 
-    local override = dependencyOverrides[overrideKey] or "auto"
-
-    return func(awaitSystemStarting, override, awaitAnySystemStarting)
+    return func
 end
 
-loadSystem("framework", "framework")
-Functions.debug.internal("Loaded framework", Framework)
+---@class SystemDefinition
+---@field name string @ File in systems/ & key in dependency_override.lua
+---@field global string @ Global the system file selects
+---@field isAlwaysAwaited? boolean @ Its system file fetches data once, so it can not be selected again later
+---@field isSelfFollowing? boolean @ Never waits & follows resource starts & stops by itself, so it only runs once
 
-loadSystem("inventory", "inventory")
-Functions.debug.internal("Loaded inventory", Inventory)
+---@type SystemDefinition[]
+local systemDefinitions = {
+    {name = "framework", global = "Framework", isAlwaysAwaited = true},
+    {name = "inventory", global = "Inventory", isAlwaysAwaited = true},
+    {name = "target", global = "Target"},
+    {name = "gang", global = "GangSystem"},
+    {name = "fuel", global = "FuelSystem"},
+    {name = "vehicleKeys", global = "VehicleKeysSystem"},
+    {name = "doorlock", global = "DoorlockSystem"},
+    {name = "death", global = "DeathSystem"},
+    {name = "hud", global = "HudSystem"},
+    {name = "banking", global = "BankingSystem"},
+    {name = "notification", global = "NotificationSystem"},
+    {name = "phone", global = "PhoneSystem", isSelfFollowing = true},
+    {name = "progressbar", global = "ProgressBarSystem"},
+    {name = "billing", global = "BillingSystem"},
+    {name = "jail", global = "JailSystem"},
+    {name = "mileage", global = "MileageSystem"},
+    {name = "appearance", global = "AppearanceSystem"},
+}
 
-loadSystem("target", "target")
-Functions.debug.internal("Loaded target", Target)
+-- From zyke_systems {...}, which FiveM stores as "zyke_system" entries
+---@type table<string, true>?
+local listedSystems = nil
 
-loadSystem("gang", "gang")
-Functions.debug.internal("Loaded gang", GangSystem)
+local listedCount = GetNumResourceMetadata(ResName, "zyke_system")
+if (listedCount > 0) then
+    listedSystems = {}
 
-loadSystem("fuel", "fuel")
-Functions.debug.internal("Loaded fuel", FuelSystem)
+    local validNames, isValidName = {}, {}
+    for i = 1, #systemDefinitions do
+        validNames[i] = systemDefinitions[i].name
+        isValidName[systemDefinitions[i].name] = true
+    end
 
-loadSystem("vehicleKeys", "vehicleKeys")
-Functions.debug.internal("Loaded vehicle keys", VehicleKeysSystem)
+    for i = 0, listedCount - 1 do
+        local name = GetResourceMetadata(ResName, "zyke_system", i)
 
-loadSystem("doorlock", "doorlock")
-Functions.debug.internal("Loaded door lock", DoorlockSystem)
+        if (not isValidName[name]) then
+            print(("^1[zyke_lib] %s lists the unknown system '%s' in zyke_systems. Valid systems: %s^7"):format(ResName, name, table.concat(validNames, ", ")))
+        end
 
-loadSystem("death", "death")
-Functions.debug.internal("Loaded death", DeathSystem)
+        listedSystems[name] = true
+    end
+end
 
-loadSystem("hud", "hud")
-Functions.debug.internal("Loaded HUD", HudSystem)
+---@param definition SystemDefinition
+---@param func function
+---@param override string
+local function loadSystem(definition, func, override)
+    local startedAt = GetGameTimer()
 
-loadSystem("banking", "banking")
-Functions.debug.internal("Loaded banking", BankingSystem)
+    func(awaitSystemStarting, override, awaitAnySystemStarting)
 
-loadSystem("notification", "notification")
-Functions.debug.internal("Loaded notification", NotificationSystem)
+    Functions.debug.internal(("Loaded %s in %dms"):format(definition.name, GetGameTimer() - startedAt), _G[definition.global])
+end
 
-loadSystem("phone", "phone")
-Functions.debug.internal("Loaded phone", PhoneSystem)
+---@type table<string, fun(startedName?: string, stoppedName?: string)[]> @ Selectors by the resource names they select from
+local followers = {}
 
-loadSystem("progressbar", "progressbar")
-Functions.debug.internal("Loaded progressbar", ProgressBarSystem)
+---@param providerName string
+---@param resourceName string
+---@return boolean isProvided
+local function isProvidedBy(providerName, resourceName)
+    for i = 0, GetNumResourceMetadata(providerName, "provide") - 1 do
+        if (GetResourceMetadata(providerName, "provide", i) == resourceName) then return true end
+    end
 
-loadSystem("billing", "billing")
-Functions.debug.internal("Loaded billing", BillingSystem)
+    return false
+end
 
-loadSystem("jail", "jail")
-Functions.debug.internal("Loaded jail", JailSystem)
+-- During its stop event a resource still reads as started, and during its server start event as starting, as do the names it provides
+---@param resourceName string
+---@param startedName? string @ Resource whose start event is running
+---@param stoppedName? string @ Resource whose stop event is running
+---@return boolean isStarted
+local function isResourceStarted(resourceName, startedName, stoppedName)
+    if (stoppedName and (resourceName == stoppedName or isProvidedBy(stoppedName, resourceName))) then return false end
 
-loadSystem("mileage", "mileage")
-Functions.debug.internal("Loaded mileage", MileageSystem)
+    -- A client start event can arrive after the resource stopped again, its state then keeps it from being selected
+    if (startedName and (resourceName == startedName or isProvidedBy(startedName, resourceName))) then
+        local state = GetResourceState(startedName)
 
-loadSystem("appearance", "appearance")
-Functions.debug.internal("Loaded appearance", AppearanceSystem)
+        return state == "started" or state == "starting"
+    end
+
+    return GetResourceState(resourceName) == "started"
+end
+
+-- Never waits: selects from the resources running now & again whenever one of them starts or stops
+---@param definition SystemDefinition
+---@param func function
+---@param override string
+local function followSystem(definition, func, override)
+    local watched = {}
+    local startedName, stoppedName = nil, nil
+    local selectSystem
+
+    ---@param resourceName string
+    local function watch(resourceName)
+        if (watched[resourceName]) then return end
+
+        watched[resourceName] = true
+
+        local selectors = followers[resourceName] or {}
+        selectors[#selectors + 1] = selectSystem
+        followers[resourceName] = selectors
+    end
+
+    -- Stands in for awaitSystemStarting, without waiting
+    ---@param fileName string
+    ---@return string state
+    local function readSystemState(fileName)
+        watch(fileName)
+
+        if (isResourceStarted(fileName, startedName, stoppedName)) then return "started" end
+
+        local state = GetResourceState(fileName)
+
+        return state == "started" and "stopping" or state
+    end
+
+    -- Stands in for awaitAnySystemStarting, without waiting
+    ---@generic T: {fileName: string}
+    ---@param systems T[] @ Candidates in priority order
+    ---@return T? system @ nil while no candidate runs
+    local function readStartedSystem(systems)
+        for i = 1, #systems do
+            watch(systems[i].fileName)
+        end
+
+        for i = 1, #systems do
+            if (isResourceStarted(systems[i].fileName, startedName, stoppedName)) then return systems[i] end
+        end
+    end
+
+    -- An exact override is only selected while that resource runs, so one that starts later logs no warning
+    local isExactOverride = override ~= "auto" and override ~= "none"
+
+    ---@param started? string @ Resource whose start event is running
+    ---@param stopped? string @ Resource whose stop event is running
+    function selectSystem(started, stopped)
+        startedName, stoppedName = started, stopped
+        _G[definition.global] = nil
+
+        if (not isExactOverride or isResourceStarted(override, started, stopped)) then
+            func(readSystemState, override, readStartedSystem)
+        end
+
+        Functions.debug.internal(("Following %s"):format(definition.name), _G[definition.global])
+    end
+
+    if (isExactOverride) then watch(override) end
+
+    selectSystem()
+end
+
+-- A resource also answers for the names it provides
+---@param resourceName string
+---@param started? string @ Resource whose start event is running
+---@param stopped? string @ Resource whose stop event is running
+local function selectFollowers(resourceName, started, stopped)
+    local names = {resourceName}
+    for i = 0, GetNumResourceMetadata(resourceName, "provide") - 1 do
+        names[#names + 1] = GetResourceMetadata(resourceName, "provide", i)
+    end
+
+    local isSelected = {}
+    for i = 1, #names do
+        local selectors = followers[names[i]] or {}
+
+        for j = 1, #selectors do
+            if (not isSelected[selectors[j]]) then
+                isSelected[selectors[j]] = true
+
+                selectors[j](started, stopped)
+            end
+        end
+    end
+end
+
+-- Registered before any system is selected, so no start or stop can fall between a selection & its handlers
+if (listedSystems) then
+    ---@param resourceName string
+    local function onResourceStart(resourceName)
+        selectFollowers(resourceName, resourceName, nil)
+    end
+
+    ---@param resourceName string
+    local function onResourceStop(resourceName)
+        selectFollowers(resourceName, nil, resourceName)
+    end
+
+    if (Context == "server") then
+        AddEventHandler("onResourceStart", onResourceStart)
+    else
+        AddEventHandler("onClientResourceStart", onResourceStart)
+    end
+
+    -- Clients hear onResourceStop a frame before onClientResourceStop, while the resource still runs
+    AddEventHandler("onResourceStop", onResourceStop)
+end
+
+---@type table<string, string> @ System names by their global, for the systems this resource did not list
+local unlistedSystems = {}
+
+for i = 1, #systemDefinitions do
+    local definition = systemDefinitions[i]
+    local func = compileSystem(definition.name)
+    local override = dependencyOverrides[definition.name] or "auto"
+
+    -- Without a list every system is awaited, as it was before the list existed
+    local isAwaited = not listedSystems or definition.isAlwaysAwaited or listedSystems[definition.name]
+
+    if (not isAwaited) then unlistedSystems[definition.global] = definition.name end
+
+    if (isAwaited or definition.isSelfFollowing) then
+        loadSystem(definition, func, override)
+    else
+        followSystem(definition, func, override)
+    end
+end
+
+-- imports.lua warns when this resource uses one of them, since it is not awaited while the resource starts
+if (listedSystems) then UnlistedSystems = unlistedSystems end
 
 HasLoadedDependencies = true
 
