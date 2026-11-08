@@ -5,4 +5,5 @@ return {
     ["formConfirm"] = "Bevestigen",
     ["copyTitle"] = "Naar klembord kopiëren",
     ["copyButton"] = "Kopiëren",
+    ["dispatchAlert"] = {msg = "Melding van de meldkamer: %s", type = "warning"},
 }

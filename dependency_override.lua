@@ -11,7 +11,7 @@
 --   "<resource_name>"  - Use a specific resource (will wait for it to start)
 --   "none"             - Skip detection entirely, use your framework's built-in system
 --
--- NOTE: "none" is only valid for optional systems (gang, fuel, vehicleKeys, doorlock, death, banking, notification, phone).
+-- NOTE: "none" is only valid for optional systems (gang, fuel, vehicleKeys, doorlock, death, banking, notification, phone, dispatch).
 -- Setting "none" means the library will fall back to your framework's default behavior.
 -- For example, gang = "none" will use QB's built-in gang system.
 
@@ -80,6 +80,12 @@ return {
     -- Options: "auto", "none", "sd-phone", "lb-phone", "yseries", "okokPhone", "roadphone", "gksphone",
     -- "qs-smartphone-pro", "qs-smartphone", "high-phone", "17mov_Phone", "npwd"
     phone = "auto",
+
+    -- Dispatch system, used for police alerts (set to "none" to send them as a notification & a map blip instead)
+    -- Dispatches are never waited for, the library follows them as they start & stop
+    -- Options: "auto", "none", "cd_dispatch3d", "ps-dispatch", "cd_dispatch", "qs-dispatch", "rcore_dispatch",
+    -- "core_dispatch", "tk_dispatch", "codem-dispatchv2", "lb-tablet"
+    dispatch = "auto",
 
     -- Progressbar system
     -- Options: "auto", "zyke_lib", "ox_lib", "lation_ui", "wasabi_uikit"

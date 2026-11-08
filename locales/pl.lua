@@ -5,4 +5,5 @@ return {
     ["formConfirm"] = "Potwierdź",
     ["copyTitle"] = "Kopiuj do schowka",
     ["copyButton"] = "Kopiuj",
+    ["dispatchAlert"] = {msg = "Zgłoszenie z dyspozytorni: %s", type = "warning"},
 }

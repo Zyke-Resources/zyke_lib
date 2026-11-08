@@ -178,6 +178,7 @@ local systemDefinitions = {
     {name = "banking", global = "BankingSystem"},
     {name = "notification", global = "NotificationSystem"},
     {name = "phone", global = "PhoneSystem", isSelfFollowing = true},
+    {name = "dispatch", global = "DispatchSystem", isSelfFollowing = true},
     {name = "progressbar", global = "ProgressBarSystem"},
     {name = "billing", global = "BillingSystem"},
     {name = "jail", global = "JailSystem"},

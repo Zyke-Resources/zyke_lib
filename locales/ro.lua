@@ -5,4 +5,5 @@ return {
     ["formConfirm"] = "Confirmă",
     ["copyTitle"] = "Copiază în clipboard",
     ["copyButton"] = "Copiază",
+    ["dispatchAlert"] = {msg = "Apel de la dispecerat: %s", type = "warning"},
 }

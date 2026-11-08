@@ -5,4 +5,5 @@ return {
     ["formConfirm"] = "Potvrdit",
     ["copyTitle"] = "Kopírovat do schránky",
     ["copyButton"] = "Kopírovat",
+    ["dispatchAlert"] = {msg = "Hlášení z dispečinku: %s", type = "warning"},
 }

@@ -60,6 +60,7 @@ loader {
     "internals/items/client.lua",
     "internals/states/client.lua",
     "internals/language/client.lua",
+    "internals/dispatch/client.lua",
 }
 
 client_scripts {

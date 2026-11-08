@@ -5,4 +5,5 @@ return {
     ["formConfirm"] = "Bekräfta",
     ["copyTitle"] = "Kopiera till urklipp",
     ["copyButton"] = "Kopiera",
+    ["dispatchAlert"] = {msg = "Larm från ledningscentralen: %s", type = "warning"},
 }

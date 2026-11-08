@@ -5,4 +5,5 @@ return {
     ["formConfirm"] = "Onayla",
     ["copyTitle"] = "Panoya kopyala",
     ["copyButton"] = "Kopyala",
+    ["dispatchAlert"] = {msg = "Merkezden ihbar: %s", type = "warning"},
 }

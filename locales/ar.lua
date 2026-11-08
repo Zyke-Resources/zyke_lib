@@ -5,4 +5,5 @@ return {
     ["formConfirm"] = "تأكيد",
     ["copyTitle"] = "نسخ إلى الحافظة",
     ["copyButton"] = "نسخ",
+    ["dispatchAlert"] = {msg = "بلاغ من غرفة العمليات: %s", type = "warning"},
 }

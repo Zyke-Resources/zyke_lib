@@ -5,4 +5,5 @@ return {
     ["formConfirm"] = "Patvirtinti",
     ["copyTitle"] = "Kopijuoti į iškarpinę",
     ["copyButton"] = "Kopijuoti",
+    ["dispatchAlert"] = {msg = "Iškvietimas iš budėtojų: %s", type = "warning"},
 }

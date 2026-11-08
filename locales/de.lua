@@ -5,4 +5,5 @@ return {
     ["formConfirm"] = "Bestätigen",
     ["copyTitle"] = "In die Zwischenablage kopieren",
     ["copyButton"] = "Kopieren",
+    ["dispatchAlert"] = {msg = "Einsatzmeldung: %s", type = "warning"},
 }

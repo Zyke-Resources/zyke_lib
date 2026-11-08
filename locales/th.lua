@@ -5,4 +5,5 @@ return {
     ["formConfirm"] = "ยืนยัน",
     ["copyTitle"] = "คัดลอกไปยังคลิปบอร์ด",
     ["copyButton"] = "คัดลอก",
+    ["dispatchAlert"] = {msg = "แจ้งเหตุจากศูนย์สั่งการ: %s", type = "warning"},
 }

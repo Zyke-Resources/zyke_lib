@@ -5,4 +5,5 @@ return {
     ["formConfirm"] = "確認",
     ["copyTitle"] = "クリップボードにコピー",
     ["copyButton"] = "コピー",
+    ["dispatchAlert"] = {msg = "指令センターからの通報: %s", type = "warning"},
 }

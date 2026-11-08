@@ -5,4 +5,5 @@ return {
     ["formConfirm"] = "Confirmer",
     ["copyTitle"] = "Copier dans le presse-papiers",
     ["copyButton"] = "Copier",
+    ["dispatchAlert"] = {msg = "Appel du central : %s", type = "warning"},
 }
