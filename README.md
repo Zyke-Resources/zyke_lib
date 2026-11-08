@@ -263,6 +263,7 @@ Supported: ps-dispatch, cd_dispatch3d, cd_dispatch, qs-dispatch, rcore_dispatch,
 | `getProvider()` | Selected resource name |
 | `isAvailable()` | Whether the selected resource is started |
 | `ensure(entry)` | Adds the door unless the door lock already has it, returns `ensured, reason?` |
+| `setLocked(name, locked)` | Locks or unlocks the door for every player, returns `changed, reason?` |
 
 `entry` takes a unique `name`, `doors` (one door, or both halves of a double door, each `{model, coords, heading}`), and optionally `label`, `group`, `jobs` (names or `{name, minGrade}`, as for `Z.isJob`), `locked` (default `true`), `distance` and `pin`. A door already there is left as it is, so changes the server owner made in the door lock stay. Renaming an entry adds the door again.
 
@@ -272,7 +273,13 @@ Supported: ps-dispatch, cd_dispatch3d, cd_dispatch, qs-dispatch, rcore_dispatch,
 | `rcore_doorlock` | `addDoor` export, one door per half, found again by position. rcore takes no job from another resource, so the door opens with `pin` until the server owner sets its access in `/doors` |
 | `qb-doorlock` | Not possible: it reads its doors from `qb-doorlock/configs/*.lua`. `ensure` returns `false, "doorlockConfigOnly"` and the resource ships a config file instead |
 
-Other `reason` values: `doorlockUnavailable` (no door lock started), `invalidDoor`, `databaseUnavailable` and `doorNotAdded`.
+| Provider | How `setLocked` finds and changes the door |
+|---|---|
+| `ox_doorlock` | `getDoorFromName` and `setDoorState` |
+| `rcore_doorlock` | Every door in `getSqlDoors` whose `label` is the name (what `ensure` gives it without a `label`), through `changeDoorState` |
+| `qb-doorlock` | The name is the door's key in its configs. `qb-doorlock:server:updateState` with an online character standing in, since it takes changes only from a player; it can't report a name it doesn't have |
+
+Other `reason` values: `doorlockUnavailable` (no door lock started), `invalidDoor`, `databaseUnavailable`, `doorNotAdded`, `doorNotFound`, `doorNotChanged` and `noPlayers`.
 
 ## Appearance
 

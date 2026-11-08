@@ -144,6 +144,68 @@ local function ensureRcoreDoor(entry)
     return true
 end
 
+---@param name string
+---@param locked boolean
+---@return boolean changed
+---@return string? reason
+local function setOxDoorLocked(name, locked)
+    local door = exports["ox_doorlock"]:getDoorFromName(name)
+    if (not door) then return false, "doorNotFound" end
+
+    -- Called from another resource's export there is no player source, so ox_doorlock skips its own access check
+    local changed = exports["ox_doorlock"]:setDoorState(door.id, locked and 1 or 0)
+    if (not changed) then return false, "doorNotChanged" end
+
+    return true
+end
+
+-- rcore_doorlock has no door names, so every door added under the name as its label changes, both halves included
+---@param name string
+---@param locked boolean
+---@return boolean changed
+---@return string? reason
+local function setRcoreDoorLocked(name, locked)
+    local isFound, isChanged = false, true
+
+    for doorId, door in pairs(exports["rcore_doorlock"]:getSqlDoors()) do
+        if (door.label == name) then
+            isFound = true
+
+            if (not exports["rcore_doorlock"]:changeDoorState(door.id or doorId, locked and 1 or 0)) then isChanged = false end
+        end
+    end
+
+    if (not isFound) then return false, "doorNotFound" end
+    if (not isChanged) then return false, "doorNotChanged" end
+
+    return true
+end
+
+-- qb-doorlock only takes a state change from a player with a character, so one stands in and its access check is
+-- skipped. It keeps its doors to itself, so a name missing from its configs can't be told apart from a change
+---@param name string
+---@param locked boolean
+---@return boolean changed
+---@return string? reason
+local function setQbDoorLocked(name, locked)
+    local players = Functions.getPlayers()
+    local standIn = nil
+
+    for i = 1, #players do
+        if (Functions.getIdentifier(players[i])) then
+            standIn = players[i]
+            break
+        end
+    end
+
+    if (not standIn) then return false, "noPlayers" end
+
+    -- doorID, locked, src, usedLockpick, unlockAnyway, enableSounds, enableAnimation, sentSource
+    TriggerEvent("qb-doorlock:server:updateState", name, locked, false, false, true, true, false, standIn)
+
+    return true
+end
+
 ---@return string? providerName
 function Functions.doorlock.getProvider()
     return DoorlockSystem
@@ -167,6 +229,22 @@ function Functions.doorlock.ensure(entry)
 
     if (DoorlockSystem == "ox_doorlock") then return ensureOxDoor(entry) end
     if (DoorlockSystem == "rcore_doorlock") then return ensureRcoreDoor(entry) end
+
+    return false, "doorlockUnavailable"
+end
+
+-- Locks or unlocks a door for every player by the name it was added with, the door's config key in qb-doorlock
+---@param name string
+---@param locked boolean
+---@return boolean changed
+---@return string? reason @ doorlockUnavailable, invalidDoor, doorNotFound, doorNotChanged or noPlayers
+function Functions.doorlock.setLocked(name, locked)
+    if (not awaitProvider()) then return false, "doorlockUnavailable" end
+    if (type(name) ~= "string" or type(locked) ~= "boolean") then return false, "invalidDoor" end
+
+    if (DoorlockSystem == "ox_doorlock") then return setOxDoorLocked(name, locked) end
+    if (DoorlockSystem == "rcore_doorlock") then return setRcoreDoorLocked(name, locked) end
+    if (DoorlockSystem == "qb-doorlock") then return setQbDoorLocked(name, locked) end
 
     return false, "doorlockUnavailable"
 end
