@@ -1,6 +1,6 @@
 # Phone
 
-The phone bridge reads a character's phone number, finds the owner of a number and sends texts through whichever phone resource the server runs. When no phone is running it falls back to the number the framework keeps (`charinfo.phone` on QBCore and Qbox, `users.phone_number` on ESX when a phone resource added that column).
+The phone bridge reads a character's phone number, finds the owner of a number, sends texts and hears texts sent to a number through whichever phone resource the server runs. When no phone is running it falls back to the number the framework keeps (`charinfo.phone` on QBCore and Qbox, `users.phone_number` on ESX when a phone resource added that column).
 
 zyke_lib never caches numbers. Many phones tie the number to the phone item or SIM card, so it changes when the player swaps phones and is `nil` while they carry none. Read it each time you need it, and cache it yourself for a short time if you read it often.
 
@@ -100,6 +100,25 @@ local sent, reason = Z.sendPhoneMessage(source, "Your code is 4821", {number = "
 
 ---
 
+### `Z.onPhoneMessage(phoneNumber, handler)` (server)
+
+Calls `handler` each time a player texts `phoneNumber`. The number does not need an owner, so a resource can run its own contact, such as an informant who answers with `Z.sendPhoneMessage`. Texts are heard only while sd-phone or lb-phone runs. The handler stays registered while another phone runs, and hears texts again once a supported one starts.
+
+```lua
+Z.onPhoneMessage("5550199", function(message)
+    if (not message.plyId) then return end
+
+    Z.sendPhoneMessage(message.plyId, "Who is this?", {number = "5550199", name = "5550199"})
+end)
+```
+
+- `phoneNumber` (string | number, required) -- compared with `Z.normalizePhoneNumber`. Use digits only, sd-phone strips everything else.
+- `handler` (fun(message: IncomingPhoneMessage), required) -- may yield. `message` holds `from` and `to` (as the phone stores them), `message` (the text) and `plyId` (the sender, `nil` when they could not be found online).
+
+Only plain texts from players reach the handler. Pictures, group texts and sd-phone's system texts (the ones `Z.sendPhoneMessage` sends) are skipped, so a reply never loops back. On lb-phone the sender is found through `Z.getPhoneNumberOwner`, since its event carries no player id.
+
+---
+
 ### `Z.canSendPhoneMessage()` (server)
 
 Returns whether the running phone can deliver a text, without sending anything. `false` when no phone is running.
@@ -135,21 +154,23 @@ Leading zeros and country codes are left alone, so `+1 555 123 4567` and `555123
 
 ## Support
 
-| Phone | Number | Offline number | Owner lookup | Texts | Source |
-|---|---|---|---|---|---|
-| sd-phone | yes | yes | online & offline | yes, stored for offline players | local source (1.0.5) |
-| lb-phone | yes | yes | online | yes | official docs |
-| yseries | yes | yes | online (primary phone only) | yes, the target number must exist | official docs |
-| okokPhone | yes | no | online | yes | official docs |
-| roadphone | yes (Pro by source, base by identifier) | yes | online | yes | official docs |
-| gksphone | yes | no | online | yes, system message | official docs |
-| qs-smartphone-pro | yes (by identifier) | yes | no | online players only, as an app | archived docs only |
-| qs-smartphone (V3) | yes | no | no | online players only, as an app | official docs |
-| qs-smartphone (legacy, with qs-base) | yes | no | no | no | archived docs only |
-| high-phone | yes | no | online | yes | official docs, ownership model undocumented |
-| npwd | yes | no | online | yes | source |
-| 17mov_Phone | unsupported | unsupported | unsupported | unsupported | export signatures unverified |
-| Framework (QBCore, Qbox) | `charinfo.phone` | yes | online & offline | no | source |
-| Framework (ESX) | the `phoneNumber` player variable, else `users.phone_number` when the column exists | yes | online & offline | no | source |
+| Phone | Number | Offline number | Owner lookup | Texts | Hears texts | Source |
+|---|---|---|---|---|---|---|
+| sd-phone | yes | yes | online & offline | yes, stored for offline players | yes | local source (1.0.5) |
+| lb-phone | yes | yes | online | yes | yes | official docs |
+| yseries | yes | yes | online (primary phone only) | yes, the target number must exist | no | official docs |
+| okokPhone | yes | no | online | yes | no | official docs |
+| roadphone | yes (Pro by source, base by identifier) | yes | online | yes | no | official docs |
+| gksphone | yes | no | online | yes, system message | no | official docs |
+| qs-smartphone-pro | yes (by identifier) | yes | no | online players only, as an app | no | archived docs only |
+| qs-smartphone (V3) | yes | no | no | online players only, as an app | no | official docs |
+| qs-smartphone (legacy, with qs-base) | yes | no | no | no | no | archived docs only |
+| high-phone | yes | no | online | yes | no | official docs, ownership model undocumented |
+| npwd | yes | no | online | yes | no | source |
+| 17mov_Phone | unsupported | unsupported | unsupported | unsupported | unsupported | export signatures unverified |
+| Framework (QBCore, Qbox) | `charinfo.phone` | yes | online & offline | no | no | source |
+| Framework (ESX) | the `phoneNumber` player variable, else `users.phone_number` when the column exists | yes | online & offline | no | no | source |
+
+lb-phone's docs do not say whether it fires its sent event for a number nobody owns, so test `Z.onPhoneMessage` on an lb-phone server before relying on it.
 
 Phones known only from archived docs, or with undocumented behaviour, may need adjusting once tested against the real resource.
