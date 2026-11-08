@@ -43,62 +43,98 @@ else
     end
 end
 
-local items = {}
-local success = false
+---@return table? items
+local function fetchItems()
+    local items = {}
 
--- See systems/framework.lua for more info on why we're doing this
-repeat
-    success, items = pcall(function()
-        if (Inventory == "OX") then
-            items = exports["ox_inventory"]:Items()
-        elseif (Inventory == "ONE") then
-            items = exports["one_inventory"]:GetAllItemDefinitions()
-        elseif (Inventory == "TGIANN") then
-            items = exports["tgiann-inventory"]:Items()
+    if (Inventory == "OX") then
+        items = exports["ox_inventory"]:Items()
+    elseif (Inventory == "ONE") then
+        items = exports["one_inventory"]:GetAllItemDefinitions()
+    elseif (Inventory == "TGIANN") then
+        items = exports["tgiann-inventory"]:Items()
 
-            -- We're forced to iterate all items and translate them because of a new stupid design choice breaking compatibility
-            for _, itemData in pairs(items) do
-                if (type(itemData.label) == "table") then
-                    itemData.label = itemData.label["en"]
-                end
-
-                if (type(itemData.description) == "table") then
-                    itemData.description = itemData.description["en"]
-                end
+        -- We're forced to iterate all items and translate them because of a new stupid design choice breaking compatibility
+        for _, itemData in pairs(items) do
+            if (type(itemData.label) == "table") then
+                itemData.label = itemData.label["en"]
             end
-        elseif (Inventory == "CODEM") then
-            items = exports["codem-inventory"]:GetItemList()
-        elseif (Inventory == "QS") then
-            items = exports['qs-inventory']:GetItemList()
-        else
-            -- ESX items only exist on the server side for some reason
-            if (Framework == "ESX") then
-                if (Context == "server") then
-                    Z.callback.register("zyke_lib:FetchItems", function()
-                        return ESX.Items
-                    end)
-                else
-                    items = Z.callback.await("zyke_lib:FetchItems")
-                end
-            elseif (Framework == "QB") then
-                items = QB.Shared.Items
+
+            if (type(itemData.description) == "table") then
+                itemData.description = itemData.description["en"]
             end
         end
+    elseif (Inventory == "CODEM") then
+        items = exports["codem-inventory"]:GetItemList()
+    elseif (Inventory == "QS") then
+        items = exports['qs-inventory']:GetItemList()
+    else
+        -- ESX items only exist on the server side for some reason
+        if (Framework == "ESX") then
+            if (Context == "server") then
+                Z.callback.register("zyke_lib:FetchItems", function()
+                    return ESX.Items
+                end)
+            else
+                items = Z.callback.request("zyke_lib:FetchItems")
+            end
+        elseif (Framework == "QB") then
+            items = QB.Shared.Items
+        end
+    end
 
-        return items
-    end)
-
-    Wait(50)
-until success
-
-if (not Inventory) then
-    Inventory = "DEFAULT"
+    return items
 end
 
-Items = items
+-- See systems/framework.lua for more info on why we're doing this
+---@param resName? string @ Inventory resource, retrying stops once it is no longer started
+---@return boolean success, table? items
+local function awaitItems(resName)
+    local success, items
 
-if (Inventory == "ONE") then
-    AddEventHandler("one_inventory:onDefinitionsUpdated", function()
-        Items = exports["one_inventory"]:GetAllItemDefinitions()
-    end)
+    repeat
+        success, items = pcall(fetchItems)
+
+        Wait(50)
+    until (success or (resName and GetResourceState(resName) ~= "started"))
+
+    return success, items
 end
+
+-- A client re-downloads a restarted inventory and can start it after this resource, so its items are read again on every start
+---@param resName string
+local function onInventoryStart(resName)
+    if (override ~= "auto" and override ~= resName) then return end
+
+    for i = 1, #systems do
+        local system = systems[i]
+
+        if (system.fileName == resName) then
+            if (Inventory and Inventory ~= "DEFAULT" and Inventory ~= system.variable) then return end
+
+            Inventory = system.variable
+
+            local success, items = awaitItems(resName)
+            if (success) then Items = items end
+
+            return
+        end
+    end
+end
+
+AddEventHandler(Context == "server" and "onResourceStart" or "onClientResourceStart", onInventoryStart)
+
+local selectedInventory = Inventory
+local _, items = awaitItems()
+
+-- An inventory start handled while awaiting has already read its items
+if (Inventory == selectedInventory) then
+    Inventory = Inventory or "DEFAULT"
+    Items = items
+end
+
+AddEventHandler("one_inventory:onDefinitionsUpdated", function()
+    if (Inventory ~= "ONE") then return end
+
+    Items = exports["one_inventory"]:GetAllItemDefinitions()
+end)
