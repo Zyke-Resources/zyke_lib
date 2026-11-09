@@ -50,20 +50,6 @@
 ---@field aimRadius number
 ---@field aimed? string @ Id of the point aimed at on the last frame
 
----@class InterestPointRoom
----@field index integer
----@field min vector3 @ In interior space
----@field max vector3
----@field volume number
-
----@class InterestPointInterior
----@field origin vector3
----@field axisX vector3 @ World direction of the interior's own axes
----@field axisY vector3
----@field axisZ vector3
----@field bounds InterestPointRoom @ The limbo room, which spans the interior
----@field rooms InterestPointRoom[] @ Smallest first
-
 ---@class InterestPointVisual
 ---@field point? InterestPoint @ Nil once the point left its set
 ---@field coords? vector3 @ Last known world position, kept while fading out
@@ -130,7 +116,7 @@ local aimInterval = 50
 -- flicker between neighbours
 local aimStickiness = 1.3
 -- A point's own room is read again once it moved this many metres, or after one to two of these intervals
--- in case its interior finished loading. GetInteriorAtCoords costs more than everything else a point takes
+-- in case its interior finished loading. Reading it costs more than everything else a point takes
 local roomMoveTolerance = 0.5
 local roomRecheckMs = 1000
 -- Degrees past the corners of the screen a point still counts as in view. A point outside is skipped
@@ -193,20 +179,14 @@ local guideAlpha = 0.0
 local targetingEnabled = LibConfig.interestPointTargeting == true
 local wasTargeting = not targetingEnabled
 local roomCheckEnabled = LibConfig.interestPointRoomCheck ~= false
----@type table<integer, InterestPointInterior> @ [interiorId], an interior's rooms never change
-local interiors = {}
 -- The player's interior and room index at the last aim judgement, no room while it is unknown
 local plyInterior = 0
 ---@type integer?
 local plyRoom
--- Where the rooms' boxes put the player while the game keeps them outside. A rooftop or a yard can lie inside a
--- building's bounds, and the points around the player there are read from the same boxes
-local plyBoxInterior = 0
+-- A hidden local object moved onto each point without an entity, so the game gives it the room like any other entity
+local probeModel = `prop_golf_ball`
 ---@type integer?
-local plyBoxRoom
----@type vector3?
-local plyBoxAt
-local plyBoxCheckAt = 0
+local probe
 
 -- Only called when a prompt is sent: reading a command's binding costs more than the rest of a set's refresh
 ---@param key? string
@@ -233,91 +213,53 @@ local function resolveCoords(point)
     return point.coords
 end
 
----@param interiorId integer
----@param roomIndex integer
----@return InterestPointRoom room
-local function readRoom(interiorId, roomIndex)
-    local minX, minY, minZ, maxX, maxY, maxZ = GetInteriorRoomExtents(interiorId, roomIndex)
+-- Nil while its model loads
+---@return integer? entity
+local function getProbe()
+    if (probe and DoesEntityExist(probe)) then return probe end
 
-    return {
-        index = roomIndex,
-        min = vector3(minX, minY, minZ),
-        max = vector3(maxX, maxY, maxZ),
-        volume = (maxX - minX) * (maxY - minY) * (maxZ - minZ),
-    }
-end
+    if (not HasModelLoaded(probeModel)) then
+        RequestModel(probeModel)
 
----@param interiorId integer
----@return InterestPointInterior? interior @ Nil until the interior has loaded
-local function getInterior(interiorId)
-    local interior = interiors[interiorId]
-    if (interior) then return interior end
-    if (not IsInteriorReady(interiorId)) then return nil end
-
-    local origin = GetOffsetFromInteriorInWorldCoords(interiorId, 0.0, 0.0, 0.0)
-    local rooms = {}
-
-    -- Room 0 is limbo
-    for i = 1, GetInteriorRoomCount(interiorId) - 1 do
-        rooms[#rooms + 1] = readRoom(interiorId, i)
+        return nil
     end
 
-    table.sort(rooms, function(a, b)
-        return a.volume < b.volume
-    end)
+    probe = CreateObjectNoOffset(probeModel, 0.0, 0.0, 0.0, false, false, false)
 
-    interior = {
-        origin = origin,
-        axisX = GetOffsetFromInteriorInWorldCoords(interiorId, 1.0, 0.0, 0.0) - origin,
-        axisY = GetOffsetFromInteriorInWorldCoords(interiorId, 0.0, 1.0, 0.0) - origin,
-        axisZ = GetOffsetFromInteriorInWorldCoords(interiorId, 0.0, 0.0, 1.0) - origin,
-        bounds = readRoom(interiorId, 0),
-        rooms = rooms,
-    }
-    interiors[interiorId] = interior
+    SetEntityVisible(probe, false, false)
+    SetEntityCollision(probe, false, false)
+    FreezeEntityPosition(probe, true)
+    SetModelAsNoLongerNeeded(probeModel)
 
-    return interior
+    return probe
 end
 
----@param room InterestPointRoom
----@param x number @ In interior space
----@param y number
----@param z number
----@return boolean inside
-local function isInRoom(room, x, y, z)
-    local min, max = room.min, room.max
-
-    return x >= min.x and x <= max.x and y >= min.y and y <= max.y and z >= min.z and z <= max.z
-end
-
--- There is no native for the room at a position, so it is read from the rooms' boxes. A box is as wide as its
--- room's furthest corners, so the box of an L-shaped room also covers the rooms in its corner: the smallest box
--- the point is in is taken as its room
+-- There is no native for the room at a position, so the probe is moved there and the game places it in a room.
+-- GetInteriorAtCoords can't be used: it answers for anywhere in an interior's bounds, such as the street outside a
+-- wall, and picks either of two interiors that overlap. Interior room extents are no help either, many are offset
+-- from their rooms. The probe reads as outside on top of another object, so the collision's interior is taken then
 ---@param coords vector3
 ---@return integer interiorId @ 0 when outside
 ---@return integer? roomIndex @ Nil when the room is unknown
 local function getRoomAtCoords(coords)
-    local interiorId = GetInteriorAtCoords(coords.x, coords.y, coords.z)
-    if (interiorId == 0) then return 0, nil end
+    local entity = getProbe()
 
-    local interior = getInterior(interiorId)
-    if (not interior) then return interiorId, nil end
+    if (entity) then
+        SetEntityCoordsNoOffset(entity, coords.x, coords.y, coords.z, false, false, false)
 
-    local offset = coords - interior.origin
-    local x, y, z = dot(offset, interior.axisX), dot(offset, interior.axisY), dot(offset, interior.axisZ)
+        local interiorId = GetInteriorFromEntity(entity)
 
-    for i = 1, #interior.rooms do
-        if (isInRoom(interior.rooms[i], x, y, z)) then return interiorId, interior.rooms[i].index end
+        if (interiorId ~= 0) then
+            local roomIndex = GetInteriorRoomIndexByHash(interiorId, GetRoomKeyFromEntity(entity))
+
+            return interiorId, roomIndex > 0 and roomIndex or nil
+        end
     end
 
-    -- GetInteriorAtCoords also answers for a point just outside the walls
-    if (not isInRoom(interior.bounds, x, y, z)) then return 0, nil end
-
-    return interiorId, nil
+    return GetInteriorFromCollision(coords.x, coords.y, coords.z), nil
 end
 
--- A point on an entity is in the room the game keeps the entity in. The boxes put a prop on a counter or by a doorway
--- in the neighbouring room whenever that room's box is the smaller one. An entity in no interior is read from the boxes
+-- A point on an entity is in the room the game keeps the entity in. An entity in no interior is read from its position
 ---@param point InterestPoint
 ---@param coords vector3
 ---@return integer interiorId @ 0 when outside
@@ -345,31 +287,17 @@ local function isInPlayerRoom(visual, point, coords, now)
         visual.roomAt, visual.roomCheckAt = coords, now + math.random(roomRecheckMs, roomRecheckMs * 2)
     end
 
-    if (visual.roomInterior == plyInterior) then return not visual.roomIndex or not plyRoom or visual.roomIndex == plyRoom end
-    if (plyInterior ~= 0 or visual.roomInterior ~= plyBoxInterior) then return false end
+    if (visual.roomInterior ~= plyInterior) then return false end
 
-    return not visual.roomIndex or not plyBoxRoom or visual.roomIndex == plyBoxRoom
+    return not visual.roomIndex or not plyRoom or visual.roomIndex == plyRoom
 end
 
 ---@param ped integer
----@param now integer
-local function refreshPlayerRoom(ped, now)
+local function refreshPlayerRoom(ped)
     plyInterior = GetInteriorFromEntity(ped)
 
     local roomIndex = plyInterior ~= 0 and GetInteriorRoomIndexByHash(plyInterior, GetRoomKeyFromEntity(ped)) or 0
     plyRoom = roomIndex > 0 and roomIndex or nil
-
-    if (plyInterior ~= 0) then
-        plyBoxInterior, plyBoxRoom, plyBoxAt = 0, nil, nil
-
-        return
-    end
-
-    local coords = GetEntityCoords(ped)
-    if (plyBoxAt and now < plyBoxCheckAt and #(coords - plyBoxAt) <= roomMoveTolerance) then return end
-
-    plyBoxInterior, plyBoxRoom = getRoomAtCoords(coords)
-    plyBoxAt, plyBoxCheckAt = coords, now + roomRecheckMs
 end
 
 ---@param slot InterestPointSlot
@@ -744,7 +672,7 @@ local function judge(now, paused, targeting)
     local ped = PlayerPedId()
     local pedCoords = GetEntityCoords(ped)
 
-    refreshPlayerRoom(ped, now)
+    refreshPlayerRoom(ped)
     refreshView()
 
     for _, resourceSets in pairs(sets) do
