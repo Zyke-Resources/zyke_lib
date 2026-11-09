@@ -7,6 +7,7 @@
 -- submenu when useAimedInterestPoint reads the key press on it, and the back key, shown beside the key, leaves it
 -- Only following and drawing the markers runs every frame. Rooms, aim, the camera's view and the prompts
 -- are judged on the aim interval, and the loop sleeps between judgements while nothing is on screen
+-- An aim set's markers only show near the player, fading in over the last metres of their show distance
 
 ---@class InterestPointOption
 ---@field id string @ Stable within its point, so the selection holds across updates
@@ -34,6 +35,7 @@
 ---@field active? boolean @ Expands the ring into the key prompt; aim sets decide this themselves
 ---@field opacity? number @ 0-1, defaults to 1
 ---@field reach? number @ Metres from the player an aim set's point can be aimed at, any distance when omitted
+---@field showDistance? number @ Metres from the player the marker shows within, overrides the set's. Never less than a little past the reach
 ---@field visualId? string @ resource:set:id, built once when the set is replaced
 ---@field resolved? vector3 | false @ World position at the last judgement, false while it is in another room
 ---@field culled? boolean @ Outside the camera's view at the last judgement, so it can't be aimed at
@@ -42,6 +44,7 @@
 ---@field aim? boolean @ The marker nearest the screen centre across every aim set is aimed at and shown active, read through getAimedInterestPoint
 ---@field aimRadius? number @ 1080p pixels from the screen centre a marker can be and still count as aimed at
 ---@field ignoreRooms? boolean @ Points show and can be aimed at from another room, and from outside their interior
+---@field showDistance? number @ Metres from the player the markers show within. Aim sets default to the config's interestPointShowDistance, other sets show at any distance
 
 ---@class InterestPointSet
 ---@field points InterestPoint[]
@@ -56,6 +59,7 @@
 ---@field resolvedFrame? integer @ Frame the coords were last read on
 ---@field seenTick integer
 ---@field alpha number @ 0-1 fade in and out
+---@field fade? number @ 0-1 the alpha fades to while present, below 1 near the point's show distance
 ---@field present boolean
 ---@field active boolean
 ---@field culled? boolean @ Outside the view at the last judgement, so it is neither followed nor drawn
@@ -131,6 +135,9 @@ local layoutInterval = 3000
 local guideRadiusScale = 3
 -- Metres past a point's reach the guide dot still shows, so the player is guided before they are in range
 local guideReachMargin = 1.5
+-- Metres a marker fades in over inside its show distance, which stays this far past the guide's
+local showFadeDistance = 2.0
+local defaultShowDistance = tonumber(LibConfig.interestPointShowDistance)
 -- 1080p pixels, drawn from a texture generated at this many pixels per side
 local guideSize = 7
 local guideTextureSize = 32
@@ -690,8 +697,12 @@ local function judge(now, paused, targeting)
 
                 -- Nothing shows while the targeting key is up, so there is nothing to read
                 local coords = targeting and resolveCoords(point) or nil
+                -- Checked before the room, which costs more, so a point out of range reads nothing else
+                local fade = coords and point.showDistance and (point.showDistance - #(coords - pedCoords)) / showFadeDistance or 1.0
+                if (fade < 0.0) then coords = nil end
                 if (coords and set.rooms and not isInPlayerRoom(visual, point, coords, now)) then coords = nil end
 
+                visual.fade = math.min(fade, 1.0)
                 point.resolved = coords or false
                 point.culled = coords ~= nil and isOutsideView(coords)
             end
@@ -776,7 +787,7 @@ local function renderVisuals(deltaMs, paused)
     for id, visual in pairs(visuals) do
         if (visual.culled) then
             -- Not drawn before the next judgement, so there is no fade to show
-            visual.alpha = visual.present and 1.0 or 0.0
+            visual.alpha = visual.present and visual.fade or 0.0
         elseif (visual.present or visual.alpha > 0.0) then
             local point = visual.point
             busy = true
@@ -791,7 +802,8 @@ local function renderVisuals(deltaMs, paused)
                 end
             end
 
-            local alpha = visual.present and math.min(visual.alpha + step, 1.0) or math.max(visual.alpha - step, 0.0)
+            local target = visual.present and visual.fade or 0.0
+            local alpha = visual.alpha < target and math.min(visual.alpha + step, target) or math.max(visual.alpha - step, target)
             local coords = visual.coords
             visual.alpha = alpha
 
@@ -928,8 +940,11 @@ end
 ---@param points InterestPoint[]
 ---@param options? InterestPointOptions
 Functions.setInterestPoints = function(id, points, options)
+    options = options or {}
+
     local resourceName = GetInvokingResource() or ResName
     local normalized = {}
+    local setShowDistance = tonumber(options.showDistance) or (options.aim == true and defaultShowDistance) or nil
 
     for i = 1, #points do
         local point = points[i]
@@ -941,6 +956,8 @@ Functions.setInterestPoints = function(id, points, options)
             local pointOptions, optionsKey = normalizeOptions(point.options, menus)
             local single = pointOptions and #pointOptions == 1 and pointOptions[1]
             local hint = single and single.hint or point.hint
+            local reach = tonumber(point.reach)
+            local showDistance = tonumber(point.showDistance) or setShowDistance
 
             normalized[#normalized + 1] = {
                 id = point.id,
@@ -956,7 +973,8 @@ Functions.setInterestPoints = function(id, points, options)
                 menus = next(menus) and menus or nil,
                 active = point.active,
                 opacity = tonumber(point.opacity),
-                reach = tonumber(point.reach),
+                reach = reach,
+                showDistance = showDistance and math.max(showDistance, (reach or 0.0) + guideReachMargin + showFadeDistance),
                 visualId = ("%s:%s:%s"):format(resourceName, id, point.id),
             }
         end
@@ -968,7 +986,6 @@ Functions.setInterestPoints = function(id, points, options)
         return
     end
 
-    options = options or {}
     sets[resourceName] = sets[resourceName] or {}
 
     local previous = sets[resourceName][id]

@@ -42,6 +42,10 @@ return {
     -- When disabled, they also show through walls from other rooms and from outside
     interestPointRoomCheck = true,
 
+    -- Metres from you within which an interest point you aim at shows, fading in over the last two metres
+    -- A point always shows a little past the distance it can be used from, and a resource can show its own points further
+    interestPointShowDistance = 10.0,
+
     -- Works like a target system: interest points stay hidden and can't be used until the key below is held
     -- When disabled, they always show while you are near them
     interestPointTargeting = false,
