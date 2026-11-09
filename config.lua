@@ -55,6 +55,14 @@ return {
     -- Players can change it for themselves in the GTA key binding settings
     interestPointBackKey = "Q",
 
+    -- The column the missions of every resource stack in, such as a player's jobs and the robbery they are part of
+    -- position is "top-left", "top-right", "center-left", "center-right", "bottom-left" or "bottom-right"
+    -- offset is the gap to the screen edges, in percent of the screen height
+    missionTracker = {
+        position = "top-left",
+        offset = {x = 2.5, y = 2.5},
+    },
+
     -- Discord roles, the bot token and guild ID are server convars, see the README
     discordRoles = {
         -- Keeps fetched roles in the resource KVP, so after a restart they answer right away instead of every player being fetched again

@@ -7,9 +7,11 @@ import ContextMenuModule from "./modules/context_menu";
 import ProgressModule from "./modules/progress";
 import SkillCheckModule from "./modules/skill_check";
 import KeybindsModule from "./modules/keybinds";
+import MissionTrackerModule from "./modules/mission_tracker";
 
 const App = () => (
 	<ModalProvider>
+		<MissionTrackerModule />
 		<PromptModule />
 		<ClipboardModule />
 		<ModalModule />

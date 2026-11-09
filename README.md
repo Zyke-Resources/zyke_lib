@@ -281,6 +281,36 @@ Supported: ps-dispatch, cd_dispatch3d, cd_dispatch, qs-dispatch, rcore_dispatch,
 
 Other `reason` values: `doorlockUnavailable` (no door lock started), `invalidDoor`, `databaseUnavailable`, `doorNotAdded`, `doorNotFound`, `doorNotChanged` and `noPlayers`.
 
+## Mission Tracker
+
+`Z.missionTracker.*` shows a resource's missions on screen: a title, an optional countdown and the steps, each `done`, `current`, `pending` or `failed`. It runs on the client. zyke_lib draws each mission as a card of its own, in one column with the missions of every resource, in the order they were first shown, so a player on a job and a robbery at once sees both without them overlapping. They hide while the pause menu is open, and a resource's missions are removed when it stops.
+
+| `Z.missionTracker` method | Purpose |
+|---|---|
+| `show(id, mission)` | Shows the mission, or replaces a shown one in its place in the column, returns `shown` |
+| `update(id, changes)` | Replaces some fields of a shown mission, such as `steps`, returns `updated` |
+| `hide(id)` | Removes the mission, returns `removed` |
+| `hideAll()` | Removes every mission of the calling resource, returns `removed` |
+
+`id` is picked by the resource and only has to be unique among its own missions, so several can be up at once. Texts are shown as they are sent, so translate them in the resource.
+
+```lua
+Z.missionTracker.show("job:42", {
+    title = "Deliver the van",
+    countdown = {endsAt = GetGameTimer() + 15 * 60000, duration = 15 * 60000}, -- optional, endsAt in GetGameTimer() ms
+    steps = {
+        {label = "Steal the van", state = "done"},
+        {label = "Lose the police", state = "current", detail = "2 units on you"}, -- detail shows while not done
+        {label = "Drop it at the docks", state = "pending"},
+    },
+})
+
+Z.missionTracker.update("job:42", {steps = steps})
+Z.missionTracker.hide("job:42")
+```
+
+The column's corner and its gap to the screen edges are `missionTracker` in zyke_lib's `config.lua` (top left by default). It is one setting for every resource, so the column never splits.
+
 ## Appearance
 
 `Z.appearance.*` puts work outfits on and the saved look back. It runs on the client.
