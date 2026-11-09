@@ -397,6 +397,10 @@ RegisterNUICallback("Eventhandler:Context", function(passed, cb)
         end
     elseif (action == "close") then
         local menuId = data.menuId
+
+        -- Closing sends this for the menu that just closed as well, after a select may already have opened the next one
+        if (not activeMenuData[menuId]) then return end
+
         doClose(menuId, true)
     end
 end)
