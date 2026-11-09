@@ -25,11 +25,8 @@ end
 ---@param weight integer @ Maximum weight in grams
 function Functions.stash.register(id, label, slots, weight)
     if (Inventory == "OX") then
-        local stash = Functions.stash.get(id)
-
-        if (not stash) then
-            exports["ox_inventory"]:RegisterStash(id, label, slots, weight)
-        end
+        -- ox_inventory resizes and relabels a stash that is already loaded, so a new size applies at once
+        exports["ox_inventory"]:RegisterStash(id, label, slots, weight)
     elseif (Inventory == "ONE") then
         oneStashes[id] = {
             id = id,
