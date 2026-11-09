@@ -104,4 +104,24 @@ function Functions.appearance.restore()
     return false
 end
 
+-- Opens the appearance resource's menu of the player's saved outfits, such as a wardrobe in a
+-- house or a hotel room uses
+---@return boolean opened @ False when the appearance resource has no outfit menu to open
+function Functions.appearance.openWardrobe()
+    -- onex-creation provides illenium-appearance and answers its events
+    if (AppearanceSystem == "illenium-appearance" or AppearanceSystem == "onex-creation") then
+        TriggerEvent("illenium-appearance:client:openOutfitMenu")
+
+        return true
+    end
+
+    if (AppearanceSystem == "qb-clothing") then
+        TriggerEvent("qb-clothing:client:openOutfitMenu")
+
+        return true
+    end
+
+    return false
+end
+
 return Functions.appearance
