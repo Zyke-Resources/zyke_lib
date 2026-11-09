@@ -131,7 +131,7 @@ Each system supports the following values:
 | `"<resource_name>"` | Use a specific resource (will wait for it to start) |
 | `"none"` | Skip detection entirely, fall back to your framework's built-in system |
 
-> **Note:** `"none"` is only valid for **optional** systems (gang, fuel, vehicle keys, door lock, death, banking, notification, dispatch). Setting it means the library will use your framework's default behavior instead.
+> **Note:** `"none"` is only valid for **optional** systems (gang, fuel, vehicle keys, door lock, death, banking, notification, dispatch, time). Setting it means the library will use your framework's default behavior instead.
 
 ### Available Systems
 
@@ -158,6 +158,7 @@ Each system supports the following values:
 | `dispatch` | `"auto"`, `"none"`, `"cd_dispatch3d"`, `"ps-dispatch"`, `"cd_dispatch"`, `"qs-dispatch"`, `"rcore_dispatch"`, `"core_dispatch"`, `"tk_dispatch"`, `"codem-dispatchv2"`, `"lb-tablet"` |
 | `progressbar` | `"auto"`, `"zyke_lib"`, `"ox_lib"`, `"lation_ui"`, `"wasabi_uikit"` |
 | `appearance` | `"auto"`, `"none"`, `"onex-creation"`, `"illenium-appearance"`, `"rcore_clothing"`, `"qb-clothing"`, `"esx_skin"` |
+| `time` | `"auto"`, `"none"`, `"cd_easytime"`, `"qb-weathersync"`. Read by `Z.getGameTime` on the server, which returns nil without one |
 
 ### Example
 

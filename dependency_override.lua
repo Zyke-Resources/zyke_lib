@@ -11,7 +11,7 @@
 --   "<resource_name>"  - Use a specific resource (will wait for it to start)
 --   "none"             - Skip detection entirely, use your framework's built-in system
 --
--- NOTE: "none" is only valid for optional systems (gang, fuel, vehicleKeys, doorlock, death, banking, notification, phone, dispatch).
+-- NOTE: "none" is only valid for optional systems (gang, fuel, vehicleKeys, doorlock, death, banking, notification, phone, dispatch, time).
 -- Setting "none" means the library will fall back to your framework's default behavior.
 -- For example, gang = "none" will use QB's built-in gang system.
 
@@ -109,4 +109,9 @@ return {
     -- (set to "none" if you don't run one, work outfits then stay on until the player changes)
     -- Options: "auto", "none", "onex-creation", "illenium-appearance", "rcore_clothing", "qb-clothing", "esx_skin"
     appearance = "auto",
+
+    -- Time sync system, which keeps the server's clock, read for the time of day on the server
+    -- (set to "none" if you don't run one, resources then fall back to a player's own clock)
+    -- Options: "auto", "none", "cd_easytime", "qb-weathersync"
+    time = "auto",
 }
