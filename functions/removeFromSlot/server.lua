@@ -9,8 +9,8 @@ function Functions.removeFromSlot(plyId, item, amount, slot)
     item = itemName or item
 
     if (Inventory == "OX") then
-        exports["ox_inventory"]:RemoveItem(plyId, item, amount, nil, slot)
-        return
+        -- Returns true, or false with ox_inventory's reason such as no_item_in_slot
+        return exports["ox_inventory"]:RemoveItem(plyId, item, amount, nil, slot)
     elseif (Inventory == "ONE") then
         return exports["one_inventory"]:RemoveItem(plyId, item, amount, nil, slot)
     elseif (Inventory == "TGIANN") then
