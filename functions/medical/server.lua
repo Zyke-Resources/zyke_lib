@@ -243,7 +243,8 @@ local function readOsp(plyId, reading)
     reading.bleeding = totalBleeding >= 1.0 and 4 or totalBleeding >= 0.6 and 3 or totalBleeding >= ospSevereBleeding and 2 or totalBleeding > 0.0 and 1 or 0
 end
 
--- The player's injuries now. esx_ambulancejob and scripts without an adapter only give the weapon of their last death
+-- The player's injuries now. esx_death, esx_ambulancejob and scripts without an adapter only give the weapon of their
+-- last death
 ---@param plyId PlayerId
 ---@return MedicalInjuries reading
 function Functions.medical.getInjuries(plyId)
@@ -335,6 +336,40 @@ if (DeathSystem == "esx_ambulancejob") then
         if (not (reported[plyId] and reported[plyId].dead)) then return end
 
         revived(plyId)
+    end)
+end
+
+-- esx_death owns the death state and fires esx_death:stateChanged with no reviver, so a medic's revive through
+-- esx_ambulancejob is remembered until esx_death confirms it with the "ems" reason
+if (DeathSystem == "esx_death") then
+    ---@type table<PlayerId, PlayerId> @ The medic who asked to revive each player
+    local medics = {}
+
+    ---@param targetId integer @ The player the medic revives
+    RegisterNetEvent("esx_ambulancejob:revive", function(targetId)
+        local patientId = math.tointeger(tonumber(targetId))
+        if (not patientId or patientId == source) then return end
+
+        medics[patientId] = source
+    end)
+
+    ---@param plyId PlayerId
+    ---@param dead boolean
+    ---@param reason string @ "death", "restore", "respawn", "logout", "ems", "admin", "txadmin" or a caller's own
+    AddEventHandler("esx_death:stateChanged", function(plyId, dead, reason)
+        local reviverId = medics[plyId]
+
+        medics[plyId] = nil
+
+        if (dead == true) then
+            local deathState = exports["esx_death"]:GetDeathState(plyId)
+
+            return died(plyId, deathState and toHash(deathState.deathCause))
+        end
+
+        if (reason == "logout") then return end
+
+        revived(plyId, reason == "ems" and reviverId or nil)
     end)
 end
 

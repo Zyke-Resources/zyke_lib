@@ -13,6 +13,8 @@ local systems = {
     {fileName = "p_ambulancejob", variable = "p_ambulancejob"},
     {fileName = "qbx_medical", variable = "qbx_medical"},
     {fileName = "qb-ambulancejob", variable = "qb-ambulancejob"},
+    -- Newer esx_ambulancejob depends on esx_death and leaves deaths and revives to it
+    {fileName = "esx_death", variable = "esx_death"},
     {fileName = "esx_ambulancejob", variable = "esx_ambulancejob"}
 }
 

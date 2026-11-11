@@ -2,8 +2,9 @@
 ---@return boolean dead
 ---@diagnostic disable-next-line: duplicate-set-field
 function Functions.isPlayerDead(plyId)
-    -- esx_ambulancejob and qbx_medical set isDead true, wasabi_ambulance_v2 isDead above 0, wasabi_ambulance dead to
-    -- "dead" or "laststand", osp_ambulance BodyDamage. sky_ambulancejob and p_ambulancejob have no verified server read
+    -- esx_death, esx_ambulancejob and qbx_medical set isDead true, wasabi_ambulance_v2 isDead above 0, wasabi_ambulance
+    -- dead to "dead" or "laststand", osp_ambulance BodyDamage. sky_ambulancejob and p_ambulancejob have no verified
+    -- server read
     local state = Player(plyId).state
     local isDead = state.isDead
     if (isDead == true or (type(isDead) == "number" and isDead > 0)) then return true end

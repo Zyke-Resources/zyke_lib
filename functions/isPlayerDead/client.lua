@@ -18,6 +18,9 @@ function Functions.isPlayerDead()
         return bodyDamage.isDead == true or bodyDamage.inLastStand == true
     end
 
+    -- esx_death resurrects the downed ped, so only its state bag shows the death
+    if (DeathSystem == "esx_death") then return LocalPlayer.state.isDead == true end
+
     if (DeathSystem == "p_ambulancejob") then
         local bodyState = exports['p_ambulancejob']:getDeathInfo()
         return bodyState.isDead

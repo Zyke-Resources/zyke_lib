@@ -58,7 +58,7 @@ return {
     -- Death check system (set to "none" to use your framework's built-in death checks)
     -- Also read for injuries, deaths and revives, which the framework's own ambulance resources answer too
     -- Options: "auto", "none", "sky_ambulancejob", "wasabi_ambulance_v2", "wasabi_ambulance", "osp_ambulance", "p_ambulancejob",
-    -- "qbx_medical", "qb-ambulancejob", "esx_ambulancejob"
+    -- "qbx_medical", "qb-ambulancejob", "esx_death", "esx_ambulancejob"
     death = "auto",
 
     -- HUD system (set to "none" if you don't use a HUD resource)
