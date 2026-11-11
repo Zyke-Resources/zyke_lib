@@ -115,6 +115,12 @@ function Functions.appearance.openWardrobe()
         return true
     end
 
+    if (AppearanceSystem == "rcore_clothing") then
+        TriggerEvent("rcore_clothing:openChangingRoom")
+
+        return true
+    end
+
     if (AppearanceSystem == "qb-clothing") then
         TriggerEvent("qb-clothing:client:openOutfitMenu")
 

@@ -320,7 +320,7 @@ The column's corner and its gap to the screen edges are `missionTracker` in zyke
 |---|---|
 | `wearOutfit(outfit)` | Puts `outfit.components` and `outfit.props` on the player without saving them, returns `worn` |
 | `restore()` | Puts the character's saved clothes back on from the appearance resource, returns `restored` |
-| `openWardrobe()` | Opens the appearance resource's menu of the player's saved outfits, returns `opened`; `illenium-appearance` and `onex-creation` through `illenium-appearance:client:openOutfitMenu`, `qb-clothing` through `qb-clothing:client:openOutfitMenu`, `false` for the others |
+| `openWardrobe()` | Opens the appearance resource's menu of the player's saved outfits, returns `opened`; `illenium-appearance` and `onex-creation` through `illenium-appearance:client:openOutfitMenu`, `rcore_clothing` through `rcore_clothing:openChangingRoom`, `qb-clothing` through `qb-clothing:client:openOutfitMenu`, `false` for the others |
 
 Each piece is `{id, drawable, texture?, collection?}`: `id` is the component id (0-11) or the prop anchor (0-7), and `drawable` -1 takes a prop off. With `collection` (such as `"mp_m_zyke_dden"`), `drawable` is the index inside that clothing collection, which stays the same whatever other clothing packs a server streams, where a global drawable number does not. `wearOutfit` changes nothing and returns `false` when a collection piece is not streamed for the player's ped.
 
