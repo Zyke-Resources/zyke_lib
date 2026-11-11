@@ -30,6 +30,8 @@ local hasNui = GetResourceMetadata(ResName, "ui_page", 0) ~= nil
 local loadedStrings = {}
 ---@type table<string, true> @ Keys whose text failed to format, so each one warns once
 local brokenKeys = {}
+-- Server settings added to every language's strings, never in a locale file
+local formatKeys = {localeString = true, currencyFormat = true}
 
 local function notFoundDefault()
     print("^1[ERROR] Could not find fallback translation (locales/en.lua) CRITICAL!!!^7")
@@ -78,7 +80,7 @@ local function getStrings(language, warnMissing)
         local missingTranslations = {}
 
         for key, baseTranslation in pairs(getStrings(baseLanguage) or {}) do
-            if (strings[key] == nil) then
+            if (strings[key] == nil and not formatKeys[key]) then
                 missingTranslations[#missingTranslations+1] = key
                 strings[key] = baseTranslation
             end
