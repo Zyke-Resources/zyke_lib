@@ -11,10 +11,14 @@ end
 ---@type table<string, table | fun(): table>
 local ensuredMetadata = {}
 
+-- The slot can hold another item by the time this arrives, such as after the player moved or used it
 ---@param slot integer
-RegisterNetEvent("zyke_lib:MissingMetadata", function(slot)
+---@param expectedName string @ Item the client saw in the slot
+RegisterNetEvent("zyke_lib:MissingMetadata", function(slot, expectedName)
+    if (type(expectedName) ~= "string") then return end
+
     local item = Functions.getInventorySlot(source, slot)
-    if (not item) then return end
+    if (not item or not item.name) then return end
 
     local newMetadata = {}
     if Inventory == "TGIANN" then
@@ -24,12 +28,14 @@ RegisterNetEvent("zyke_lib:MissingMetadata", function(slot)
     end
     local added = 0
 
-    local itemName
-    if (item.name) then
-        _, itemName = Functions.getItem(item.name)
-    end
+    local _, itemName = Functions.getItem(item.name)
+    itemName = itemName or item.name
 
-    local desiredMetadata = ensuredMetadata[itemName or item.name]
+    local _, expectedItemName = Functions.getItem(expectedName)
+    if ((expectedItemName or expectedName) ~= itemName) then return end
+
+    local desiredMetadata = ensuredMetadata[itemName]
+    if (not desiredMetadata) then return end
 
     -- The item's current metadata is passed in, so defaults can follow what the item already holds
     if (isFuncRef(desiredMetadata)) then

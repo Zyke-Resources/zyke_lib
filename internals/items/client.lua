@@ -69,7 +69,7 @@ local function checkItems(changes)
         end
 
         if (missingMetadata) then
-            TriggerServerEvent("zyke_lib:MissingMetadata", item.slot)
+            TriggerServerEvent("zyke_lib:MissingMetadata", item.slot, name)
         end
 
         ::continue::
