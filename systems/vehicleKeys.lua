@@ -3,9 +3,10 @@ local awaitSystemStarting, override = ...
 if (override == "none") then return end
 
 -- Exact overrides can use any resource name; this list only controls auto-detection order
--- Keep zyke_vehiclekeys first because its provide aliases can report compatibility resource names as started
+-- Keep zyke_vehiclekeys and jg-vehiclekeys ahead of the resources their provide aliases can report as started
 local systems = {
     "zyke_vehiclekeys",
+    "jg-vehiclekeys",
     "qb-vehiclekeys",
     "qbx_vehiclekeys",
     "qs-vehiclekeys",

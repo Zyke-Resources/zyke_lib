@@ -72,6 +72,13 @@ local function normalizePlates(rawPlates)
     return plates
 end
 
+-- JG exports answer with {success, code, data} tables
+---@param result any
+---@return boolean success
+local function isJgSuccess(result)
+    return type(result) == "table" and result.success == true
+end
+
 ---@return string? providerName
 function Functions.vehicleKeys.getProvider()
     return VehicleKeysSystem
@@ -89,6 +96,19 @@ function Functions.vehicleKeys.getCapabilities()
 
     if (VehicleKeysSystem == "zyke_vehiclekeys") then
         return exports["zyke_vehiclekeys"]:GetCapabilities()
+    end
+
+    if (VehicleKeysSystem == "jg-vehiclekeys") then
+        -- Item or identifier access depends on its Config.KeyMode, which it does not expose
+        return {
+            provider = VehicleKeysSystem,
+            giveKey = true,
+            removeKey = true,
+            hasKey = true,
+            listKeys = true,
+            engineControl = true,
+            serverAuthoritative = true,
+        }
     end
 
     if (VehicleKeysSystem == "qb-vehiclekeys") then
@@ -174,6 +194,8 @@ function Functions.vehicleKeys.has(identifier)
     local plate = resolvePlate(identifier)
     if (not plate) then return false end
 
+    -- Waits for the JG server's answer
+    if (VehicleKeysSystem == "jg-vehiclekeys") then return exports["jg-vehiclekeys"]:hasKeys(plate) == true end
     if (VehicleKeysSystem == "qb-vehiclekeys") then return exports["qb-vehiclekeys"]:HasKeys(plate) == true end
     if (VehicleKeysSystem == "qs-vehiclekeys") then return exports["qs-vehiclekeys"]:GetKey(plate) == true end
     if (VehicleKeysSystem == "wasabi_carlock") then return exports["wasabi_carlock"]:HasKey(plate) == true end
@@ -191,6 +213,7 @@ function Functions.vehicleKeys.give(identifier)
     if (not plate) then return false end
 
     if (VehicleKeysSystem == "zyke_vehiclekeys") then return exports["zyke_vehiclekeys"]:GiveKey(plate) ~= false end
+    if (VehicleKeysSystem == "jg-vehiclekeys") then return isJgSuccess(exports["jg-vehiclekeys"]:giveKeys(plate, resolveModel(identifier))) end
 
     if (VehicleKeysSystem == "qb-vehiclekeys") then
         TriggerEvent("vehiclekeys:client:SetOwner", plate)
@@ -220,6 +243,7 @@ function Functions.vehicleKeys.remove(identifier)
     if (not plate) then return false end
 
     if (VehicleKeysSystem == "zyke_vehiclekeys") then return exports["zyke_vehiclekeys"]:RemoveKey(plate) ~= false end
+    if (VehicleKeysSystem == "jg-vehiclekeys") then return isJgSuccess(exports["jg-vehiclekeys"]:removeKeys(plate, resolveModel(identifier))) end
 
     if (VehicleKeysSystem == "qb-vehiclekeys") then
         TriggerEvent("qb-vehiclekeys:client:RemoveKeys", plate)
@@ -247,6 +271,19 @@ function Functions.vehicleKeys.getAccessiblePlates()
 
     if (VehicleKeysSystem == "zyke_vehiclekeys") then
         return normalizePlates(Z.callback.request("zyke_vehiclekeys:GetAccessiblePlates", nil) or {})
+    end
+
+    if (VehicleKeysSystem == "jg-vehiclekeys") then
+        local keys = exports["jg-vehiclekeys"]:getKeys()
+        if (type(keys) ~= "table") then return {} end
+
+        -- getKeys also lists keys JG no longer accepts, marked valid = false
+        local plates = {}
+        for i = 1, #keys do
+            if (keys[i].valid ~= false) then plates[#plates + 1] = keys[i].plate end
+        end
+
+        return normalizePlates(plates)
     end
 
     if (VehicleKeysSystem == "qb-vehiclekeys") then
@@ -306,6 +343,13 @@ function Functions.vehicleKeys.setEngineState(vehicle, enabled)
         if (not DoesEntityExist(vehicle) or GetEntityType(vehicle) ~= 2) then return false end
 
         return exports["zyke_vehiclekeys"]:SetEngineState(vehicle, enabled) == true
+    end
+
+    if (VehicleKeysSystem == "jg-vehiclekeys") then
+        if (not DoesEntityExist(vehicle) or GetEntityType(vehicle) ~= 2) then return false end
+
+        -- JG only accepts this from the driver's seat
+        return isJgSuccess(exports["jg-vehiclekeys"]:setEngineState(vehicle, enabled))
     end
 
     return false

@@ -149,7 +149,7 @@ Each system supports the following values:
 |---|---|
 | `gang` | `"auto"`, `"none"`, `"pug-gangs"` |
 | `fuel` | `"auto"`, `"none"`, `"ox_fuel"`, `"LegacyFuel"`, `"cdn-fuel"`, `"lc_fuel"`, `"rcore_fuel"`, `"Renewed-Fuel"`, `"lyre_fuel"` |
-| `vehicleKeys` | `"auto"`, `"none"`, `"zyke_vehiclekeys"`, `"qb-vehiclekeys"`, `"qbx_vehiclekeys"`, `"qs-vehiclekeys"`, `"wasabi_carlock"`, `"Renewed-Vehiclekeys"` |
+| `vehicleKeys` | `"auto"`, `"none"`, `"zyke_vehiclekeys"`, `"jg-vehiclekeys"`, `"qb-vehiclekeys"`, `"qbx_vehiclekeys"`, `"qs-vehiclekeys"`, `"wasabi_carlock"`, `"Renewed-Vehiclekeys"` |
 | `doorlock` | `"auto"`, `"none"`, `"ox_doorlock"`, `"rcore_doorlock"`, `"qb-doorlock"` |
 | `death` | `"auto"`, `"none"`, `"sky_ambulancejob"`, `"wasabi_ambulance"`, `"wasabi_ambulance_v2"`, `"osp_ambulance"` |
 | `hud` | `"auto"`, `"none"`, or any HUD listed under [HUD Visibility](#hud-visibility) |
@@ -440,13 +440,14 @@ Give `zyke_lib` its own bot when another bot or script already uses one: rate li
 | Provider | Client integration | Server integration |
 |---|---|---|
 | `zyke_vehiclekeys` | All client exports listed above | All server exports listed above |
+| `jg-vehiclekeys` | `giveKeys`, `hasKeys`, `removeKeys`, `getKeys`, and `setEngineState` exports | `giveKeys`, `hasKeys`, `removeKeys`, `getKeys`, and `vehiclePlateChanged` exports; temporary keys are permanent |
 | `qb-vehiclekeys` | Give event `vehiclekeys:client:SetOwner`, `HasKeys` export, remove event `qb-vehiclekeys:client:RemoveKeys`, and the provider key-list callback | `GiveKeys`, `HasKeys`, and `RemoveKeys` exports; key listing bridges through the client |
 | `qbx_vehiclekeys` | `HasKeys` export with a live vehicle; give/remove unavailable | `GiveKeys`, `HasKeys`, and `RemoveKeys` exports with a live vehicle; key listing resolves the player's `keysList` state bag |
 | `qs-vehiclekeys` | `GiveKeys`, `GetKey`, and `RemoveKeys` exports with plate/model | Server requests bridge to those client exports; key listing reads `vehiclekeys` item metadata |
 | `wasabi_carlock` | `GiveKey`, `HasKey`, `RemoveKey`, and `GetAllKeys` exports | Give/has/remove use server exports; key listing bridges through the client |
 | `Renewed-Vehiclekeys` | `addKey`, `hasKey`, and `removeKey` exports; `setLockState` sets the `vehicleLock` state bag on vehicles the client owns | `addKey`, `hasKey`, and `removeKey` exports; temporary keys are permanent and key listing is unavailable |
 
-Renewed-Vehiclekeys is supported with its default identifier keys; its `useKeyItem` item-key mode is not supported. Qbox and Quasar require a live vehicle for the operations marked above. Check `requiresVehicle` and `serverAuthoritative` before calling a provider outside a normal streamed-vehicle flow. Capability-only metadata such as `identifierAccess`, `itemAccess`, `liveMenu`, and `actionMaxDistance` is returned unchanged by `getCapabilities()`.
+jg-vehiclekeys provides the `qb-vehiclekeys` and `qbx_vehiclekeys` aliases, so auto-detection and an alias override both resolve to the JG adapter. Its `Config.KeyMode` decides between item and virtual keys and is not exposed, so its capabilities report neither `itemAccess` nor `identifierAccess`. Renewed-Vehiclekeys is supported with its default identifier keys; its `useKeyItem` item-key mode is not supported. Qbox and Quasar require a live vehicle for the operations marked above. Check `requiresVehicle` and `serverAuthoritative` before calling a provider outside a normal streamed-vehicle flow. Capability-only metadata such as `identifierAccess`, `itemAccess`, `liveMenu`, and `actionMaxDistance` is returned unchanged by `getCapabilities()`.
 
 ### Adding a provider
 

@@ -54,6 +54,13 @@ local function getVehicle(plate)
     return nil
 end
 
+-- JG exports answer with {success, code, data} tables
+---@param result any
+---@return boolean success
+local function isJgSuccess(result)
+    return type(result) == "table" and result.success == true
+end
+
 ---@return string? providerName
 function Functions.vehicleKeys.getProvider()
     return VehicleKeysSystem
@@ -71,6 +78,19 @@ function Functions.vehicleKeys.getCapabilities()
 
     if (VehicleKeysSystem == "zyke_vehiclekeys") then
         return exports["zyke_vehiclekeys"]:GetCapabilities()
+    end
+
+    if (VehicleKeysSystem == "jg-vehiclekeys") then
+        -- Item or identifier access depends on its Config.KeyMode, which it does not expose
+        return {
+            provider = VehicleKeysSystem,
+            giveKey = true,
+            removeKey = true,
+            hasKey = true,
+            listKeys = true,
+            renamePlate = true,
+            serverAuthoritative = true,
+        }
     end
 
     if (VehicleKeysSystem == "qb-vehiclekeys") then
@@ -155,6 +175,12 @@ function Functions.vehicleKeys.give(plyId, rawPlate, allowFallback, context)
         return given ~= false, reason
     end
 
+    if (VehicleKeysSystem == "jg-vehiclekeys") then
+        local result = exports["jg-vehiclekeys"]:giveKeys(plyId, plate)
+
+        return isJgSuccess(result), type(result) == "table" and result.code or nil
+    end
+
     if (VehicleKeysSystem == "qb-vehiclekeys") then
         return exports["qb-vehiclekeys"]:GiveKeys(plyId, plate) ~= false
     end
@@ -204,6 +230,12 @@ function Functions.vehicleKeys.giveTemporary(plyId, rawPlate, skipCanGiveCheck, 
         return exports["zyke_vehiclekeys"]:GiveTemporaryKey(plyId, plate, skipCanGiveCheck, allowFallback)
     end
 
+    if (VehicleKeysSystem == "jg-vehiclekeys") then
+        local result = exports["jg-vehiclekeys"]:giveKeys(plyId, plate)
+
+        return isJgSuccess(result), type(result) == "table" and result.code or nil
+    end
+
     if (VehicleKeysSystem == "qb-vehiclekeys") then
         return exports["qb-vehiclekeys"]:GiveKeys(plyId, plate) ~= false
     end
@@ -246,6 +278,7 @@ function Functions.vehicleKeys.has(plyId, rawPlate)
     if (not plate) then return false end
 
     if (VehicleKeysSystem == "zyke_vehiclekeys") then return exports["zyke_vehiclekeys"]:HasKey(plyId, plate) == true end
+    if (VehicleKeysSystem == "jg-vehiclekeys") then return exports["jg-vehiclekeys"]:hasKeys(plyId, plate) == true end
     if (VehicleKeysSystem == "qb-vehiclekeys") then return exports["qb-vehiclekeys"]:HasKeys(plyId, plate) == true end
     if (VehicleKeysSystem == "qbx_vehiclekeys") then
         local vehicle = getVehicle(plate)
@@ -279,6 +312,11 @@ function Functions.vehicleKeys.remove(plyId, rawPlate)
     local removed
     if (VehicleKeysSystem == "zyke_vehiclekeys") then
         removed = exports["zyke_vehiclekeys"]:RemoveKey(plyId, plate)
+    elseif (VehicleKeysSystem == "jg-vehiclekeys") then
+        local result = exports["jg-vehiclekeys"]:removeKeys(plyId, plate)
+        if (not isJgSuccess(result)) then return 0 end
+
+        removed = result.data and result.data.removed
     elseif (VehicleKeysSystem == "qb-vehiclekeys") then
         removed = exports["qb-vehiclekeys"]:RemoveKeys(plyId, plate)
     elseif (VehicleKeysSystem == "qbx_vehiclekeys") then
@@ -319,6 +357,11 @@ function Functions.vehicleKeys.removeAll(plyId, rawPlate)
     local removed
     if (VehicleKeysSystem == "zyke_vehiclekeys") then
         removed = exports["zyke_vehiclekeys"]:RemoveAllKeys(plyId, plate)
+    elseif (VehicleKeysSystem == "jg-vehiclekeys") then
+        local result = exports["jg-vehiclekeys"]:removeKeys(plyId, plate)
+        if (not isJgSuccess(result)) then return 0 end
+
+        removed = result.data and result.data.removed
     elseif (VehicleKeysSystem == "qb-vehiclekeys") then
         removed = exports["qb-vehiclekeys"]:RemoveKeys(plyId, plate)
     elseif (VehicleKeysSystem == "qbx_vehiclekeys") then
@@ -375,6 +418,18 @@ function Functions.vehicleKeys.renamePlate(rawOldPlate, rawNewPlate)
         if (not oldPlate or not newPlate) then return false end
 
         return exports["zyke_vehiclekeys"]:RenamePlate(oldPlate, newPlate) == true
+    end
+
+    if (VehicleKeysSystem == "jg-vehiclekeys") then
+        local oldPlate = normalizePlate(rawOldPlate)
+        local newPlate = normalizePlate(rawNewPlate)
+        if (not oldPlate or not newPlate) then return false end
+
+        -- JG documents no return value here, so only an explicit failure counts
+        local result = exports["jg-vehiclekeys"]:vehiclePlateChanged(newPlate, oldPlate)
+        if (type(result) == "table") then return result.success == true end
+
+        return result ~= false
     end
 
     return false
@@ -537,6 +592,19 @@ function Functions.vehicleKeys.getAccessiblePlates(plyId)
     if (VehicleKeysSystem == "zyke_vehiclekeys") then
         local plates = exports["zyke_vehiclekeys"]:GetAccessiblePlates(plyId)
         if (type(plates) ~= "table") then return {} end
+
+        return normalizePlates(plates)
+    end
+
+    if (VehicleKeysSystem == "jg-vehiclekeys") then
+        local keys = exports["jg-vehiclekeys"]:getKeys(plyId)
+        if (type(keys) ~= "table") then return {} end
+
+        -- getKeys also lists keys JG no longer accepts, marked valid = false
+        local plates = {}
+        for i = 1, #keys do
+            if (keys[i].valid ~= false) then plates[#plates + 1] = keys[i].plate end
+        end
 
         return normalizePlates(plates)
     end
