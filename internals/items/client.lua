@@ -43,29 +43,18 @@ local function checkItems(changes)
 
         if (modifySlots and not modifiedSlots[tostring(item.slot)]) then goto continue end
 
+        -- Read through formatItem's metadata on every inventory, raw TGIANN info keeps durability under another key
+        -- and would report it as missing after every fill
         local missingMetadata = false
-        if Inventory == "TGIANN" then
-            if (item.info) then
-                for metaKey in pairs(ensuredMetadata[name]) do
-                    if (item.info[metaKey] == nil) then
-                        missingMetadata = true
-                        break
-                    end
+        if (item.metadata) then
+            for metaKey in pairs(ensuredMetadata[name]) do
+                if (item.metadata[metaKey] == nil) then
+                    missingMetadata = true
+                    break
                 end
-            else
-                missingMetadata = true
             end
         else
-            if (item.metadata) then
-                for metaKey in pairs(ensuredMetadata[name]) do
-                    if (item.metadata[metaKey] == nil) then
-                        missingMetadata = true
-                        break
-                    end
-                end
-            else
-                missingMetadata = true
-            end
+            missingMetadata = true
         end
 
         if (missingMetadata) then
