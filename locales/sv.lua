@@ -6,4 +6,9 @@ return {
     ["copyTitle"] = "Kopiera till urklipp",
     ["copyButton"] = "Kopiera",
     ["dispatchAlert"] = {msg = "Larm från ledningscentralen: %s", type = "warning"},
+    ["missionExitLabel"] = "Kört fast? Lämna uppdraget",
+    ["missionExitUnknown"] = {msg = "Inget uppdrag du kan lämna har det numret.", type = "error"},
+    ["missionExitHelp"] = "Lämna ett uppdrag i listan",
+    ["missionExitArgName"] = "nummer",
+    ["missionExitArgHelp"] = "Numret under uppdraget",
 }

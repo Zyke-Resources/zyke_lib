@@ -6,4 +6,9 @@ return {
     ["copyTitle"] = "Naar klembord kopiëren",
     ["copyButton"] = "Kopiëren",
     ["dispatchAlert"] = {msg = "Melding van de meldkamer: %s", type = "warning"},
+    ["missionExitLabel"] = "Vast? Verlaat de missie",
+    ["missionExitUnknown"] = {msg = "Geen missie die je kunt verlaten heeft dat nummer.", type = "error"},
+    ["missionExitHelp"] = "Een missie uit de lijst verlaten",
+    ["missionExitArgName"] = "nummer",
+    ["missionExitArgHelp"] = "Het nummer onder de missie",
 }

@@ -18,6 +18,7 @@ Functions.missionTracker = {}
 ---@field title string
 ---@field steps MissionStep[]
 ---@field countdown? MissionCountdown
+---@field exitable? boolean @ Shows the exit command under the mission, the resource takes it away in its onExit handler
 
 -- Shows a mission, or replaces what a shown one holds while it keeps its place in the column
 ---@param id string | integer @ Picked by this resource, unique among its own missions
@@ -45,6 +46,19 @@ end
 ---@return boolean removed
 function Functions.missionTracker.hideAll()
     return exports[LibName]:removeMissions()
+end
+
+-- Runs when the player leaves one of this resource's exitable missions with the exit command. The mission stays until
+-- the handler hides it
+---@param handler fun(id: string)
+function Functions.missionTracker.onExit(handler)
+    ---@param resource string
+    ---@param id string
+    AddEventHandler("zyke_lib:missionExit", function(resource, id)
+        if (resource ~= ResName) then return end
+
+        handler(id)
+    end)
 end
 
 return Functions.missionTracker

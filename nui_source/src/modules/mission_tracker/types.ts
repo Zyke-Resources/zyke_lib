@@ -20,6 +20,8 @@ export interface Mission {
 	// Lua sends an empty table as an object
 	steps: MissionStep[] | Record<string, never>;
 	countdown?: MissionCountdown;
+	// Set when the player may leave the mission, such as "/exitmission 2"
+	exitCommand?: string;
 }
 
 export interface MissionTrackerData {
@@ -27,4 +29,6 @@ export interface MissionTrackerData {
 	position: MissionTrackerPosition;
 	// Gap to the screen edges, in percent of the screen height so both sides match
 	offset: { x: number; y: number };
+	// The footer's text, in the player's language
+	exitLabel?: string;
 }

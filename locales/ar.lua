@@ -6,4 +6,9 @@ return {
     ["copyTitle"] = "نسخ إلى الحافظة",
     ["copyButton"] = "نسخ",
     ["dispatchAlert"] = {msg = "بلاغ من غرفة العمليات: %s", type = "warning"},
+    ["missionExitLabel"] = "عالق؟ غادر المهمة",
+    ["missionExitUnknown"] = {msg = "لا توجد مهمة يمكنك مغادرتها بهذا الرقم.", type = "error"},
+    ["missionExitHelp"] = "مغادرة مهمة من القائمة",
+    ["missionExitArgName"] = "رقم",
+    ["missionExitArgHelp"] = "الرقم أسفل المهمة",
 }

@@ -6,4 +6,9 @@ return {
     ["copyTitle"] = "In die Zwischenablage kopieren",
     ["copyButton"] = "Kopieren",
     ["dispatchAlert"] = {msg = "Einsatzmeldung: %s", type = "warning"},
+    ["missionExitLabel"] = "Festgefahren? Mission verlassen",
+    ["missionExitUnknown"] = {msg = "Keine Mission, die du verlassen kannst, hat diese Nummer.", type = "error"},
+    ["missionExitHelp"] = "Eine Mission aus der Liste verlassen",
+    ["missionExitArgName"] = "nummer",
+    ["missionExitArgHelp"] = "Die Nummer unter der Mission",
 }

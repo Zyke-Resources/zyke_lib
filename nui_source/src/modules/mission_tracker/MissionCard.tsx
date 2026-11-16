@@ -1,17 +1,19 @@
 import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import Countdown from "./Countdown";
+import ExitFooter from "./ExitFooter";
 import StepList from "./StepList";
 import type { Mission } from "./types";
 
 interface MissionCardProps {
 	mission: Mission;
 	fromLeft: boolean;
+	exitLabel?: string;
 }
 
 // One mission: its title with the time left, and its steps. It moves by position only, as a layout animation of its
 // size would stretch its text when its steps change
-const MissionCard = forwardRef<HTMLDivElement, MissionCardProps>(({ mission, fromLeft }, ref) => (
+const MissionCard = forwardRef<HTMLDivElement, MissionCardProps>(({ mission, fromLeft, exitLabel }, ref) => (
 	<motion.div
 		ref={ref}
 		className="mission-card"
@@ -27,6 +29,7 @@ const MissionCard = forwardRef<HTMLDivElement, MissionCardProps>(({ mission, fro
 		</div>
 
 		<StepList steps={Array.isArray(mission.steps) ? mission.steps : []} />
+		{mission.exitCommand && <ExitFooter label={exitLabel} command={mission.exitCommand} />}
 	</motion.div>
 ));
 

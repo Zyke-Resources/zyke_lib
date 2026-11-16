@@ -5,6 +5,7 @@
 local settings = LibConfig.missionTracker or {}
 local position = settings.position or "top-left"
 local offset = settings.offset or {x = 2.5, y = 2.5}
+local exitCommand = settings.exitCommand or "exitmission"
 
 ---@type {resource: string, id: string, mission: MissionData}[]
 local missions = {}
@@ -38,11 +39,12 @@ local function sync()
                 title = mission.title,
                 steps = mission.steps,
                 countdown = getCountdown(mission, now),
+                exitCommand = mission.exitable == true and ("/%s %s"):format(exitCommand, i) or nil,
             }
         end
     end
 
-    SendNUIMessage({event = "SetMissionTracker", data = {missions = list, position = position, offset = offset}})
+    SendNUIMessage({event = "SetMissionTracker", data = {missions = list, position = position, offset = offset, exitLabel = T("missionExitLabel")}})
 end
 
 local function watchPauseMenu()
@@ -175,6 +177,21 @@ end
 ---@return boolean removed
 exports("removeMissions", function()
     return removeResourceMissions(getResource())
+end)
+
+-- Leaves the mission with the number shown under it, the only one there is when no number is given
+---@param args string[]
+Functions.registerCommand(exitCommand, function(_, args)
+    local index = tonumber(args[1]) or (#missions == 1 and 1 or nil)
+    local entry = index and missions[index]
+    if (not entry or entry.mission.exitable ~= true) then return Functions.notify("missionExitUnknown") end
+
+    TriggerEvent("zyke_lib:missionExit", entry.resource, entry.id)
+end, T("missionExitHelp"), {{T("missionExitArgName"), T("missionExitArgHelp")}})
+
+-- The footer was read in the old language
+Functions.onLanguageChange(function()
+    sync()
 end)
 
 -- The page asks once it has loaded, so missions shown before then are sent again

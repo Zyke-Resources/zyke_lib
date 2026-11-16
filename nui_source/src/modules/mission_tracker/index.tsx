@@ -32,7 +32,7 @@ const MissionTrackerModule = () => {
 		>
 			<AnimatePresence mode="popLayout">
 				{missions.map((mission) => (
-					<MissionCard key={mission.key} mission={mission} fromLeft={fromLeft} />
+					<MissionCard key={mission.key} mission={mission} fromLeft={fromLeft} exitLabel={tracker?.exitLabel} />
 				))}
 			</AnimatePresence>
 		</div>

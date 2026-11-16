@@ -194,3 +194,35 @@
         opacity: 0.35;
     }
 }
+
+/* The strip under a mission the player may leave: the hint on the left, the command on the right */
+.mission-exit {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.6rem 1.2rem;
+    background: rgb(var(--dark3));
+    border-top: 1px solid rgb(var(--grey2));
+}
+
+.mission-exit-label {
+    min-width: 0;
+    color: rgb(var(--secText));
+    font-size: 1.1rem;
+    line-height: 1.4;
+}
+
+.mission-exit-command {
+    flex: 0 0 auto;
+    padding: 0.05rem 0.5rem;
+    color: rgb(var(--textMuted));
+    font-family: var(--font);
+    font-size: 1.1rem;
+    line-height: 1.4;
+    font-weight: 500;
+    white-space: nowrap;
+    background: rgb(var(--grey2));
+    border: 1px solid rgb(var(--grey5));
+    border-radius: 0.4rem;
+}

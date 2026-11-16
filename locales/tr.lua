@@ -6,4 +6,9 @@ return {
     ["copyTitle"] = "Panoya kopyala",
     ["copyButton"] = "Kopyala",
     ["dispatchAlert"] = {msg = "Merkezden ihbar: %s", type = "warning"},
+    ["missionExitLabel"] = "Takıldın mı? Görevden çık",
+    ["missionExitUnknown"] = {msg = "Çıkabileceğin hiçbir görev bu numaraya sahip değil.", type = "error"},
+    ["missionExitHelp"] = "Listedeki bir görevden çık",
+    ["missionExitArgName"] = "numara",
+    ["missionExitArgHelp"] = "Görevin altındaki numara",
 }

@@ -6,4 +6,9 @@ return {
     ["copyTitle"] = "Kopiuj do schowka",
     ["copyButton"] = "Kopiuj",
     ["dispatchAlert"] = {msg = "Zgłoszenie z dyspozytorni: %s", type = "warning"},
+    ["missionExitLabel"] = "Utknąłeś? Opuść misję",
+    ["missionExitUnknown"] = {msg = "Żadna misja, którą możesz opuścić, nie ma tego numeru.", type = "error"},
+    ["missionExitHelp"] = "Opuść misję z listy",
+    ["missionExitArgName"] = "numer",
+    ["missionExitArgHelp"] = "Numer pod misją",
 }

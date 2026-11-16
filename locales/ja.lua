@@ -6,4 +6,9 @@ return {
     ["copyTitle"] = "クリップボードにコピー",
     ["copyButton"] = "コピー",
     ["dispatchAlert"] = {msg = "指令センターからの通報: %s", type = "warning"},
+    ["missionExitLabel"] = "進めない？ミッションを抜ける",
+    ["missionExitUnknown"] = {msg = "その番号で抜けられるミッションはありません。", type = "error"},
+    ["missionExitHelp"] = "リストのミッションを抜ける",
+    ["missionExitArgName"] = "番号",
+    ["missionExitArgHelp"] = "ミッションの下にある番号",
 }

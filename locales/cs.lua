@@ -6,4 +6,9 @@ return {
     ["copyTitle"] = "Kopírovat do schránky",
     ["copyButton"] = "Kopírovat",
     ["dispatchAlert"] = {msg = "Hlášení z dispečinku: %s", type = "warning"},
+    ["missionExitLabel"] = "Zasekl ses? Opusť misi",
+    ["missionExitUnknown"] = {msg = "Žádná mise, kterou můžeš opustit, nemá toto číslo.", type = "error"},
+    ["missionExitHelp"] = "Opustit misi ze seznamu",
+    ["missionExitArgName"] = "číslo",
+    ["missionExitArgHelp"] = "Číslo pod misí",
 }

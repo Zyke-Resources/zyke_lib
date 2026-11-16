@@ -62,9 +62,11 @@ return {
     -- The column the missions of every resource stack in, such as a player's jobs and the robbery they are part of
     -- position is "top-left", "top-right", "center-left", "center-right", "bottom-left" or "bottom-right"
     -- offset is the gap to the screen edges, in percent of the screen height
+    -- exitCommand leaves the mission with the number shown under it, such as /exitmission 2, for a mission its resource lets players leave
     missionTracker = {
         position = "top-left",
         offset = {x = 2.5, y = 2.5},
+        exitCommand = "exitmission",
     },
 
     -- Players who are txAdmin admins pass every permission check of zyke_lib and the resources built on it, such as admin commands
