@@ -47,6 +47,7 @@ loader {
     "internals/items/server.lua",
     "internals/playerIdentifiers/server.lua",
     "internals/discordRoles/server.lua",
+    "internals/txAdmin/server.lua",
     "internals/states/server.lua",
     "internals/weaponBlock/server.lua",
     "internals/language/server.lua",

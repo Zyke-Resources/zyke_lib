@@ -67,6 +67,11 @@ return {
         offset = {x = 2.5, y = 2.5},
     },
 
+    -- Players who are txAdmin admins pass every permission check of zyke_lib and the resources built on it, such as admin commands
+    -- txAdmin does not tell other resources which txAdmin permissions an admin has, so an admin with only some of them passes too
+    -- It needs the txAdmin in-game menu enabled, since admins are recognised when the menu signs them in a few seconds after joining
+    txAdminAdmins = true,
+
     -- Discord roles, the bot token and guild ID are server convars, see the README
     discordRoles = {
         -- Keeps fetched roles in the resource KVP, so after a restart they answer right away instead of every player being fetched again

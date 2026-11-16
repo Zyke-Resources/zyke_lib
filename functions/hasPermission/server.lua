@@ -19,6 +19,7 @@ function Functions.hasPermission(player, permission)
 
     local plyId = Functions.getPlayerId(player)
     if (not plyId) then return false end
+    if (exports[LibName]:IsTxAdmin(plyId)) then return true end
 
     local permissions = type(permission) == "table" and permission or {permission}
 
