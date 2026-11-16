@@ -1,5 +1,26 @@
 Functions.society = {}
 
+-- Exports only answer to the resource's own name, so a banking resource that provides qb-banking is called by its name
+---@return string resourceName
+local function getQbBankingResource()
+    local provider = nil
+
+    for i = 0, GetNumResources() - 1 do
+        local resourceName = GetResourceByFindIndex(i)
+        local isStarted = resourceName and GetResourceState(resourceName) == "started"
+
+        if (isStarted and resourceName == "qb-banking") then return resourceName end
+
+        if (isStarted and not provider) then
+            for j = 0, GetNumResourceMetadata(resourceName, "provide") - 1 do
+                if (GetResourceMetadata(resourceName, "provide", j) == "qb-banking") then provider = resourceName end
+            end
+        end
+    end
+
+    return provider or "qb-banking"
+end
+
 ---@param name string @ Society account name
 ---@return number? balance
 function Functions.society.get(name)
@@ -26,7 +47,7 @@ function Functions.society.get(name)
     end
 
     if (Framework == "QB") then
-        return exports["qb-banking"]:GetAccountBalance(name)
+        return exports[getQbBankingResource()]:GetAccountBalance(name)
     end
 
     if (Framework == "ESX") then
@@ -72,7 +93,7 @@ function Functions.society.add(name, amount)
     end
 
     if (Framework == "QB") then
-        return exports["qb-banking"]:AddMoney(name, amount) ~= false
+        return exports[getQbBankingResource()]:AddMoney(name, amount) ~= false
     end
 
     if (Framework == "ESX") then
@@ -122,7 +143,7 @@ function Functions.society.remove(name, amount)
     end
 
     if (Framework == "QB") then
-        return exports["qb-banking"]:RemoveMoney(name, amount) ~= false
+        return exports[getQbBankingResource()]:RemoveMoney(name, amount) ~= false
     end
 
     if (Framework == "ESX") then
@@ -164,7 +185,7 @@ function Functions.society.ensure(name, label)
         -- CreateJobAccount doesn't check for an existing account
         if (MySQL.scalar.await("SELECT 1 FROM `bank_accounts` WHERE `account_name` = ?", {name})) then return true end
 
-        return exports["qb-banking"]:CreateJobAccount(name, 0) ~= nil
+        return exports[getQbBankingResource()]:CreateJobAccount(name, 0) ~= nil
     end
 
     if (Framework == "ESX") then
