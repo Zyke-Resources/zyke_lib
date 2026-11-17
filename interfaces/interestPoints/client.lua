@@ -77,6 +77,7 @@
 ---@field menu? string[] @ Ids of the options whose submenus are open, the last is shown
 ---@field selected? string @ Id of the selected option
 ---@field selectedIndex? integer
+---@field drawSlot? InterestPointSlot @ Slot drawn this frame in the second pass, above every ring
 
 ---@class InterestPointSlot
 ---@field index integer
@@ -785,6 +786,8 @@ local function renderVisuals(deltaMs, paused)
     local busy = scrollable
 
     for id, visual in pairs(visuals) do
+        visual.drawSlot = nil
+
         if (visual.culled) then
             -- Not drawn before the next judgement, so there is no fade to show
             visual.alpha = visual.present and visual.fade or 0.0
@@ -811,14 +814,25 @@ local function renderVisuals(deltaMs, paused)
                 local slot = getPointSlot(id)
                 drawn = drawn + 1
 
-                SetDrawOrigin(coords.x, coords.y, coords.z, 0)
-
                 if (slot) then
-                    DrawSprite(slot.dui.dictName, slot.dui.txtName, layout.duiX, 0.0, layout.duiW, layout.duiH, 0.0, 255, 255, 255, math.floor(alpha * 255))
+                    visual.drawSlot = slot
                 elseif (ringReady) then
+                    SetDrawOrigin(coords.x, coords.y, coords.z, 0)
                     DrawSprite(ringSlot.dui.dictName, ringSlot.dui.txtName, 0.0, 0.0, layout.ringW, layout.ringH, 0.0, 255, 255, 255, math.floor(alpha * visual.opacity * 255))
                 end
             end
+        end
+    end
+
+    -- Sprites draw in call order, so the prompts go last and their text stays above every ring
+    for _, visual in pairs(visuals) do
+        local slot = visual.drawSlot
+
+        if (slot) then
+            local coords = visual.coords
+
+            SetDrawOrigin(coords.x, coords.y, coords.z, 0)
+            DrawSprite(slot.dui.dictName, slot.dui.txtName, layout.duiX, 0.0, layout.duiW, layout.duiH, 0.0, 255, 255, 255, math.floor(visual.alpha * 255))
         end
     end
 
