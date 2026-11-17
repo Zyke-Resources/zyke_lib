@@ -69,10 +69,11 @@ return {
         exitCommand = "exitmission",
     },
 
-    -- Players who are txAdmin admins pass every permission check of zyke_lib and the resources built on it, such as admin commands
-    -- txAdmin does not tell other resources which txAdmin permissions an admin has, so an admin with only some of them passes too
+    -- When enabled, players who are txAdmin admins pass every permission check of zyke_lib and the resources built on it, such as admin commands
+    -- txAdmin keeps an admin's permissions inside its own resource and never shares them, so an admin with only some txAdmin permissions passes too
+    -- Off by default for that reason; give admins ACE permissions or framework groups instead to keep each check to the permission it asks for
     -- It needs the txAdmin in-game menu enabled, since admins are recognised when the menu signs them in a few seconds after joining
-    txAdminAdmins = true,
+    txAdminAdmins = false,
 
     -- Discord roles, the bot token and guild ID are server convars, see the README
     discordRoles = {
