@@ -4,6 +4,7 @@
 ---@field amount integer
 ---@field weight number
 ---@field metadata table<string, any> | nil
+---@field info? table<string, any> @ TGIANN only, the item's own info as the inventory stores it
 ---@field slot integer
 
 -- Store the id of the container the item is present in, only populate if we specifically search for it in an external container
