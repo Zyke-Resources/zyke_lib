@@ -11,7 +11,7 @@
 --   "<resource_name>"  - Use a specific resource (will wait for it to start)
 --   "none"             - Skip detection entirely, use your framework's built-in system
 --
--- NOTE: "none" is only valid for optional systems (gang, fuel, vehicleKeys, doorlock, death, banking, notification, phone, dispatch, time).
+-- NOTE: "none" is only valid for optional systems (gang, fuel, vehicleKeys, doorlock, death, banking, notification, phone, dispatch, time, status).
 -- Setting "none" means the library will fall back to your framework's default behavior.
 -- For example, gang = "none" will use QB's built-in gang system.
 
@@ -114,4 +114,9 @@ return {
     -- (set to "none" if you don't run one, resources then fall back to a player's own clock)
     -- Options: "auto", "none", "cd_easytime", "qb-weathersync"
     time = "auto",
+
+    -- Status system, which keeps needs such as hunger, thirst, stress and drunk, read on the server
+    -- (set to "none" to read hunger, thirst and stress from QBCore's or Qbox's player metadata, ESX has none of its own)
+    -- Options: "auto", "none", "zyke_status", "esx_status"
+    status = "auto",
 }

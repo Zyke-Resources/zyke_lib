@@ -185,6 +185,7 @@ local systemDefinitions = {
     {name = "mileage", global = "MileageSystem"},
     {name = "appearance", global = "AppearanceSystem"},
     {name = "time", global = "TimeSystem"},
+    {name = "status", global = "StatusSystem"},
 }
 
 -- From zyke_systems {...}, which FiveM stores as "zyke_system" entries

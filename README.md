@@ -111,6 +111,11 @@ Some inventories offer a lot of backwards-compatible functionality and you may n
 -   `systems/appearance.lua`
 -   `functions/appearance/client.lua`
 
+### Status
+
+-   `systems/status.lua`
+-   `functions/getStatus/server.lua`
+
 ### Framework
 
 To add in a completely new framework, you would need to modify pretty much all files.
@@ -131,7 +136,7 @@ Each system supports the following values:
 | `"<resource_name>"` | Use a specific resource (will wait for it to start) |
 | `"none"` | Skip detection entirely, fall back to your framework's built-in system |
 
-> **Note:** `"none"` is only valid for **optional** systems (gang, fuel, vehicle keys, door lock, death, banking, notification, dispatch, time). Setting it means the library will use your framework's default behavior instead.
+> **Note:** `"none"` is only valid for **optional** systems (gang, fuel, vehicle keys, door lock, death, banking, notification, dispatch, time, status). Setting it means the library will use your framework's default behavior instead.
 
 ### Available Systems
 
@@ -159,6 +164,7 @@ Each system supports the following values:
 | `progressbar` | `"auto"`, `"zyke_lib"`, `"ox_lib"`, `"lation_ui"`, `"wasabi_uikit"` |
 | `appearance` | `"auto"`, `"none"`, `"onex-creation"`, `"illenium-appearance"`, `"rcore_clothing"`, `"qb-clothing"`, `"esx_skin"` |
 | `time` | `"auto"`, `"none"`, `"cd_easytime"`, `"qb-weathersync"`. Read by `Z.getGameTime` on the server, which returns nil without one |
+| `status` | `"auto"`, `"none"`, `"zyke_status"`, `"esx_status"`. Read by `Z.getStatus` on the server, see [Status](#status) |
 
 ### Example
 
@@ -333,6 +339,19 @@ Each piece is `{id, drawable, texture?, collection?}`: `id` is the component id 
 | `esx_skin` | `esx_skin:getPlayerSkin` callback, then `skinchanger:loadSkin` |
 
 With no appearance resource found, `restore` returns `false` and the outfit stays on.
+
+## Status
+
+`Z.getStatus(plyId, name)` reads a player's status on the server, such as `"hunger"`, `"thirst"`, `"stress"` or `"drunk"`, normalised to 0-100. It returns `nil` when the status system has no such status for that player, so a resource can tell "sober" (0) from "this server keeps no drunk value" (`nil`).
+
+| Status system | What it answers |
+|---|---|
+| `zyke_status` | Every status type it has (`hunger`, `thirst`, `stress`, `drunk`, `high`, `caffeine`, `cold`, `addiction`), through its `GetStatus` export |
+| `esx_status` | Every status registered with it, through its `esx_status:getStatus` server event, as its `percent`. `drunk` comes from `esx_optionalneeds`, `hunger` and `thirst` from `esx_basicneeds`. Statuses a client registers reach the server with the client's periodic update, up to about 30 seconds late |
+| None, on QBCore or Qbox | `hunger`, `thirst` and `stress` from the player's metadata (on Qbox from the player's state bag, where Qbox keeps the live value) |
+| None, on ESX | Nothing |
+
+QBCore and Qbox have no drunk value a server can read: `qb-smallresources` and `qbx_smallresources` count drinks in a client-side counter only. Run a status resource that has one, such as `zyke_status`.
 
 ## Discord Roles
 
