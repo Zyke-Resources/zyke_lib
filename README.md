@@ -346,7 +346,7 @@ With no appearance resource found, `restore` returns `false` and the outfit stay
 
 | Status system | What it answers |
 |---|---|
-| `zyke_status` | Every status type it has (`hunger`, `thirst`, `stress`, `drunk`, `high`, `caffeine`, `cold`, `addiction`), through its `GetStatus` export |
+| `zyke_status` | `hunger`, `thirst`, `stress`, `drunk`, `caffeine` and `cold` through its `GetStatus` export. `high` and `addiction` are kept per substance with no value of their own, so they answer the highest substance's through its `GetAllRawStatuses` export: the strongest active high, and the highest addiction level (not the satisfaction) |
 | `esx_status` | Every status registered with it, through its `esx_status:getStatus` server event, as its `percent`. `drunk` comes from `esx_optionalneeds`, `hunger` and `thirst` from `esx_basicneeds`. Statuses a client registers reach the server with the client's periodic update, up to about 30 seconds late |
 | None, on QBCore or Qbox | `hunger`, `thirst` and `stress` from the player's metadata (on Qbox from the player's state bag, where Qbox keeps the live value) |
 | None, on ESX | Nothing |
