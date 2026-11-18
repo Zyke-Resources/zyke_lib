@@ -23,10 +23,11 @@ end
 ---@param label string @ Display label for the stash
 ---@param slots integer @ Number of slots
 ---@param weight integer @ Maximum weight in grams
-function Functions.stash.register(id, label, slots, weight)
+---@param coords? vector3 @ Where the stash stands, ox_inventory then refuses opens a player asks for from further away
+function Functions.stash.register(id, label, slots, weight, coords)
     if (Inventory == "OX") then
         -- ox_inventory resizes and relabels a stash that is already loaded, so a new size applies at once
-        exports["ox_inventory"]:RegisterStash(id, label, slots, weight)
+        exports["ox_inventory"]:RegisterStash(id, label, slots, weight, nil, nil, coords)
     elseif (Inventory == "ONE") then
         oneStashes[id] = {
             id = id,
@@ -149,6 +150,38 @@ function Functions.stash.getSlot(id, slot)
         return Formatting.formatItem(exports["ox_inventory"]:GetSlot(id, slot))
     elseif (Inventory == "ONE") then
         return Formatting.formatItem(exports["one_inventory"]:GetSlot("stash:" .. id, slot))
+    end
+
+    return nil
+end
+
+-- Replaces the metadata of the item in one slot of a stash
+---@param id string @ Unique stash identifier
+---@param slot integer
+---@param metadata table<string, any>
+---@return boolean written @ False when the inventory has no stash items
+function Functions.stash.setSlotMetadata(id, slot, metadata)
+    if (Inventory == "OX") then
+        exports["ox_inventory"]:SetMetadata(id, slot, metadata)
+
+        return true
+    elseif (Inventory == "ONE") then
+        exports["one_inventory"]:SetItemMetadata("stash:" .. id, slot, metadata)
+
+        return true
+    end
+
+    return false
+end
+
+---@param id string @ Unique stash identifier
+---@param plyId integer
+---@return boolean? isOpen @ Nil when the inventory does not say which stash a player has open
+function Functions.stash.isOpenBy(id, plyId)
+    if (Inventory == "OX") then
+        local inventory = exports["ox_inventory"]:GetInventory(plyId)
+
+        return inventory ~= nil and inventory.open == id
     end
 
     return nil
