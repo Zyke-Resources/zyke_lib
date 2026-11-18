@@ -1,4 +1,4 @@
----@param model string
+---@param model string | integer @ Name or hash
 ---@param skipError? boolean
 ---@param timeout? integer @ms
 ---@return boolean
