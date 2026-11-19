@@ -1,4 +1,4 @@
----@param player CharacterIdentifier | PlayerId
+---@param player Character | CharacterIdentifier | PlayerId
 ---@return PlayerGang | nil
 ---@diagnostic disable-next-line: duplicate-set-field
 function Functions.getGang(player)
