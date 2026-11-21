@@ -112,7 +112,7 @@ return {
 
     -- Time sync system, which keeps the server's clock, read for the time of day on the server
     -- (set to "none" if you don't run one, resources then fall back to a player's own clock)
-    -- Options: "auto", "none", "cd_easytime", "qb-weathersync"
+    -- Options: "auto", "none", "cd_easytime", "qb-weathersync", "av_weather"
     time = "auto",
 
     -- Status system, which keeps needs such as hunger, thirst, stress and drunk, read on the server

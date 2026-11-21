@@ -24,6 +24,32 @@ local reads = {
 
         return photos
     end,
+    ["yseries"] = function(plyId, identifier, limit)
+        local phoneImei = exports["yseries"]:GetPhoneImeiBySourceId(plyId)
+        if (not phoneImei) then return nil end
+
+        local rows = MySQL.query.await(
+            "SELECT id, image, is_favorite, UNIX_TIMESTAMP(`date`) AS takenAt FROM yphone_gallery WHERE phone_imei = ? AND deleted = 0 ORDER BY id DESC LIMIT ?",
+            { phoneImei, limit }
+        ) or {}
+
+        local photos = {}
+        for _, row in ipairs(rows) do
+            if row.image and row.image ~= "" then
+                local isVideo = row.image:lower():match("%.mp4") ~= nil or row.image:lower():match("%.webm") ~= nil
+
+                photos[#photos + 1] = {
+                    id = tostring(row.id),
+                    url = row.image,
+                    isVideo = isVideo,
+                    favorite = tonumber(row.is_favorite) == 1 or row.is_favorite == true,
+                    takenAt = math.floor(tonumber(row.takenAt) or 0),
+                }
+            end
+        end
+
+        return photos
+    end,
 }
 
 -- Yields, call it from a thread or handler

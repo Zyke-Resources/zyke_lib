@@ -29,10 +29,24 @@ local listeners = {
             return {from = data.sender, to = data.recipient, message = data.message, plyId = plyId}
         end,
     },
+    ["yseries"] = {
+        event = "yseries:server:messages:sent",
+        read = function(data)
+            -- Ignore system messages (nil senderImei), group chats (table participants), or non-text payloads
+            if (not data.senderImei or type(data.participants) ~= "string" or type(data.content) ~= "string") then
+                return nil
+            end
+
+            -- targetSource in yseries is the recipient, so resolve the sender via phone number
+            local _, plyId = Functions.getPhoneNumberOwner(data.sender)
+
+            return {from = data.sender, to = data.participants, message = data.content, plyId = plyId}
+        end,
+    },
 }
 
 -- Calls the handler when a player texts the number, which works for numbers nobody owns
--- Texts are only heard while sd-phone or lb-phone runs, the handler stays registered while another phone runs
+-- Texts are only heard while a supported phone runs, the handler stays registered while another phone runs
 -- The handler may yield
 ---@param phoneNumber string | number @ Compared with Z.normalizePhoneNumber, use digits only since sd-phone strips everything else
 ---@param handler fun(message: IncomingPhoneMessage)
@@ -43,7 +57,9 @@ function Functions.onPhoneMessage(phoneNumber, handler)
     for system, listener in pairs(listeners) do
         AddEventHandler(listener.event, function(data)
             if (PhoneSystem ~= system or type(data) ~= "table") then return end
-            if (Functions.normalizePhoneNumber(data.targetNumber or data.recipient) ~= watched) then return end
+
+            local rawTarget = data.targetNumber or data.recipient or (type(data.participants) == "string" and data.participants or nil)
+            if (Functions.normalizePhoneNumber(rawTarget) ~= watched) then return end
 
             local message = listener.read(data)
             if (not message or message.message == "") then return end

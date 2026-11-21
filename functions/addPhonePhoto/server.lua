@@ -10,6 +10,20 @@ local saves = {
 
         return type(result) == "table" and result.success == true and result.photo and result.photo.id or nil
     end,
+    ["yseries"] = function(plyId, url)
+        -- Get the player's equipped/primary phone IMEI
+        local phoneImei = exports["yseries"]:GetPhoneImeiBySourceId(plyId)
+        if (not phoneImei) then return false end
+
+        -- Insert directly into YSeries gallery (change table to `yflip_gallery` if using YFlip)
+        local insertId = MySQL.insert.await("INSERT INTO yphone_gallery (phone_imei, image) VALUES (?, ?)", {
+            phoneImei,
+            url
+        })
+
+        -- Functions.addPhonePhoto strictly checks `type(photoId) == "string"`
+        return insertId and tostring(insertId) or nil
+    end,
 }
 
 -- Yields, call it from a thread or handler

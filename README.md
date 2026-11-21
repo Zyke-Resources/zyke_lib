@@ -165,7 +165,7 @@ Each system supports the following values:
 | `dispatch` | `"auto"`, `"none"`, `"cd_dispatch3d"`, `"ps-dispatch"`, `"cd_dispatch"`, `"qs-dispatch"`, `"rcore_dispatch"`, `"core_dispatch"`, `"tk_dispatch"`, `"codem-dispatchv2"`, `"lb-tablet"` |
 | `progressbar` | `"auto"`, `"zyke_lib"`, `"ox_lib"`, `"lation_ui"`, `"wasabi_uikit"` |
 | `appearance` | `"auto"`, `"none"`, `"onex-creation"`, `"illenium-appearance"`, `"rcore_clothing"`, `"qb-clothing"`, `"esx_skin"` |
-| `time` | `"auto"`, `"none"`, `"cd_easytime"`, `"qb-weathersync"`. Read by `Z.getGameTime` on the server, which returns nil without one |
+| `time` | `"auto"`, `"none"`, `"cd_easytime"`, `"qb-weathersync"`, `"av_weather"`. Read by `Z.getGameTime` on the server, which returns nil without one |
 | `status` | `"auto"`, `"none"`, `"zyke_status"`, `"esx_status"`. Read by `Z.getStatus` on the server, see [Status](#status) |
 
 ### Example

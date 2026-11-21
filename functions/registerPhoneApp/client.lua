@@ -35,6 +35,22 @@ local adds = {
             icon = app.icon,
         })
     end,
+    ["yseries"] = function(app)
+        exports["yseries"]:RemoveCustomApp(app.id)
+
+        -- YSeries expects a full `https://cfx-nui-...` URL rather than a bare `resource/path/page.html` string
+        local uiUrl = app.ui:find("^https?://") and app.ui or ("https://cfx-nui-" .. app.ui)
+
+        return exports["yseries"]:AddCustomApp({
+            key = app.id,
+            name = app.name,
+            description = app.description,
+            developer = app.developer,
+            defaultApp = app.preinstalled == true,
+            ui = uiUrl,
+            icon = app.icon,
+        })
+    end
 }
 
 -- Added again whenever the phone starts, it forgets the apps of other resources when it stops
