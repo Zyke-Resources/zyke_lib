@@ -18,6 +18,15 @@ local checks = {
 
         return true
     end,
+    ["yseries"] = function(plyId)
+        local phoneImei = exports["yseries"]:GetPhoneImeiBySourceId(plyId)
+        if (not phoneImei) then return false, "noPhone" end
+
+        -- YSeries tracks airplane mode via player state bags; it has no server-side signal export
+        if (Player(plyId).state.airplaneMode == true) then return false, "airplaneMode" end
+
+        return true
+    end,
 }
 
 -- Whether the player's phone can go online over mobile data right now, such as for an app that loads from the server
