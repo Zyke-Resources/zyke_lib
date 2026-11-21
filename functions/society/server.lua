@@ -172,7 +172,12 @@ end
 function Functions.society.ensure(name, label)
     if (type(name) ~= "string" or name == "") then return false end
 
-    if (BankingSystem == "RENEWED_BANKING") then
+    if (BankingSystem == "TGG_BANKING") then
+        -- Returns the account as it is when it already exists
+        local balance = exports['tgg-banking']:GetSocietyAccountMoney(name)
+        if balance and type(balance) == "number" then return true end
+        return exports['tgg-banking']:CreateBusinessAccount(name, 0, label)
+    elseif (BankingSystem == "RENEWED_BANKING") then
         -- Returns the account as it is when it already exists
         return exports["Renewed-Banking"]:CreateJobAccount({name = name, label = label}, 0) ~= nil
     elseif (BankingSystem) then
