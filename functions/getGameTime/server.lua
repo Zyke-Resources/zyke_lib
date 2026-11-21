@@ -7,6 +7,9 @@ function Functions.getGameTime()
     if (TimeSystem == "cd_easytime") then
         local data = exports["cd_easytime"]:GetAllData()
         if (data and data.hours) then return math.floor(data.hours) % 24, math.floor(data.mins or 0) % 60 end
+    elseif (TimeSystem == "av_weather") then
+        local data = exports["av_weather"]:getTime()
+        if (data and data.hour) then return data.hour, data.minutes or 0 end
     elseif (TimeSystem == "qb-weathersync") then
         local hour, minute = exports["qb-weathersync"]:getTime()
         if (hour) then return hour, minute or 0 end
