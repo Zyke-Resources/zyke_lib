@@ -1,6 +1,6 @@
 # Phone
 
-The phone bridge reads a character's phone number, finds the owner of a number, sends texts, hears texts sent to a number and reads and saves to a character's photo gallery through whichever phone resource the server runs. When no phone is running it falls back to the number the framework keeps (`charinfo.phone` on QBCore and Qbox, `users.phone_number` on ESX when a phone resource added that column).
+The phone bridge reads a character's phone number, finds the owner of a number, sends texts, hears texts sent to a number, reads and saves to a character's photo gallery, puts apps of your resource on the phone and checks whether it has mobile data, through whichever phone resource the server runs. When no phone is running it falls back to the number the framework keeps (`charinfo.phone` on QBCore and Qbox, `users.phone_number` on ESX when a phone resource added that column).
 
 zyke_lib never caches numbers. Many phones tie the number to the phone item or SIM card, so it changes when the player swaps phones and is `nil` while they carry none. Read it each time you need it, and cache it yourself for a short time if you read it often.
 
@@ -200,6 +200,49 @@ Leading zeros and country codes are left alone, so `+1 555 123 4567` and `555123
 
 ---
 
+### `Z.registerPhoneApp(app)` (client)
+
+Puts an app of your resource on the running phone. The phone shows your page in a frame of its own, and the page reaches your resource's NUI callbacks with `fetch` like any NUI page. Returns whether the phone took the app, and a reason when it did not.
+
+```lua
+Z.registerPhoneApp({
+    id = "my_resource_menu",
+    name = "Menu",
+    description = "Today's menu and opening hours",
+    ui = GetCurrentResourceName() .. "/web/phone.html",
+    icon = ("https://cfx-nui-%s/web/icon.png"):format(GetCurrentResourceName()),
+    preinstalled = true,
+})
+```
+
+- `id` (string, required) -- unique across every resource.
+- `name` (string, required) and `description` (string, required) -- shown on the home screen and in the phone's App Store. Call `Z.registerPhoneApp` again with the same `id` to change them, for example when the player's language changes.
+- `ui` (string, required) -- a page of your resource as `"resource/path/page.html"`. List it in your `files`.
+- `icon` (string, required) -- an image URL. A square image works best, the phone rounds its corners.
+- `developer` (string, optional) -- shown in the App Store.
+- `preinstalled` (boolean, optional) -- on every phone from the start. Otherwise players install it from the App Store.
+
+The phone forgets the apps of other resources when it stops, so zyke_lib adds yours again when it starts. While no phone that takes apps is running the result is `false, "unsupported"`, and the app is added once one starts.
+
+The app only draws an icon and a page. Anything the page asks your server for must still be checked there, also whether the player has a phone at all: use `Z.hasPhoneData` for that.
+
+---
+
+### `Z.hasPhoneData(player)` (server)
+
+Returns whether the player's phone can go online over mobile data right now, and a reason when it can not. Use it on the server for what an app on the phone asks for, the way a real app needs a connection.
+
+```lua
+local hasData, reason = Z.hasPhoneData(source)
+if (not hasData) then return {ok = false, error = "offline"} end
+```
+
+- `player` (PlayerId, required) -- an online player.
+
+sd-phone answers with its airplane mode and its cell signal, which counts the Wi-Fi network the phone is on. lb-phone has no signal the server can read, so only its airplane mode and whether the player carries a phone count.
+
+---
+
 ## Reasons
 
 | Reason | Meaning |
@@ -207,7 +250,9 @@ Leading zeros and country codes are left alone, so `+1 555 123 4567` and `555123
 | `invalidPlayer` | The input is not an online player or a known character identifier |
 | `noPhoneSystem` | No phone is running and the framework keeps no number (plain ESX) |
 | `noNumber` | The phone is running but the character has no number, usually no phone or SIM equipped. For owner lookups: nobody owns the number |
-| `noPhone` | Gallery methods: the player carries no phone |
+| `noPhone` | Gallery methods and `Z.hasPhoneData`: the player carries no phone |
+| `airplaneMode` | `Z.hasPhoneData`: the phone is in airplane mode |
+| `noService` | `Z.hasPhoneData`: the phone has no data signal |
 | `invalidUrl` | `Z.addPhonePhoto`: the URL is not an HTTPS string |
 | `offlineUnsupported` | The character is offline and the phone has no offline read or lookup |
 | `unsupported` | The phone can not do this |
@@ -216,6 +261,8 @@ Leading zeros and country codes are left alone, so `+1 555 123 4567` and `555123
 ---
 
 ## Support
+
+Apps (`Z.registerPhoneApp`) and the data check (`Z.hasPhoneData`) work on sd-phone (local source, 1.0.5) and lb-phone (official docs). Every other phone answers `false, "unsupported"`.
 
 | Phone | Number | Offline number | Owner lookup | Texts | Hears texts | Gallery | Source |
 |---|---|---|---|---|---|---|---|
