@@ -7,6 +7,7 @@ if (override == "none") then
 end
 
 local systems = {
+    {fileName = "av_weather", variable = "av_weather"},
     {fileName = "cd_easytime", variable = "cd_easytime"},
     {fileName = "qb-weathersync", variable = "qb-weathersync"},
 }
