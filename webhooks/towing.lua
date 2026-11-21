@@ -15,4 +15,9 @@ return {
     ["WinchDurabilityLow"] = "",
     ["WinchWornOut"] = "",
     ["AdminAction"] = "",
+    ["TowJobAccepted"] = "",
+    ["TowJobFinished"] = "",
+    ["TowRequestCreated"] = "",
+    ["TowRequestClosed"] = "",
+    ["JobContentChanged"] = "",
 }
