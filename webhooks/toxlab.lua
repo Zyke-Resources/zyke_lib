@@ -3,4 +3,6 @@ return {
     ["SampleRefused"] = "",
     ["ReportPrinted"] = "",
     ["InstantRead"] = "",
+    ["AnalyserPlaced"] = "",
+    ["AnalyserPickedUp"] = "",
 }
