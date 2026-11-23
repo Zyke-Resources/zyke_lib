@@ -238,7 +238,8 @@ for i = 1, #forceLoad do
     local start = forceLoad[i]:find("/")
     local name = forceLoad[i]:sub(1, start - 1)
 
-    loadFunc("functions", Functions, name, true)
+    -- The resource's files run while the loader waits, a module they used is loaded already and would register its handlers twice
+    if (rawget(Functions, name) == nil) then loadFunc("functions", Functions, name, true) end
 end
 
 -- Automatically version checking with support for legacy system where we individually imported this
