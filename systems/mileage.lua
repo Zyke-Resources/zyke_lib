@@ -8,6 +8,8 @@ end
 local systems = {
     {fileName = "jg-vehiclemileage", variable = "jg-vehiclemileage"},
     {fileName = "zyke_garages", variable = "zyke_garages"},
+    -- After zyke_garages, so a garage shows the distance it counts itself
+    {fileName = "zyke_mechanic", variable = "zyke_mechanic"},
     -- Last, since jim-mechanic is mostly run for its other features and a dedicated mileage script should win
     {fileName = "jim-mechanic", variable = "jim-mechanic"},
 }
