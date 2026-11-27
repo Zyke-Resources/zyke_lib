@@ -101,6 +101,10 @@ function Functions.getInventoryImagePath(itemName, metadata)
         if (type(metadata.image) == "string") then return ("nui://%s/web/images/%s.png"):format(resourceName, metadata.image) end
     end
 
+    -- ox resolves an item's client.image to a full URL on the client, which a picture named after the item may not match
+    local definitionImage = Inventory == "OX" and Items[itemName] and Items[itemName].client and Items[itemName].client.image
+    if (type(definitionImage) == "string") then return definitionImage end
+
     return ("nui://%s/web/images/%s.png"):format(resourceName, itemName)
 end
 
