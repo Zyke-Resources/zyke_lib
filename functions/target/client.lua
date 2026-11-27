@@ -3,7 +3,7 @@ Functions.target = {}
 ---@alias TargetModel string | integer
 
 ---@class RegisteredTarget
----@field type "entity" | "zone" | "model" | "globalVehicle"
+---@field type "entity" | "zone" | "model" | "globalVehicle" | "globalPlayer"
 ---@field models? TargetModel | TargetModel[]
 ---@field names? string[]
 ---@field labels? string[]
@@ -42,6 +42,8 @@ end
 
 ---@class GlobalVehicleTargetDetails : EntityTargetDetails
 
+---@class GlobalPlayerTargetDetails : EntityTargetDetails
+
 ---@class BoxTargetDetails
 ---@field name string @id
 ---@field pos vector3
@@ -55,8 +57,8 @@ end
 ---@field distance? number @2.0 default
 
 -- Translating and ensuring distance exists properly
----@param targetDetails EntityTargetDetails | ModelTargetDetails | GlobalVehicleTargetDetails | BoxTargetDetails
----@return EntityTargetDetails | ModelTargetDetails | GlobalVehicleTargetDetails | BoxTargetDetails targetDetails
+---@param targetDetails EntityTargetDetails | ModelTargetDetails | GlobalVehicleTargetDetails | GlobalPlayerTargetDetails | BoxTargetDetails
+---@return EntityTargetDetails | ModelTargetDetails | GlobalVehicleTargetDetails | GlobalPlayerTargetDetails | BoxTargetDetails targetDetails
 local function ensureTargetDetails(targetDetails)
     if (not targetDetails.distance) then
         targetDetails.distance = 2.0
@@ -101,7 +103,7 @@ end
 
 ---@param options TargetOption[]
 ---@param id integer
----@param targetType "model" | "globalVehicle"
+---@param targetType "model" | "globalVehicle" | "globalPlayer"
 local function ensureTargetOptionNames(options, id, targetType)
     for i = 1, #options do
         if (not options[i].name) then
@@ -209,6 +211,9 @@ function Functions.target.remove(id)
     elseif (zoneType == "globalVehicle") then
         if (Target == "OX") then return exports["ox_target"]:removeGlobalVehicle(details.names) end
         if (Target == "QB") then return exports["qb-target"]:RemoveGlobalVehicle(details.labels) end
+    elseif (zoneType == "globalPlayer") then
+        if (Target == "OX") then return exports["ox_target"]:removeGlobalPlayer(details.names) end
+        if (Target == "QB") then return exports["qb-target"]:RemoveGlobalPlayer(details.labels) end
     end
 end
 
@@ -267,6 +272,37 @@ function Functions.target.addGlobalVehicle(targetDetails)
 
     targets[id] = {
         type = "globalVehicle",
+        names = getTargetOptionValues(targetDetails.options, "name"),
+        labels = getTargetOptionValues(targetDetails.options, "label"),
+    }
+
+    return id
+end
+
+-- Options on every other player's ped
+---@param targetDetails GlobalPlayerTargetDetails
+---@return integer | nil id
+function Functions.target.addGlobalPlayer(targetDetails)
+    if (Target ~= "OX" and Target ~= "QB") then return nil end
+
+    ---@type GlobalPlayerTargetDetails
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    targetDetails = ensureTargetDetails(targetDetails)
+
+    local id = generateId()
+    ensureTargetOptionNames(targetDetails.options, id, "globalPlayer")
+
+    if (Target == "OX") then
+        exports["ox_target"]:addGlobalPlayer(targetDetails.options)
+    elseif (Target == "QB") then
+        exports["qb-target"]:AddGlobalPlayer({
+            options = targetDetails.options,
+            distance = targetDetails.distance
+        })
+    end
+
+    targets[id] = {
+        type = "globalPlayer",
         names = getTargetOptionValues(targetDetails.options, "name"),
         labels = getTargetOptionValues(targetDetails.options, "label"),
     }
