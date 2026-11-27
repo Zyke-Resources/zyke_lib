@@ -36,6 +36,7 @@
 ---@field opacity? number @ 0-1, defaults to 1
 ---@field reach? number @ Metres from the player an aim set's point can be aimed at, any distance when omitted
 ---@field showDistance? number @ Metres from the player the marker shows within, overrides the set's. Never less than a little past the reach
+---@field rooms? integer[] | table<integer, true> @ Room indexes of the point's interior that count as one room, such as a shop the interior splits into a counter room and a front room open to it; a list when set, a lookup once the set is replaced
 ---@field visualId? string @ resource:set:id, built once when the set is replaced
 ---@field resolved? vector3 | false @ World position at the last judgement, false while it is in another room
 ---@field culled? boolean @ Outside the camera's view at the last judgement, so it can't be aimed at
@@ -296,8 +297,25 @@ local function isInPlayerRoom(visual, point, coords, now)
     end
 
     if (visual.roomInterior ~= plyInterior) then return false end
+    if (not visual.roomIndex or not plyRoom or visual.roomIndex == plyRoom) then return true end
 
-    return not visual.roomIndex or not plyRoom or visual.roomIndex == plyRoom
+    local rooms = point.rooms
+
+    return rooms ~= nil and rooms[visual.roomIndex] == true and rooms[plyRoom] == true
+end
+
+---@param rooms? integer[]
+---@return table<integer, true> | nil lookup
+local function toRoomLookup(rooms)
+    if (type(rooms) ~= "table" or #rooms == 0) then return nil end
+
+    local lookup = {}
+
+    for i = 1, #rooms do
+        lookup[rooms[i]] = true
+    end
+
+    return lookup
 end
 
 ---@param ped integer
@@ -989,6 +1007,7 @@ Functions.setInterestPoints = function(id, points, options)
                 opacity = tonumber(point.opacity),
                 reach = reach,
                 showDistance = showDistance and math.max(showDistance, (reach or 0.0) + guideReachMargin + showFadeDistance),
+                rooms = toRoomLookup(point.rooms),
                 visualId = ("%s:%s:%s"):format(resourceName, id, point.id),
             }
         end
